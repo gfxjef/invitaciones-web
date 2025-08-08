@@ -5,9 +5,9 @@ from enum import Enum
 
 
 class UserRole(Enum):
-    CLIENT = 'client'
-    ADMIN = 'admin'
-    DESIGNER = 'designer'
+    CLIENT = 'CLIENT'
+    ADMIN = 'ADMIN'
+    DESIGNER = 'DESIGNER'
 
 
 class User(db.Model):

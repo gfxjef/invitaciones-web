@@ -7,7 +7,10 @@
       "Bash(git commit:*)",
       "Bash(gh repo create:*)",
       "Bash(gh issue create:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python:*)",
+      "Bash(venvScriptspython init_db.py test)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

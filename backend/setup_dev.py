@@ -25,22 +25,22 @@ def run_command(command, cwd=None):
 def setup_backend():
     """Configurar entorno backend"""
     backend_dir = Path(__file__).parent
-    print(f"📁 Configurando backend en: {backend_dir}")
+    print(f"[INFO] Configurando backend en: {backend_dir}")
     
     # Crear virtual environment
-    print("🐍 Creando virtual environment...")
+    print("[INFO] Creando virtual environment...")
     venv_path = backend_dir / "venv"
     
     if venv_path.exists():
-        print("✅ Virtual environment ya existe")
+        print("[OK] Virtual environment ya existe")
     else:
         if not run_command("python -m venv venv", cwd=backend_dir):
-            print("❌ Error creando virtual environment")
+            print("[ERROR] Error creando virtual environment")
             return False
-        print("✅ Virtual environment creado")
+        print("[OK] Virtual environment creado")
     
     # Activar venv y instalar dependencias
-    print("📦 Instalando dependencias...")
+    print("[INFO] Instalando dependencias...")
     
     if os.name == 'nt':  # Windows
         activate_cmd = r"venv\Scripts\activate"
@@ -51,25 +51,25 @@ def setup_backend():
     
     # Instalar dependencias
     if not run_command(f"{pip_cmd} install -r requirements.txt", cwd=backend_dir):
-        print("❌ Error instalando dependencias")
+        print("[ERROR] Error instalando dependencias")
         return False
     
-    print("✅ Dependencias instaladas correctamente")
+    print("[OK] Dependencias instaladas correctamente")
     
     # Verificar archivo .env
     env_file = backend_dir / ".env"
     env_example = backend_dir / ".env.example"
     
     if not env_file.exists() and env_example.exists():
-        print("📄 Copiando .env.example a backend/.env")
+        print("[INFO] Copiando .env.example a backend/.env")
         with open(env_example, 'r') as f:
             content = f.read()
         with open(env_file, 'w') as f:
             f.write(content)
-        print("⚠️  Recuerda configurar las variables en backend/.env")
+        print("[WARN] Recuerda configurar las variables en backend/.env")
     
-    print("\n🎉 Backend configurado correctamente!")
-    print("\n📋 Para ejecutar el servidor:")
+    print("\n[SUCCESS] Backend configurado correctamente!")
+    print("\n[INFO] Para ejecutar el servidor:")
     if os.name == 'nt':
         print("   cd backend")
         print("   venv\\Scripts\\activate")

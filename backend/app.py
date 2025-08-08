@@ -21,9 +21,19 @@ ma = Marshmallow()
 def create_app(config_name=None):
     app = Flask(__name__)
     
+    # Build MySQL connection string from individual variables
+    db_host = os.getenv('DB_HOST', 'localhost')
+    db_user = os.getenv('DB_USER', 'root')
+    db_password = os.getenv('DB_PASSWORD', '')
+    db_name = os.getenv('DB_NAME', 'invitaciones_web')
+    db_port = os.getenv('DB_PORT', '3306')
+    
+    # MySQL connection string
+    database_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # JWT Configuration
