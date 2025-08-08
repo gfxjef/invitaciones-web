@@ -29,19 +29,23 @@ Plataforma completa para crear y gestionar invitaciones digitales de bodas con d
 ## Stack Tecnológico
 
 ### Frontend
-- Framework SPA (React/Vue/Angular)
-- Internacionalización (ES/EN)
-- Diseño responsive
-- Integración con WhatsApp API
+- **Next.js 14** con App Router
+- **TypeScript** para type safety
+- **Tailwind CSS** para estilos
+- **Shadcn/ui** para componentes
+- **React Query** para manejo de estado
+- **Next-intl** para internacionalización (ES/EN)
+- **Framer Motion** para animaciones
 
 ### Backend
-- API REST
-- Autenticación JWT
-- Base de datos relacional
-- Integración con pasarela de pagos (Izipay)
-- Integración con Google Sheets API
-- Integración con Google Maps API
-- Gestión de archivos multimedia
+- **Python Flask** como framework
+- **SQLAlchemy** ORM
+- **Flask-JWT-Extended** para autenticación
+- **Flask-CORS** para CORS
+- **Celery** para tareas asíncronas
+- **Redis** para cache y colas
+- **PostgreSQL** como base de datos
+- Integraciones: Izipay, Google APIs, WhatsApp
 
 ## Estructura del Proyecto
 
@@ -71,13 +75,17 @@ Plataforma completa para crear y gestionar invitaciones digitales de bodas con d
 # Clonar repositorio
 git clone https://github.com/[tu-usuario]/invitaciones-web.git
 
-# Instalar dependencias del frontend
-cd frontend
-npm install
+# Backend - Flask
+cd backend
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-# Instalar dependencias del backend
-cd ../backend
+# Frontend - Next.js
+cd ../frontend
 npm install
+# o con yarn
+yarn install
 ```
 
 ## Configuración

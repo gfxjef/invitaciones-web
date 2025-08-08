@@ -67,19 +67,25 @@ Opciones recomendadas:
 - Para cache y sesiones
 - Redis Cloud tiene tier gratuito
 
-### 4. Decisiones Técnicas
+### 4. Stack Técnico Definido
 
-#### Stack Frontend
-Decidir entre:
-- **React** + Next.js (recomendado)
-- **Vue** + Nuxt
-- **Angular**
+#### Frontend - Next.js 14
+- **Framework**: Next.js con App Router
+- **Lenguaje**: TypeScript
+- **Estilos**: Tailwind CSS
+- **Estado**: React Query + Zustand
+- **Formularios**: React Hook Form + Zod
+- **Animaciones**: Framer Motion
+- **Internacionalización**: next-intl
 
-#### Stack Backend
-Decidir entre:
-- **Node.js** + Express + TypeScript (recomendado)
-- **Python** + Django/FastAPI
-- **Node.js** + NestJS
+#### Backend - Python Flask
+- **Framework**: Flask
+- **ORM**: SQLAlchemy
+- **Autenticación**: Flask-JWT-Extended
+- **Tareas asíncronas**: Celery
+- **Cache**: Redis
+- **Base de datos**: PostgreSQL
+- **API Docs**: Flask-RESTX/Swagger
 
 ### 5. Información del Negocio
 
@@ -119,9 +125,16 @@ Para el plan Standard necesitamos:
 
 #### Requisitos del Sistema
 ```bash
-- Node.js 18+ o Python 3.10+
+# Backend
+- Python 3.10+
 - PostgreSQL 14+
 - Redis 6+
+
+# Frontend
+- Node.js 18+
+- npm o yarn
+
+# General
 - Git
 - Docker (opcional pero recomendado)
 ```
