@@ -74,6 +74,7 @@ Plataforma completa para crear y gestionar invitaciones digitales de bodas con d
 ```bash
 # Clonar repositorio
 git clone https://github.com/[tu-usuario]/invitaciones-web.git
+cd invitaciones-web
 
 # Backend - Flask
 cd backend

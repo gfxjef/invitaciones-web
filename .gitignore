@@ -1,9 +1,10 @@
 # Dependencies
 node_modules/
 vendor/
-venv/
-env/
+backend/venv/
+backend/env/
 .env
+.env.local
 
 # Build outputs
 dist/
