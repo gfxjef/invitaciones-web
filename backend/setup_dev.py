@@ -58,7 +58,7 @@ def setup_backend():
     
     # Verificar archivo .env
     env_file = backend_dir / ".env"
-    env_example = backend_dir.parent / ".env.example"
+    env_example = backend_dir / ".env.example"
     
     if not env_file.exists() and env_example.exists():
         print("📄 Copiando .env.example a backend/.env")

@@ -91,15 +91,23 @@ yarn install
 
 ## Configuración
 
-Crear archivo `.env` con las siguientes variables:
+Crear archivo `backend/.env` basado en `backend/.env.example` con las siguientes variables:
 
+```bash
+# Copiar archivo de ejemplo
+cp backend/.env.example backend/.env
+
+# Luego editar backend/.env con tus credenciales reales
 ```
-DATABASE_URL=
-JWT_SECRET=
-IZIPAY_API_KEY=
-GOOGLE_SHEETS_API_KEY=
-GOOGLE_MAPS_API_KEY=
-WHATSAPP_API_TOKEN=
+
+Variables principales a configurar:
+```
+DATABASE_URL=postgresql://user:pass@localhost:5432/invitaciones_web
+JWT_SECRET=tu_clave_secreta_super_segura
+IZIPAY_API_KEY=tu_api_key_de_izipay
+GOOGLE_SHEETS_API_KEY=tu_google_sheets_api_key
+GOOGLE_MAPS_API_KEY=tu_google_maps_api_key
+WHATSAPP_API_TOKEN=tu_whatsapp_business_api_token
 ```
 
 ## Licencia
