@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Numeric
@@ -23,6 +23,10 @@ class Order(db.Model):
     discount_amount = db.Column(Numeric(10, 2), default=0)
     total = db.Column(Numeric(10, 2), nullable=False)
     currency = db.Column(db.String(3), default='PEN')
+    
+    # Coupon information
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'))
+    coupon_code = db.Column(db.String(50))  # Snapshot for historical records
     
     # Estado y fechas
     status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
@@ -60,6 +64,7 @@ class Order(db.Model):
             'total': float(self.total),
             'currency': self.currency,
             'status': self.status.value,
+            'coupon_code': self.coupon_code,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'paid_at': self.paid_at.isoformat() if self.paid_at else None,
             'items': [item.to_dict() for item in self.items]

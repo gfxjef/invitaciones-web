@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 from datetime import datetime
 
 
@@ -26,15 +26,26 @@ class Template(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     is_premium = db.Column(db.Boolean, default=False)
     display_order = db.Column(db.Integer, default=0)
+    is_deleted = db.Column(db.Boolean, default=False)  # Soft delete
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = db.Column(db.DateTime)  # Timestamp for soft delete
     
     # Relationships
     plan = db.relationship('Plan', backref='templates')
     
+    def soft_delete(self):
+        """WHY: Implements soft delete by marking the template as deleted 
+        instead of removing it from database to preserve data integrity"""
+        self.is_deleted = True
+        self.deleted_at = datetime.utcnow()
+        self.is_active = False
+    
     def to_dict(self):
-        return {
+        """WHY: Serializes template data for API responses, including 
+        all relevant fields for frontend consumption including plan pricing"""
+        data = {
             'id': self.id,
             'name': self.name,
             'description': self.description,
@@ -42,6 +53,28 @@ class Template(db.Model):
             'preview_image_url': self.preview_image_url,
             'thumbnail_url': self.thumbnail_url,
             'is_premium': self.is_premium,
+            'is_active': self.is_active,
+            'display_order': self.display_order,
             'supported_features': self.supported_features,
-            'default_colors': self.default_colors
+            'default_colors': self.default_colors,
+            'plan_id': self.plan_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        
+        # Include plan information with pricing
+        if self.plan:
+            data['plan'] = {
+                'id': self.plan.id,
+                'name': self.plan.name,
+                'price': float(self.plan.price),
+                'currency': self.plan.currency
+            }
+            data['price'] = float(self.plan.price)
+            data['currency'] = self.plan.currency
+        else:
+            data['plan'] = None
+            data['price'] = None
+            data['currency'] = 'PEN'
+            
+        return data

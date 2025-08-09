@@ -103,7 +103,7 @@ def create_app(config_name=None):
     # Create database tables if they don't exist
     with app.app_context():
         try:
-            # Import all models to ensure they're registered
+            # Import all models - all exist now after recovery
             from models import User, Plan, Template, Invitation, Order, OrderItem, OrderStatus, Cart, CartItem, Coupon, CouponUsage, InvitationURL, Claim, Testimonial
             
             # Create all tables if they don't exist
@@ -133,7 +133,7 @@ def create_app(config_name=None):
             print(f"[WARNING] Database initialization error: {e}")
             print("[INFO] You may need to run 'python init_db.py' manually")
 
-    # Register blueprints
+    # Register blueprints - Now all files exist
     from api.auth import auth_bp
     from api.users import users_bp
     from api.plans import plans_bp
