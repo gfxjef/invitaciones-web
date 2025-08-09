@@ -25,10 +25,10 @@ class CouponCreateSchema(Schema):
     start_date = fields.DateTime(allow_none=True)
     end_date = fields.DateTime(required=True)
     usage_limit = fields.Int(validate=lambda x: x > 0, allow_none=True)
-    usage_limit_per_user = fields.Int(validate=lambda x: x > 0, default=1)
-    minimum_order_amount = fields.Decimal(validate=lambda x: x >= 0, default=0)
+    usage_limit_per_user = fields.Int(validate=lambda x: x > 0, load_default=1)
+    minimum_order_amount = fields.Decimal(validate=lambda x: x >= 0, load_default=0)
     maximum_discount_amount = fields.Decimal(validate=lambda x: x > 0, allow_none=True)
-    is_active = fields.Bool(default=True)
+    is_active = fields.Bool(load_default=True)
     
     @validates('value')
     def validate_value(self, value):
