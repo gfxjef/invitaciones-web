@@ -160,6 +160,23 @@ def create_app(config_name=None):
     app.register_blueprint(coupons_bp, url_prefix='/api/coupons')
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
     
+    # Root endpoint
+    @app.route('/')
+    def index():
+        """Root endpoint - API information"""
+        return jsonify({
+            'message': 'Invitaciones Web API',
+            'version': '1.0',
+            'status': 'running',
+            'endpoints': {
+                'health': '/health',
+                'auth': '/api/auth/*',
+                'payments': '/api/payments/*',
+                'orders': '/api/orders/*',
+                'invitations': '/api/invitations/*'
+            }
+        }), 200
+
     # Health check endpoint - WHY: Enhanced health check with DB connectivity
     @app.route('/health')
     def health_check():
