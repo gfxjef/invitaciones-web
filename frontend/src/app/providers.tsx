@@ -1,8 +1,14 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
+import { AuthProvider } from '@/components/providers/AuthProvider'
+
+// Dynamic import for Toaster to reduce initial bundle size
+const Toaster = dynamic(() => import('react-hot-toast').then(mod => ({ default: mod.Toaster })), {
+  ssr: false
+})
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -10,8 +16,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
+            staleTime: 5 * 60 * 1000, // 5 minutes
             refetchOnWindowFocus: false,
+            retry: 1, // Reduce retries for faster builds
+            gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
+          },
+          mutations: {
+            retry: 1,
           },
         },
       })
@@ -19,8 +30,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster position="top-right" />
-      {children}
+      <AuthProvider>
+        <Toaster position="top-right" />
+        {children}
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

@@ -10,7 +10,8 @@
       "Bash(git push:*)",
       "Bash(python:*)",
       "Bash(venvScriptspython init_db.py test)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
