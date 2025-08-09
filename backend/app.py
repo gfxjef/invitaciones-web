@@ -1,9 +1,6 @@
-from flask import Flask
+from flask import Flask, make_response, request, jsonify
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
-from flask_marshmallow import Marshmallow
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
@@ -11,11 +8,8 @@ from datetime import timedelta
 # Load environment variables
 load_dotenv()
 
-# Initialize extensions
-db = SQLAlchemy()
-migrate = Migrate()
-jwt = JWTManager()
-ma = Marshmallow()
+# Import extensions from centralized module to avoid circular imports
+from extensions import db, migrate, jwt, ma, configure_jwt
 
 
 def create_app(config_name=None):
@@ -36,10 +30,18 @@ def create_app(config_name=None):
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # JWT Configuration
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')
+    # JWT Configuration - WHY: Enhanced JWT config with proper error handling
+    jwt_secret = os.getenv('JWT_SECRET')
+    if not jwt_secret:
+        raise ValueError("JWT_SECRET environment variable is required")
+    
+    app.config['JWT_SECRET_KEY'] = jwt_secret
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
+    app.config['JWT_IDENTITY_CLAIM'] = 'sub'
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']
+    app.config['JWT_HEADER_NAME'] = 'Authorization'
+    app.config['JWT_HEADER_TYPE'] = 'Bearer'
     
     # CORS Configuration
     cors_origins = os.getenv('CORS_ORIGIN', 'http://localhost:3000').split(',')
@@ -49,33 +51,146 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     ma.init_app(app)
-    CORS(app, origins=cors_origins, supports_credentials=True)
     
+    # JWT identity loaders and error handlers
+    @jwt.user_identity_loader
+    def user_identity_lookup(user_id):
+        return str(user_id)
+    
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data["sub"]
+        try:
+            user_id = int(identity)
+            from models import User
+            return User.query.get(user_id)
+        except (ValueError, TypeError):
+            return None
+    
+    # Configure JWT with additional settings
+    configure_jwt(jwt, app)
+    
+    # JWT Error handlers - WHY: Better error messages for frontend debugging
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({
+            'message': 'Token has expired',
+            'error': 'token_expired'
+        }), 401
+    
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return jsonify({
+            'message': 'Invalid token',
+            'error': 'invalid_token'
+        }), 401
+    
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return jsonify({
+            'message': 'Authorization token is required',
+            'error': 'authorization_required'
+        }), 401
+    
+    # Enhanced CORS configuration - WHY: Proper CORS setup for JWT token handling
+    CORS(app, 
+         origins=cors_origins,
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+         expose_headers=['Content-Length', 'X-Total-Count'])
+    
+    # Create database tables if they don't exist
+    with app.app_context():
+        try:
+            # Import all models to ensure they're registered
+            from models import User, Plan, Template, Invitation, Order, OrderItem, OrderStatus, Cart, CartItem, Coupon, CouponUsage, InvitationURL, Claim, Testimonial
+            
+            # Create all tables if they don't exist
+            db.create_all()
+            print("[INFO] Database tables created successfully!")
+            
+            # Create admin user if doesn't exist
+            admin_email = os.getenv('ADMIN_EMAIL', 'admin@invitaciones.com')
+            admin_user = User.query.filter_by(email=admin_email).first()
+            
+            if not admin_user:
+                from models.user import UserRole
+                admin_user = User(
+                    email=admin_email,
+                    first_name='Admin',
+                    last_name='System',
+                    role=UserRole.ADMIN,
+                    is_active=True,
+                    email_verified=True
+                )
+                admin_user.set_password(os.getenv('ADMIN_PASSWORD', 'admin123'))
+                db.session.add(admin_user)
+                db.session.commit()
+                print(f"[INFO] Admin user created: {admin_email}")
+                
+        except Exception as e:
+            print(f"[WARNING] Database initialization error: {e}")
+            print("[INFO] You may need to run 'python init_db.py' manually")
+
     # Register blueprints
     from api.auth import auth_bp
+    from api.users import users_bp
     from api.plans import plans_bp
     from api.invitations import invitations_bp
+    from api.invitation_urls import invitation_urls_bp
+    from api.redirect import redirect_bp
     from api.orders import orders_bp
     from api.admin import admin_bp
+    from api.templates import templates_bp
+    from api.payments import payments_bp
+    from api.coupons import coupons_bp
+    from api.cart import cart_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(users_bp, url_prefix='/api/user')
     app.register_blueprint(plans_bp, url_prefix='/api/plans')
     app.register_blueprint(invitations_bp, url_prefix='/api/invitations')
+    app.register_blueprint(invitation_urls_bp, url_prefix='/api/invitation-urls')
+    app.register_blueprint(redirect_bp)  # No prefix - needs to be at root for /r/{code}
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(templates_bp, url_prefix='/api/templates')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(coupons_bp, url_prefix='/api/coupons')
+    app.register_blueprint(cart_bp, url_prefix='/api/cart')
     
-    # Health check endpoint
+    # Health check endpoint - WHY: Enhanced health check with DB connectivity
     @app.route('/health')
     def health_check():
-        return {'status': 'healthy', 'service': 'invitaciones-api'}, 200
+        try:
+            # Test database connectivity
+            from sqlalchemy import text
+            with db.engine.connect() as connection:
+                connection.execute(text('SELECT 1'))
+            return {
+                'status': 'healthy', 
+                'service': 'invitaciones-api',
+                'database': 'connected',
+                'jwt_configured': bool(app.config.get('JWT_SECRET_KEY'))
+            }, 200
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'service': 'invitaciones-api', 
+                'database': 'disconnected',
+                'error': str(e)
+            }, 503
     
     return app
 
 
 if __name__ == '__main__':
     app = create_app()
+    # Use PORT from environment (Render uses this) or fallback to FLASK_PORT
+    port = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))
     app.run(
         host='0.0.0.0',
-        port=int(os.getenv('FLASK_PORT', 5000)),
+        port=port,
         debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     )
