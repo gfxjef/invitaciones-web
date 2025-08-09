@@ -580,11 +580,11 @@ export default function Home() {
                       </p>
                     )}
 
-                    {step.note && (
+                    {(step as any).note && (
                       <div className="bg-purple-50 p-4 rounded-lg">
                         <p className="text-slate-700">
                           <span className="font-semibold text-purple-600">¡Aquí las referencias lo son todo!</span>{' '}
-                          {step.note}
+                          {(step as any).note}
                         </p>
                       </div>
                     )}
