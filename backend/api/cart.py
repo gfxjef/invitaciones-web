@@ -16,7 +16,7 @@ class AddToCartSchema(Schema):
     """
     type = fields.Str(required=True, validate=lambda x: x in ['plan', 'template'])
     id = fields.Int(required=True, validate=lambda x: x > 0)
-    quantity = fields.Int(missing=1, validate=lambda x: x > 0)
+    quantity = fields.Int(load_default=1, validate=lambda x: x > 0)
     
     def validate_quantity_for_template(self, data, **kwargs):
         """WHY: Templates must have quantity of 1"""
