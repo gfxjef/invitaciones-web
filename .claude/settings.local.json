@@ -11,7 +11,11 @@
       "Bash(python:*)",
       "Bash(venvScriptspython init_db.py test)",
       "Bash(curl:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm ls:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

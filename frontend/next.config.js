@@ -29,7 +29,8 @@ const nextConfig = {
   // Build performance optimizations
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-accordion', '@radix-ui/react-tabs'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-accordion', '@radix-ui/react-tabs', 'framer-motion'],
+    webpackBuildWorker: true, // Faster builds
   },
   
   // Webpack optimizations

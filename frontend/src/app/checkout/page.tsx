@@ -243,7 +243,7 @@ export default function CheckoutPage() {
       
       if (!orderResponse.success || !orderResponse.order) {
         console.error('❌ [CHECKOUT] Order creation failed:', orderResponse);
-        throw new Error('Failed to create order: ' + (orderResponse.error || 'Unknown error'));
+        throw new Error('Failed to create order: ' + ((orderResponse as any).error || 'Unknown error'));
       }
       
       const order = orderResponse.order;
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
       
       if (!tokenResponse.success || !tokenResponse.token) {
         console.error('❌ [CHECKOUT] Payment token creation failed:', tokenResponse);
-        throw new Error('Failed to create payment token: ' + (tokenResponse.error || 'Unknown error'));
+        throw new Error('Failed to create payment token: ' + ((tokenResponse as any).error || 'Unknown error'));
       }
       
       setPaymentConfig({

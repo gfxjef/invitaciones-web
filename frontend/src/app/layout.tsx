@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="es">
       <head>
         {/* Izipay Checkout SDK */}
-        <script src="https://sandbox-checkout.izipay.pe/payments/v1/js/index.js"></script>
+        <script src="https://sandbox-checkout.izipay.pe/payments/v1/js/index.js" async></script>
       </head>
       <body className={inter.className}>
         <Providers>
