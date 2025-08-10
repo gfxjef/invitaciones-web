@@ -113,9 +113,13 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         });
         console.log('Form config set with token');
 
-        // Render the form
-        await KR.renderElements('#kr-payment-form');
-        console.log('Form rendered in container');
+        // Attach form to the container
+        await KR.attachForm('#kr-payment-form');
+        console.log('Form attached to container');
+        
+        // Show the form
+        await KR.showForm();
+        console.log('Form displayed');
 
         // Check that form was actually rendered
         const formElement = document.getElementById('kr-payment-form');
