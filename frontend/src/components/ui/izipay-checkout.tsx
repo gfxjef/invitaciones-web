@@ -1,26 +1,18 @@
 /**
- * Izipay Krypton V4 Checkout Component
+ * Izipay Krypton V4 Checkout Component with NPM KRGlue
  * 
- * WHY: Integrates with Izipay payment gateway using the Krypton V4 SDK.
- * Handles form token initialization, checkout form rendering, and payment processing.
+ * WHY: Integrates with Izipay payment gateway using @lyracom/embedded-form-glue NPM package.
+ * This solves the CDN 404 issue and provides reliable form rendering.
  * 
- * WHAT: Component that initializes Krypton V4 payment form with proper
- * configuration and handles payment flow completion with proper error handling.
+ * WHAT: Component that uses KRGlue from NPM to initialize and render the payment form
+ * with proper error handling and dynamic loading.
  */
 
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { CreditCard, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Lock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-// Global Krypton V4 type declarations
-declare global {
-  interface Window {
-    KR: any;
-  }
-}
 
 export interface IzipayCheckoutProps {
   /** Order details */
@@ -73,85 +65,79 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   onPaymentError,
   isLoading = false,
 }) => {
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [isPaymentReady, setIsPaymentReady] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const checkoutContainerRef = useRef<HTMLDivElement>(null);
-  const checkoutInstanceRef = useRef<any>(null);
 
-  /**
-   * Initialize Krypton V4 using embedded form approach
-   */
   useEffect(() => {
-    const initializeKryptonForm = async () => {
-      if (!paymentConfig.token || !paymentConfig.public_key) {
-        console.log('Payment config NOT ready:', {
-          hasToken: !!paymentConfig.token,
-          hasPublicKey: !!paymentConfig.public_key
-        });
-        return;
-      }
-
-      // Wait for KR SDK to be loaded
-      if (!window.KR) {
-        console.log('KR SDK not loaded yet, retrying...');
-        setTimeout(initializeKryptonForm, 500);
-        return;
-      }
-
+    const initializePaymentForm = async () => {
       try {
-        console.log('KR SDK available:', !!window.KR);
-        console.log('Initializing with:', {
-          publicKey: paymentConfig.public_key,
-          token: paymentConfig.token.substring(0, 20) + '...'
+        // Check if we have the required config
+        if (!paymentConfig.token || !paymentConfig.public_key) {
+          console.log('Waiting for payment config...', {
+            hasToken: !!paymentConfig.token,
+            hasPublicKey: !!paymentConfig.public_key
+          });
+          return;
+        }
+
+        console.log('Initializing payment form with:', {
+          publicKey: paymentConfig.public_key.substring(0, 30) + '...',
+          token: paymentConfig.token.substring(0, 30) + '...',
+          order: order.order_number
         });
 
-        setIsInitializing(true);
+        // Dynamically import KRGlue (client-side only)
+        const KRGlue = (await import('@lyracom/embedded-form-glue')).default;
+        console.log('KRGlue loaded from NPM');
 
-        // Set up error handling first
-        window.KR.onError((error: any) => {
+        // Initialize library with endpoint and public key
+        const endPoint = 'https://api.micuentaweb.pe';
+        const { KR } = await KRGlue.loadLibrary(endPoint, paymentConfig.public_key);
+        console.log('KR library initialized');
+
+        // Configure form with token
+        await KR.setFormConfig({ 
+          formToken: paymentConfig.token,
+          'kr-language': 'es-PE',
+          'kr-post-url-success': `${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=success`,
+          'kr-post-url-refused': `${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=refused`
+        });
+        console.log('Form config set');
+
+        // Render form in container
+        await KR.render('#kr-payment-form');
+        console.log('Form rendered successfully');
+
+        // Set up error handling
+        KR.onError((error: any) => {
           console.error('KR error:', error);
-          const errorMessage = error?.message || error?.detailedErrorMessage || 'Error desconocido';
-          setPaymentError(`Error: ${errorMessage}`);
+          const errorMessage = error?.message || error?.detailedErrorMessage || 'Error del formulario';
+          setPaymentError(errorMessage);
           toast.error('Error en el formulario de pago');
         });
 
-        // Configure public key
-        console.log('Setting public key...');
-        window.KR.setPublicKey(paymentConfig.public_key);
-
-        // Add form to container
-        console.log('Adding form to container...');
-        const formPromise = window.KR.addForm('#kr-payment-form');
-        
-        // Set form token
-        console.log('Setting form token...');
-        window.KR.setFormToken(paymentConfig.token);
-
-        // Wait for form to be ready
-        await formPromise;
-
-        // Debug: Check if content was rendered
+        // Check that form was actually rendered
         const formElement = document.getElementById('kr-payment-form');
-        console.log('Form rendered. innerHTML length:', formElement?.innerHTML?.length);
-        console.log('Form element height:', formElement?.offsetHeight);
+        console.log('Form element check:', {
+          exists: !!formElement,
+          hasContent: formElement?.innerHTML?.length > 0,
+          height: formElement?.offsetHeight
+        });
 
-        setIsPaymentReady(true);
-        setPaymentError(null);
         toast.success('Formulario de pago cargado');
+        setPaymentError(null);
 
       } catch (error: any) {
-        console.error('Error initializing Krypton:', error);
-        setPaymentError(`Error: ${error.message || 'Error desconocido'}`);
+        console.error('Error initializing payment form:', error);
+        setPaymentError(error.message || 'No se pudo inicializar el pago');
         toast.error('Error al cargar el formulario de pago');
       } finally {
         setIsInitializing(false);
       }
     };
 
-    // Small delay to ensure DOM is ready
-    setTimeout(initializeKryptonForm, 100);
-  }, [paymentConfig.token, paymentConfig.public_key]);
+    initializePaymentForm();
+  }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
 
   if (isLoading) {
     return (
@@ -237,17 +223,16 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           </div>
         )}
         
-        {/* Debug info */}
+        {/* Debug info (development only) */}
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
             <strong>Debug:</strong> 
-            Token: {paymentConfig.token ? paymentConfig.token.substring(0, 30) + '...' : 'None'} | 
-            Public Key: {paymentConfig.public_key ? paymentConfig.public_key.substring(0, 30) + '...' : 'None'}
+            Token: {paymentConfig.token ? '✅ ' + paymentConfig.token.substring(0, 20) + '...' : '❌ None'} | 
+            Public Key: {paymentConfig.public_key ? '✅ ' + paymentConfig.public_key.substring(0, 20) + '...' : '❌ None'}
             <br />
             <strong>Status:</strong> 
-            KR SDK: {typeof window !== 'undefined' && window.KR ? 'Loaded ✅' : 'Not Loaded ❌'} | 
-            Ready: {isPaymentReady ? '✅' : '❌'} | 
-            Initializing: {isInitializing ? '⏳' : '❌'}
+            Loading: {isInitializing ? '⏳' : '✅'} | 
+            Error: {paymentError ? '❌' : '✅'}
           </div>
         )}
       </div>
