@@ -103,14 +103,20 @@ class IzipayService:
             
         WHY: La tokenización es requerida por Izipay antes de mostrar el checkout.
         """
-        # Estructura correcta según documentación de Izipay
+        # Estructura para generar form token en Izipay
         token_payload = {
-            'amount': int(float(order_data['amount']) * 100),  # En centavos
-            'currency': order_data.get('currency', 'PEN'),
+            'amount': int(float(order_data['amount']) * 100),  # En centavos (soles a centavos)
+            'currency': 604,  # Código ISO para PEN (soles peruanos)
             'orderId': order_data['order_number'],
             'customer': {
-                'email': order_data.get('customer_email', ''),
+                'email': order_data.get('customer_email', 'test@example.com'),
                 'reference': order_data.get('customer_id', '')
+            },
+            'transactionOptions': {
+                'cardOptions': {
+                    'captureDelay': 0,
+                    'manualValidation': 'NO'
+                }
             }
         }
         
@@ -121,9 +127,12 @@ class IzipayService:
         }
         
         try:
-            url = f"{self.config['api_url']}/Charge/CreatePayment"
+            # Endpoint correcto para generar form token en Izipay
+            url = f"{self.config['api_url']}/payments"
             logger.info(f"Creating payment token for order {order_data['order_number']}")
+            logger.info(f"Request URL: {url}")
             logger.info(f"Request payload: {token_payload}")
+            logger.info(f"Request headers: {headers}")
             
             response = requests.post(
                 url,
