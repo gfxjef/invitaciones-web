@@ -115,11 +115,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
 
         // Attach form to the container
         await KR.attachForm('#kr-payment-form');
-        console.log('Form attached to container');
-        
-        // Show the form
-        await KR.showForm();
-        console.log('Form displayed');
+        console.log('Form attached and displayed in container');
 
         // Check that form was actually rendered
         const formElement = document.getElementById('kr-payment-form');
