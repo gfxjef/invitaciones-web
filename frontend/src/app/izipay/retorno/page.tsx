@@ -65,11 +65,11 @@ export default function IzipayRetornoPage() {
         if (orderNumber) {
           try {
             const orderDetails = await ordersApi.getOrderByNumber(orderNumber);
-            if (orderDetails.success && orderDetails.order) {
-              setOrder(orderDetails.order);
+            if (orderDetails) {
+              setOrder(orderDetails);
               
               // Actualizar el estado basado en la información del pedido
-              if (orderDetails.order.status === 'paid') {
+              if (orderDetails.status === 'paid') {
                 success = true;
                 message = '¡Pago confirmado!';
               }
@@ -224,10 +224,10 @@ export default function IzipayRetornoPage() {
                 {order.items.map((item, index) => (
                   <div key={index} className="flex justify-between">
                     <span className="text-gray-600">
-                      {item.template_name} x{item.quantity}
+                      {item.product_name} x{item.quantity}
                     </span>
                     <span className="font-medium text-gray-900">
-                      S/ {(item.price * item.quantity).toFixed(2)}
+                      S/ {item.total_price.toFixed(2)}
                     </span>
                   </div>
                 ))}
