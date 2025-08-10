@@ -99,11 +99,19 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
     if (paymentConfig.token && paymentConfig.public_key) {
       console.log('Payment config ready:', {
         token: paymentConfig.token.substring(0, 20) + '...',
-        publicKey: paymentConfig.public_key.substring(0, 20) + '...',
-        order: order.order_number
+        publicKey: paymentConfig.public_key,
+        order: order.order_number,
+        hasKR: !!window.KR,
+        tokenFull: paymentConfig.token
       });
       setIsPaymentReady(true);
       toast.success('Formulario de pago listo');
+    } else {
+      console.log('Payment config NOT ready:', {
+        hasToken: !!paymentConfig.token,
+        hasPublicKey: !!paymentConfig.public_key,
+        publicKey: paymentConfig.public_key
+      });
     }
   }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
 
@@ -165,24 +173,36 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
       </div>
 
       {/* Krypton V4 Smart Form */}
-      {isPaymentReady && paymentConfig.token && paymentConfig.public_key ? (
-        <div className="mb-6">
-          <div
-            className="kr-smart-form"
-            kr-public-key={paymentConfig.public_key}
-            kr-form-token={paymentConfig.token}
-            kr-api="https://api.micuentaweb.pe"
-            kr-language="es-PE"
-            kr-post-url-success={`${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`}
-            kr-post-url-refused={`${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=refused&transactionId=${paymentConfig.transaction_id}`}
-          />
-        </div>
-      ) : (
-        <div className="mb-6 p-8 bg-gray-50 rounded-lg text-center">
-          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando formulario de pago...</p>
-        </div>
-      )}
+      <div className="mb-6">
+        {isPaymentReady && paymentConfig.token && paymentConfig.public_key ? (
+          <>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingresa los datos de tu tarjeta</h3>
+            <div
+              className="kr-smart-form"
+              kr-public-key={paymentConfig.public_key}
+              kr-form-token={paymentConfig.token}
+              kr-api="https://api.micuentaweb.pe"
+              kr-language="es-PE"
+              kr-post-url-success={`${typeof window !== 'undefined' ? window.location.origin : ''}/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`}
+              kr-post-url-refused={`${typeof window !== 'undefined' ? window.location.origin : ''}/izipay/retorno?orderNumber=${order.order_number}&status=refused&transactionId=${paymentConfig.transaction_id}`}
+              style={{ minHeight: '400px' }}
+            />
+            
+            {/* Debug info visible */}
+            <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              <strong>Debug:</strong> Token: {paymentConfig.token.substring(0, 30)}... | Public Key: {paymentConfig.public_key.substring(0, 30)}...
+            </div>
+          </>
+        ) : (
+          <div className="p-8 bg-gray-50 rounded-lg text-center">
+            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando formulario de pago...</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Token: {paymentConfig.token ? '✅' : '❌'} | Public Key: {paymentConfig.public_key ? '✅' : '❌'}
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Security Notice */}
       <div className="flex items-center justify-center text-sm text-gray-500">
