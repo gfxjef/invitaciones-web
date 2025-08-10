@@ -92,8 +92,9 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
 
         // Initialize library with endpoint and public key
         const endPoint = 'https://api.micuentaweb.pe';
-        const publicKey = paymentConfig.public_key;
+        const publicKey = (paymentConfig.public_key || '').trim();
         
+        console.log('pubKey:', `"${publicKey}"`, 'len:', publicKey.length);
         console.log('Initializing KRGlue with:', { endPoint, publicKey });
         
         // Load the library - this will load the kr-payment-form.min.js automatically
