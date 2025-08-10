@@ -6,7 +6,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     get_current_user
 )
-from models import User
+from models.user import User
 from extensions import db
 from marshmallow import Schema, fields, ValidationError
 from datetime import datetime
