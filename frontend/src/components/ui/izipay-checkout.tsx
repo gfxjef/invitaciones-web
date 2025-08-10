@@ -11,7 +11,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface IzipayCheckoutProps {
