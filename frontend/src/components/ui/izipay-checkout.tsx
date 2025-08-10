@@ -1,12 +1,11 @@
 /**
- * Izipay Checkout Component
+ * Izipay Krypton V4 Checkout Component
  * 
- * WHY: Integrates with Izipay payment gateway following their official
- * example implementation. Handles token generation, checkout initialization,
- * and payment processing.
+ * WHY: Integrates with Izipay payment gateway using the Krypton V4 SDK.
+ * Handles form token initialization, checkout form rendering, and payment processing.
  * 
- * WHAT: Component that initializes Izipay checkout form with proper
- * configuration and handles payment flow completion.
+ * WHAT: Component that initializes Krypton V4 payment form with proper
+ * configuration and handles payment flow completion with proper error handling.
  */
 
 'use client';
@@ -16,10 +15,10 @@ import { Button } from '@/components/ui/button';
 import { CreditCard, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-// Global Izipay type declarations
+// Global Krypton V4 type declarations
 declare global {
   interface Window {
-    Izipay: any;
+    KR: any;
   }
 }
 
@@ -81,12 +80,12 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   const checkoutInstanceRef = useRef<any>(null);
 
   /**
-   * Initialize Izipay checkout form
-   * Following the exact pattern from the official example
+   * Initialize Krypton V4 checkout form
+   * Using the official Krypton V4 SDK implementation
    */
   const initializeCheckout = async () => {
-    if (!window.Izipay) {
-      setPaymentError('Izipay SDK not loaded. Please refresh the page.');
+    if (!window.KR) {
+      setPaymentError('Krypton SDK not loaded. Please refresh the page.');
       return;
     }
 
@@ -94,89 +93,34 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
     setPaymentError(null);
 
     try {
-      // Generate current timestamp for transaction
-      const currentTimeUnix = Date.now() * 1000;
+      // Set up error handling
+      window.KR.onError((error: any) => {
+        console.error('Krypton error:', error);
+        const errorMessage = error?.message || error?.detailedErrorMessage || 'Payment form error';
+        setPaymentError(`Error del formulario de pago: ${errorMessage}`);
+        toast.error('Error en el formulario de pago');
+      });
+
+      // Initialize Krypton with server URL and public key
+      await window.KR.setEndpoint('https://api.micuentaweb.pe');
+      await window.KR.setPublicKey(paymentConfig.public_key);
       
-      // Map document type to Izipay enum
-      const documentTypeMap = {
-        'DNI': window.Izipay.enums?.documentType?.DNI || 'DNI',
-        'RUC': window.Izipay.enums?.documentType?.RUC || 'RUC'
-      };
-
-      // Izipay configuration following official example structure
-      const iziConfig = {
-        config: {
-          transactionId: paymentConfig.transaction_id,
-          action: window.Izipay.enums?.payActions?.PAY || 'PAY',
-          merchantCode: paymentConfig.merchant_code,
-          order: {
-            orderNumber: order.order_number,
-            currency: order.currency,
-            amount: order.total.toString(),
-            processType: window.Izipay.enums?.processType?.AUTHORIZATION || 'AUTHORIZATION',
-            merchantBuyerId: `user_${order.id}`,
-            dateTimeTransaction: currentTimeUnix.toString(),
-            payMethod: window.Izipay.enums?.showMethods?.ALL || 'ALL',
-          },
-          billing: {
-            firstName: billingInfo.firstName,
-            lastName: billingInfo.lastName,
-            email: billingInfo.email,
-            phoneNumber: billingInfo.phoneNumber,
-            street: billingInfo.street,
-            city: billingInfo.city,
-            state: billingInfo.state,
-            country: billingInfo.country,
-            postalCode: billingInfo.postalCode || '00001',
-            document: billingInfo.document,
-            documentType: documentTypeMap[billingInfo.documentType] || 'DNI',
-          },
-          render: {
-            typeForm: window.Izipay.enums?.typeForm?.POP_UP || 'POP_UP',
-            container: '#izipay-checkout-container',
-            showButtonProcessForm: false, // We'll show our own button
-          },
-          urlRedirect: `${window.location.origin}/mi-cuenta/pedidos/${order.order_number}?success=true`,
-          appearance: {
-            logo: `${window.location.origin}/logo.png`,
-          },
-        },
-      };
-
-      // Payment response callback
-      const callbackResponsePayment = (response: any) => {
-        console.log('Izipay payment response:', response);
-        
-        if (response.status === 'success' || response.status === 'PAID') {
-          onPaymentComplete(response);
-        } else if (response.status === 'error' || response.status === 'FAILED') {
-          onPaymentError(response);
-        } else {
-          // Handle other statuses
-          console.log('Payment status:', response.status, response);
-        }
-      };
-
-      // Initialize checkout
-      const checkout = new window.Izipay({ config: iziConfig.config });
-      
-      if (checkout) {
-        checkoutInstanceRef.current = checkout;
-        
-        await checkout.LoadForm({
-          authorization: paymentConfig.token,
-          keyRSA: 'RSA',
-          callbackResponse: callbackResponsePayment,
+      // Create payment form with the token
+      await window.KR.addForm('#izipay-checkout-container')
+        .then((paymentForm: any) => {
+          checkoutInstanceRef.current = paymentForm;
+          
+          // Set the form token
+          return paymentForm.setFormToken(paymentConfig.token);
+        })
+        .then((result: any) => {
+          console.log('Krypton form initialized:', result);
+          setIsPaymentReady(true);
+          toast.success('Formulario de pago cargado correctamente');
         });
-        
-        setIsPaymentReady(true);
-        toast.success('Formulario de pago cargado correctamente');
-      } else {
-        throw new Error('Failed to initialize Izipay checkout');
-      }
       
     } catch (error: any) {
-      console.error('Error initializing Izipay checkout:', error);
+      console.error('Error initializing Krypton checkout:', error);
       setPaymentError(error.message || 'Error inicializando el formulario de pago');
       toast.error('Error cargando el formulario de pago');
     } finally {
@@ -190,10 +134,24 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   const handlePayment = async () => {
     if (!checkoutInstanceRef.current) {
       await initializeCheckout();
+      return;
     }
     
-    // The checkout form should appear as a popup
-    // based on the typeForm: POP_UP configuration
+    try {
+      // Submit the payment form
+      const result = await checkoutInstanceRef.current.onSubmit();
+      console.log('Payment result:', result);
+      
+      if (result.success) {
+        // Redirect to return page
+        window.location.href = `/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`;
+      } else {
+        onPaymentError(result);
+      }
+    } catch (error: any) {
+      console.error('Payment submission error:', error);
+      onPaymentError({ error: error.message || 'Payment failed' });
+    }
   };
 
   // Auto-initialize when component mounts and token is available
@@ -284,7 +242,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         {/* Security Notice */}
         <div className="flex items-center justify-center text-sm text-gray-500">
           <Lock className="w-4 h-4 mr-2" />
-          <span>Pago seguro procesado por Izipay</span>
+          <span>Pago seguro procesado por Izipay Krypton</span>
         </div>
       </div>
 

@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="es">
       <head>
         {/* Izipay Checkout SDK */}
-        <script src="https://sandbox-checkout.izipay.pe/payments/v1/js/index.js" async></script>
+        <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js" async></script>
       </head>
       <body className={inter.className}>
         <Providers>
