@@ -115,14 +115,18 @@ def create_order():
     data = request.get_json() or {}
     
     try:
+        logger.info(f"Creating order for user {current_user_id} with data: {data}")
+        
         # WHY: Use the new cart API system that stores carts in memory
         # Import the cart system to get user's cart
         from api.cart import user_carts
         
         # Get user's cart from the cart API system
         cart_items = user_carts.get(current_user_id, [])
+        logger.info(f"Cart items found: {len(cart_items)} items")
         
         if not cart_items:
+            logger.warning(f"Cart is empty for user {current_user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Cart is empty'
@@ -130,12 +134,15 @@ def create_order():
         
         # Calculate subtotal from cart items
         subtotal = sum(item.get('price', 0) * item.get('quantity', 1) for item in cart_items)
+        logger.info(f"Calculated subtotal: {subtotal}")
+        
         discount_amount = 0
         coupon = None
         coupon_code = None
         
         # Process coupon if provided
         if data.get('coupon_code'):
+            logger.info(f"Processing coupon: {data.get('coupon_code')}")
             coupon_code = data['coupon_code'].upper().strip()
             coupon = Coupon.query.filter_by(code=coupon_code).first()
             
@@ -161,6 +168,7 @@ def create_order():
         
         # Extract billing address from data
         billing_address = data.get('billing_address', {})
+        logger.info(f"Creating order with total: {total}, billing: {billing_address.get('first_name', '')} {billing_address.get('last_name', '')}")
         
         # Create new order with billing information
         order = Order(
@@ -216,11 +224,11 @@ def create_order():
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error creating order: {str(e)}")
+        logger.error(f"Error creating order: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': f'Internal error: {str(e)}'
-        }), 500
+            'error': f'Error creating order: {str(e)}'
+        }), 400
 
 
 @orders_bp.route('/<int:order_id>', methods=['GET'])
