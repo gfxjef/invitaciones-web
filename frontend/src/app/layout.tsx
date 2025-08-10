@@ -19,8 +19,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Izipay Checkout SDK */}
+        {/* Izipay Krypton V4 SDK */}
         <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js" async></script>
+        <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-glue.min.js" async></script>
+        {/* Izipay Classic CSS (optional, improves styling) */}
+        <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css" />
       </head>
       <body className={inter.className}>
         <Providers>

@@ -19,18 +19,7 @@ import toast from 'react-hot-toast';
 declare global {
   interface Window {
     KR: any;
-  }
-}
-
-// Extend HTML div element for Krypton attributes
-declare module 'react' {
-  interface HTMLAttributes<T> {
-    'kr-public-key'?: string;
-    'kr-form-token'?: string;
-    'kr-api'?: string;
-    'kr-language'?: string;
-    'kr-post-url-success'?: string;
-    'kr-post-url-refused'?: string;
+    KRGlue: any;
   }
 }
 
@@ -92,28 +81,68 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   const checkoutInstanceRef = useRef<any>(null);
 
   /**
-   * Initialize Krypton V4 Smart Form
-   * No need for manual initialization - Smart Form handles everything
+   * Initialize Krypton V4 using KRGlue for manual rendering
    */
   useEffect(() => {
-    if (paymentConfig.token && paymentConfig.public_key) {
-      console.log('Payment config ready:', {
-        token: paymentConfig.token.substring(0, 20) + '...',
-        publicKey: paymentConfig.public_key,
-        order: order.order_number,
-        hasKR: !!window.KR,
-        tokenFull: paymentConfig.token
-      });
-      setIsPaymentReady(true);
-      toast.success('Formulario de pago listo');
-    } else {
-      console.log('Payment config NOT ready:', {
-        hasToken: !!paymentConfig.token,
-        hasPublicKey: !!paymentConfig.public_key,
-        publicKey: paymentConfig.public_key
-      });
-    }
-  }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
+    const initializeKryptonForm = async () => {
+      if (!paymentConfig.token || !paymentConfig.public_key) {
+        console.log('Payment config NOT ready:', {
+          hasToken: !!paymentConfig.token,
+          hasPublicKey: !!paymentConfig.public_key,
+          publicKey: paymentConfig.public_key
+        });
+        return;
+      }
+
+      if (!window.KRGlue) {
+        console.log('KRGlue not loaded yet, retrying...');
+        setTimeout(initializeKryptonForm, 500);
+        return;
+      }
+
+      try {
+        console.log('Initializing KRGlue with:', {
+          publicKey: paymentConfig.public_key,
+          token: paymentConfig.token.substring(0, 20) + '...'
+        });
+
+        setIsInitializing(true);
+
+        // Initialize KRGlue
+        const { KR } = await window.KRGlue.loadInit({
+          publicKey: paymentConfig.public_key,
+          api: 'https://api.micuentaweb.pe'
+        });
+
+        // Set up error handling
+        KR.onError((error: any) => {
+          console.error('KR error:', error);
+          setPaymentError(`Error del formulario: ${error.message || 'Error desconocido'}`);
+          toast.error('Error cargando el formulario de pago');
+        });
+
+        // Configure form with token
+        await KR.setFormConfig({ formToken: paymentConfig.token });
+
+        // Render form in container
+        await KR.render('#kr-payment-form');
+
+        console.log('KRGlue form rendered successfully');
+        setIsPaymentReady(true);
+        setPaymentError(null);
+        toast.success('Formulario de pago cargado');
+
+      } catch (error: any) {
+        console.error('Error initializing KRGlue:', error);
+        setPaymentError(`Error inicializando pago: ${error.message}`);
+        toast.error('Error al cargar el formulario de pago');
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeKryptonForm();
+  }, [paymentConfig.token, paymentConfig.public_key]);
 
   if (isLoading) {
     return (
@@ -172,34 +201,44 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         </div>
       </div>
 
-      {/* Krypton V4 Smart Form */}
+      {/* Krypton V4 Form with KRGlue */}
       <div className="mb-6">
-        {isPaymentReady && paymentConfig.token && paymentConfig.public_key ? (
-          <>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingresa los datos de tu tarjeta</h3>
-            <div
-              className="kr-smart-form"
-              kr-public-key={paymentConfig.public_key}
-              kr-form-token={paymentConfig.token}
-              kr-api="https://api.micuentaweb.pe"
-              kr-language="es-PE"
-              kr-post-url-success={`${typeof window !== 'undefined' ? window.location.origin : ''}/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`}
-              kr-post-url-refused={`${typeof window !== 'undefined' ? window.location.origin : ''}/izipay/retorno?orderNumber=${order.order_number}&status=refused&transactionId=${paymentConfig.transaction_id}`}
-              style={{ minHeight: '400px' }}
-            />
-            
-            {/* Debug info visible */}
-            <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
-              <strong>Debug:</strong> Token: {paymentConfig.token.substring(0, 30)}... | Public Key: {paymentConfig.public_key.substring(0, 30)}...
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingresa los datos de tu tarjeta</h3>
+        
+        {/* Form container where KRGlue will render */}
+        <div 
+          id="kr-payment-form" 
+          style={{ minHeight: '420px' }}
+          className="border rounded-lg p-4"
+        />
+        
+        {paymentError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+              <span className="text-red-700">{paymentError}</span>
             </div>
-          </>
-        ) : (
-          <div className="p-8 bg-gray-50 rounded-lg text-center">
-            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando formulario de pago...</p>
-            <p className="text-xs text-gray-500 mt-2">
-              Token: {paymentConfig.token ? '✅' : '❌'} | Public Key: {paymentConfig.public_key ? '✅' : '❌'}
-            </p>
+          </div>
+        )}
+        
+        {isInitializing && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-blue-700 text-sm">Cargando formulario de pago...</p>
+          </div>
+        )}
+        
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+            <strong>Debug:</strong> 
+            Token: {paymentConfig.token ? paymentConfig.token.substring(0, 30) + '...' : 'None'} | 
+            Public Key: {paymentConfig.public_key ? paymentConfig.public_key.substring(0, 30) + '...' : 'None'}
+            <br />
+            <strong>Status:</strong> 
+            KRGlue: {typeof window !== 'undefined' && window.KRGlue ? 'Loaded ✅' : 'Not Loaded ❌'} | 
+            Ready: {isPaymentReady ? '✅' : '❌'} | 
+            Initializing: {isInitializing ? '⏳' : '❌'}
           </div>
         )}
       </div>
