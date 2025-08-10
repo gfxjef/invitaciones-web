@@ -85,9 +85,14 @@ class IzipayService:
         current_time_unix = int(time.time() * 1000000)
         return str(current_time_unix)[:10]
     
+    def _get_basic_auth(self):
+        """Genera la autenticación Basic para Izipay usando merchant_code:secret_key"""
+        auth_string = f"{self.config['merchant_code']}:{self.config['secret_key']}"
+        return base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+    
     def create_payment_token(self, transaction_id, order_data):
         """
-        Crea un token de pago en Izipay.
+        Crea un token de pago en Izipay según la documentación oficial.
         
         Args:
             transaction_id: ID único de la transacción
@@ -98,22 +103,27 @@ class IzipayService:
             
         WHY: La tokenización es requerida por Izipay antes de mostrar el checkout.
         """
+        # Estructura correcta según documentación de Izipay
         token_payload = {
-            'requestSource': 'ECOMMERCE',
-            'merchantCode': self.config['merchant_code'],
-            'orderNumber': order_data['order_number'],
-            'publicKey': self.config['public_key'],
-            'amount': str(int(float(order_data['amount']) * 100))  # Convert to centavos
+            'amount': int(float(order_data['amount']) * 100),  # En centavos
+            'currency': order_data.get('currency', 'PEN'),
+            'orderId': order_data['order_number'],
+            'customer': {
+                'email': order_data.get('customer_email', ''),
+                'reference': order_data.get('customer_id', '')
+            }
         }
         
+        # Headers según documentación Izipay
         headers = {
             'Content-Type': 'application/json',
-            'transactionId': transaction_id
+            'Authorization': f'Basic {self._get_basic_auth()}',
         }
         
         try:
-            url = f"{self.config['api_url']}/Token/Generate"
+            url = f"{self.config['api_url']}/Charge/CreatePayment"
             logger.info(f"Creating payment token for order {order_data['order_number']}")
+            logger.info(f"Request payload: {token_payload}")
             
             response = requests.post(
                 url,
@@ -122,13 +132,32 @@ class IzipayService:
                 timeout=30
             )
             
-            response.raise_for_status()
+            logger.info(f"Response status: {response.status_code}")
+            logger.info(f"Response body: {response.text[:500]}")
+            
+            if response.status_code != 200:
+                return {
+                    'success': False,
+                    'error': f'Izipay API error: {response.status_code} - {response.text}',
+                    'transaction_id': transaction_id
+                }
+            
             result = response.json()
+            
+            # Extraer el formToken de la respuesta
+            form_token = result.get('answer', {}).get('formToken')
+            if not form_token:
+                return {
+                    'success': False,
+                    'error': 'No formToken received from Izipay',
+                    'transaction_id': transaction_id
+                }
             
             logger.info(f"Token created successfully for order {order_data['order_number']}")
             return {
                 'success': True,
                 'data': result,
+                'token': form_token,
                 'transaction_id': transaction_id
             }
             
@@ -243,10 +272,13 @@ def create_payment_token():
         transaction_id = izipay_service.generate_transaction_id()
         
         # Prepare order data for Izipay
+        billing_info = data.get('billing_info', {})
         order_data = {
             'order_number': order.order_number,
             'amount': float(order.total),
-            'currency': order.currency
+            'currency': order.currency,
+            'customer_email': billing_info.get('email', order.user.email if hasattr(order, 'user') else ''),
+            'customer_id': str(order.user_id) if order.user_id else ''
         }
         
         # Create payment token
@@ -276,11 +308,9 @@ def create_payment_token():
         db.session.commit()
         
         # Prepare response with frontend configuration
-        token_data = result['data'].get('response', {})
-        
         return jsonify({
             'success': True,
-            'token': token_data.get('token'),
+            'token': result['token'],  # formToken desde Izipay
             'transaction_id': transaction_id,
             'order_number': order.order_number,
             'config': {
