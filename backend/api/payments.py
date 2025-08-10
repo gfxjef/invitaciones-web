@@ -154,6 +154,26 @@ class IzipayService:
             # Extraer el formToken de la respuesta
             answer = result.get('answer', {})
             form_token = answer.get('formToken')
+            
+            # LOGGING DETALLADO PARA VERIFICAR MERCHANT/SHOP COINCIDENCIA
+            logger.info(f"=== IZIPAY TOKEN VERIFICATION ===")
+            logger.info(f"Used MERCHANT_CODE: {self.config['merchant_code']}")
+            logger.info(f"Used PUBLIC_KEY starts with: {self.config['public_key'][:20]}...")
+            logger.info(f"Response status: {response.status_code}")
+            logger.info(f"Full Izipay response: {result}")
+            
+            # Verificar si hay información de shop en la respuesta
+            if 'shopId' in answer:
+                logger.info(f"Response shopId: {answer.get('shopId')}")
+            if 'merchantId' in answer:
+                logger.info(f"Response merchantId: {answer.get('merchantId')}")
+            if 'orderDetails' in answer:
+                order_details = answer.get('orderDetails', {})
+                logger.info(f"OrderDetails merchant: {order_details.get('merchantId', 'N/A')}")
+            
+            logger.info(f"Expected merchant code: {self.config['merchant_code']} (should match response)")
+            logger.info(f"=== END VERIFICATION ===")
+            
             if not form_token:
                 logger.error(f"No formToken in response. Full response: {result}")
                 return {

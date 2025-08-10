@@ -111,12 +111,21 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         const endPoint = 'https://api.micuentaweb.pe';
         const publicKey = (paymentConfig.public_key || '').trim();
         
+        // DETAILED LOGGING FOR PUBLIC KEY VERIFICATION
+        console.log('=== FRONTEND KEY VERIFICATION ===');
         console.log('pubKey:', `"${publicKey}"`, 'len:', publicKey.length);
-        console.log('Initializing KRGlue with:', { endPoint, publicKey });
+        console.log('First 30 chars:', publicKey.substring(0, 30));
+        console.log('Starts with 45259313:', publicKey.startsWith('45259313'));
+        console.log('Contains testpublickey_:', publicKey.includes('testpublickey_'));
+        console.log('Original key from config:', `"${paymentConfig.public_key}"`);
+        console.log('Key after trim:', `"${publicKey}"`);
+        console.log('=== END KEY VERIFICATION ===');
         
-        // Load the library - this will load the kr-payment-form.min.js automatically
+        console.log('Initializing KRGlue with loadLibrary:', { endPoint, publicKey });
+        
+        // Load the library using loadLibrary (available method)
         const { KR } = await KRGlue.loadLibrary(endPoint, publicKey);
-        console.log('KR library initialized:', !!KR);
+        console.log('KR library initialized with loadLibrary:', !!KR);
 
         // Store KR globally to prevent multiple loads
         (window as any).KR = KR;
@@ -128,13 +137,15 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           setPaymentError(errorMessage);
         });
 
-        // Configure and render form
-        await KR.setFormConfig({ 
-          formToken: paymentConfig.token
+        // Configure form with enhanced settings
+        await KR.setFormConfig({
+          formToken: paymentConfig.token,
+          'kr-public-key': publicKey,        // Extra validation to prevent mismatch
+          'kr-language': 'es-PE'             // Set language explicitly
         });
-        console.log('Form config set with token');
+        console.log('Form config set with enhanced settings');
 
-        // Attach form to the container
+        // Attach form to the container  
         await KR.attachForm('#kr-payment-form');
         console.log('Form attached and displayed in container');
 
