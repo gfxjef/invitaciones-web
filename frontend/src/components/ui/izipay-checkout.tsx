@@ -101,23 +101,30 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         toast.error('Error en el formulario de pago');
       });
 
-      // Initialize Krypton with server URL and public key
-      await window.KR.setEndpoint('https://api.micuentaweb.pe');
-      await window.KR.setPublicKey(paymentConfig.public_key);
-      
-      // Create payment form with the token
-      await window.KR.addForm('#izipay-checkout-container')
-        .then((paymentForm: any) => {
-          checkoutInstanceRef.current = paymentForm;
-          
-          // Set the form token
-          return paymentForm.setFormToken(paymentConfig.token);
-        })
-        .then((result: any) => {
-          console.log('Krypton form initialized:', result);
-          setIsPaymentReady(true);
-          toast.success('Formulario de pago cargado correctamente');
-        });
+      console.log('Initializing with public key:', paymentConfig.public_key);
+      console.log('Form token:', paymentConfig.token);
+
+      // Configure Krypton V4 with public key and token
+      const formConfig = {
+        'kr-public-key': paymentConfig.public_key,
+        'kr-post-url-success': `/izipay/retorno?orderNumber=${order.order_number}&status=success`,
+        'kr-language': 'es-ES'
+      };
+
+      // Create payment form
+      const paymentForm = await window.KR.createForm({
+        formToken: paymentConfig.token,
+        ...formConfig
+      });
+
+      checkoutInstanceRef.current = paymentForm;
+
+      // Render form in container
+      await paymentForm.render('#izipay-checkout-container');
+
+      console.log('Krypton form initialized successfully');
+      setIsPaymentReady(true);
+      toast.success('Formulario de pago cargado correctamente');
       
     } catch (error: any) {
       console.error('Error initializing Krypton checkout:', error);
@@ -138,15 +145,15 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
     }
     
     try {
-      // Submit the payment form
-      const result = await checkoutInstanceRef.current.onSubmit();
+      // Submit the payment form using Krypton V4 API
+      const result = await checkoutInstanceRef.current.submit();
       console.log('Payment result:', result);
       
-      if (result.success) {
-        // Redirect to return page
-        window.location.href = `/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`;
+      if (result && result.clientAnswer && result.clientAnswer.orderStatus === 'PAID') {
+        onPaymentComplete(result);
       } else {
-        onPaymentError(result);
+        // The form will handle redirection automatically
+        console.log('Payment processing...', result);
       }
     } catch (error: any) {
       console.error('Payment submission error:', error);
