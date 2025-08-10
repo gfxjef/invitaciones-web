@@ -16,6 +16,7 @@ import os
 import time
 import hmac
 import hashlib
+import base64
 from datetime import datetime
 from extensions import db
 from models.order import Order, OrderStatus
@@ -41,6 +42,7 @@ class IzipayConfig:
             'merchant_code': os.getenv('IZIPAY_MERCHANT_CODE'),
             'public_key': os.getenv('IZIPAY_PUBLIC_KEY'),
             'secret_key': os.getenv('IZIPAY_SECRET_KEY'),
+            'hash_key': os.getenv('IZIPAY_HASH_KEY'),  # Para validar webhooks
             'mode': os.getenv('IZIPAY_MODE', 'SANDBOX'),
             'api_url': os.getenv('IZIPAY_API_URL', 'https://sandbox-checkout.izipay.pe/apidemo/v1'),
             'webhook_url': os.getenv('IZIPAY_WEBHOOK_URL')
@@ -488,96 +490,168 @@ def payment_webhook():
     """
     POST /api/payments/webhook
     
-    Webhook para recibir notificaciones de Izipay sobre el estado de los pagos.
+    Webhook actualizado para recibir notificaciones de Izipay con estructura actual.
+    Usa payloadHttp + signature (Base64 HMAC-SHA-256).
     
-    WHY: Izipay enviará notificaciones asíncronas sobre cambios de estado de pago.
-    Esto es crítico para confirmar pagos exitosos de forma confiable.
+    Estructura esperada:
+    {
+        "payloadHttp": "{\"response\":{\"order\":[{...}]}}",
+        "signature": "Base64SignatureHMAC"
+    }
     """
     try:
-        # Get raw body for signature verification
-        payload = request.get_data(as_text=True)
-        signature = request.headers.get('X-Izipay-Signature')
+        # Obtener el body completo
+        body = request.get_json(force=True, silent=True) or {}
         
-        # Verify webhook signature
-        if not izipay_service.verify_webhook_signature(payload, signature):
-            logger.warning("Invalid webhook signature received")
-            return jsonify({'error': 'Invalid signature'}), 403
+        # IPN trae 'payloadHttp' y 'signature' en el body (y a veces 'Signature' en header)
+        payload_http = body.get('payloadHttp', '')
+        signature = body.get('signature') or request.headers.get('Signature', '')
         
-        # Parse webhook data
-        webhook_data = request.get_json()
+        logger.info(f"Webhook received - Has payloadHttp: {bool(payload_http)}, Has signature: {bool(signature)}")
         
-        if not webhook_data:
-            return jsonify({'error': 'No data received'}), 400
+        if not payload_http or not signature:
+            logger.warning("Missing payloadHttp or signature in webhook")
+            return jsonify({'ok': False, 'error': 'missing_fields'}), 400
         
-        # Extract relevant information
-        transaction_id = webhook_data.get('transactionId')
-        status = webhook_data.get('status')
-        order_number = webhook_data.get('orderNumber')
+        # Verificar la firma usando HMAC-SHA-256 con la hash_key
+        hash_key = os.getenv('IZIPAY_HASH_KEY', '').encode('utf-8')
+        if not hash_key:
+            logger.error("IZIPAY_HASH_KEY not configured")
+            return jsonify({'ok': False, 'error': 'server_config_error'}), 500
         
-        if not all([transaction_id, status, order_number]):
-            logger.warning("Incomplete webhook data received")
-            return jsonify({'error': 'Incomplete data'}), 400
+        # Calcular la firma esperada
+        mac = hmac.new(hash_key, payload_http.encode('utf-8'), hashlib.sha256).digest()
+        expected_signature = base64.b64encode(mac).decode('utf-8')
         
-        # Find order by transaction_id or order_number
+        # Comparar firmas de forma segura
+        if not hmac.compare_digest(expected_signature, signature):
+            logger.warning(f"Invalid signature: expected={expected_signature[:20]}... got={signature[:20]}...")
+            return jsonify({'ok': False, 'error': 'invalid_signature'}), 400
+        
+        # Parsear el payload original (texto JSON dentro de payloadHttp)
+        try:
+            original = json.loads(payload_http)
+        except Exception as e:
+            logger.error(f"Error parsing payloadHttp: {str(e)}")
+            return jsonify({'ok': False, 'error': 'invalid_payload'}), 400
+        
+        # Extraer información del pedido según estructura de Izipay
+        # La estructura puede variar, aquí los campos más comunes
+        response = original.get('response', {})
+        orders = response.get('order', [])
+        
+        if orders and len(orders) > 0:
+            order_data = orders[0]
+        else:
+            # Fallback para otras estructuras posibles
+            order_data = response
+        
+        # Extraer campos relevantes
+        order_number = order_data.get('orderNumber') or order_data.get('orderId')
+        state_message = order_data.get('stateMessage') or order_data.get('status')
+        transaction_id = order_data.get('transactionId') or order_data.get('uuid')
+        amount = order_data.get('amount')
+        currency = order_data.get('currency')
+        
+        logger.info(f"Webhook data - Order: {order_number}, Status: {state_message}, Transaction: {transaction_id}")
+        
+        if not order_number:
+            logger.warning("No order number in webhook data")
+            return jsonify({'ok': True, 'warning': 'no_order_number'}), 200
+        
+        # Buscar la orden en la base de datos
         order = Order.query.filter(
-            (Order.transaction_id == transaction_id) | 
-            (Order.order_number == order_number)
+            (Order.order_number == order_number) |
+            (Order.transaction_id == transaction_id)
         ).first()
         
         if not order:
             logger.warning(f"Order not found for webhook: {order_number}")
-            return jsonify({'error': 'Order not found'}), 404
+            # Retornar 200 para evitar reintentos de Izipay
+            return jsonify({'ok': True, 'warning': 'order_not_found'}), 200
         
-        # Update order status based on webhook
-        if status == 'PAID' or status == 'CAPTURED':
+        # Actualizar el estado del pedido según el mensaje de estado
+        state_lower = (state_message or '').lower()
+        
+        if 'paid' in state_lower or 'authorized' in state_lower or 'captured' in state_lower:
             if order.status != OrderStatus.PAID:
                 order.status = OrderStatus.PAID
                 order.paid_at = datetime.utcnow()
                 order.payment_method = 'IZIPAY'
                 
-                # Update payment data with webhook info
+                # Guardar toda la información del webhook
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
-                    'webhook_confirmation': webhook_data,
-                    'webhook_received_at': datetime.utcnow().isoformat()
+                    'webhook_confirmation': original,
+                    'webhook_received_at': datetime.utcnow().isoformat(),
+                    'transaction_id': transaction_id,
+                    'state_message': state_message
                 })
                 order.payment_data = current_payment_data
                 
                 logger.info(f"Webhook confirmed payment for order {order.order_number}")
         
-        elif status == 'CANCELLED' or status == 'FAILED':
+        elif 'refused' in state_lower or 'failed' in state_lower or 'error' in state_lower:
+            if order.status == OrderStatus.PENDING:
+                order.status = OrderStatus.FAILED
+                
+                current_payment_data = order.payment_data or {}
+                current_payment_data.update({
+                    'webhook_failure': original,
+                    'webhook_received_at': datetime.utcnow().isoformat(),
+                    'failure_reason': state_message
+                })
+                order.payment_data = current_payment_data
+                
+                logger.info(f"Webhook confirmed payment failure for order {order.order_number}")
+        
+        elif 'cancelled' in state_lower or 'canceled' in state_lower:
             if order.status == OrderStatus.PENDING:
                 order.status = OrderStatus.CANCELLED
                 
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
-                    'webhook_cancellation': webhook_data,
+                    'webhook_cancellation': original,
                     'webhook_received_at': datetime.utcnow().isoformat()
                 })
                 order.payment_data = current_payment_data
                 
                 logger.info(f"Webhook confirmed cancellation for order {order.order_number}")
         
-        elif status == 'REFUNDED':
+        elif 'refunded' in state_lower:
             order.status = OrderStatus.REFUNDED
             
             current_payment_data = order.payment_data or {}
             current_payment_data.update({
-                'webhook_refund': webhook_data,
+                'webhook_refund': original,
                 'webhook_received_at': datetime.utcnow().isoformat()
             })
             order.payment_data = current_payment_data
             
             logger.info(f"Webhook confirmed refund for order {order.order_number}")
         
+        else:
+            # Estado no reconocido, guardar de todos modos
+            current_payment_data = order.payment_data or {}
+            current_payment_data.update({
+                'webhook_unknown': original,
+                'webhook_received_at': datetime.utcnow().isoformat(),
+                'unknown_state': state_message
+            })
+            order.payment_data = current_payment_data
+            
+            logger.warning(f"Unknown payment state for order {order.order_number}: {state_message}")
+        
+        # Guardar cambios
         db.session.commit()
         
-        return jsonify({'success': True}), 200
+        return jsonify({'ok': True}), 200
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error processing webhook: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f"Error processing webhook: {str(e)}", exc_info=True)
+        # Retornar 200 para evitar reintentos innecesarios
+        return jsonify({'ok': True, 'error': 'internal_error'}), 200
 
 
 @payments_bp.route('/status/<int:order_id>', methods=['GET'])
@@ -668,6 +742,71 @@ def get_payment_config():
         return jsonify({
             'success': False,
             'error': f'Internal error: {str(e)}'
+        }), 500
+
+
+@payments_bp.route('/izipay/status/<order_number>', methods=['GET'])
+def get_izipay_payment_status(order_number):
+    """
+    GET /api/payments/izipay/status/<order_number>
+    
+    Endpoint público para consultar el estado de un pago por número de orden.
+    Usado por la página de retorno de Izipay para verificar el estado actualizado.
+    
+    Returns:
+        {
+            "success": true,
+            "order": {
+                "order_number": "ORD-20240109-001",
+                "status": "paid",
+                "payment_method": "IZIPAY",
+                "total": 150.00,
+                "transaction_id": "abc123",
+                "paid_at": "2024-01-09T10:30:00Z"
+            }
+        }
+    """
+    try:
+        # Buscar la orden por número
+        order = Order.query.filter_by(order_number=order_number).first()
+        
+        if not order:
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+        
+        # Extraer información relevante del payment_data si existe
+        payment_info = {}
+        if order.payment_data:
+            if 'webhook_confirmation' in order.payment_data:
+                webhook_data = order.payment_data['webhook_confirmation']
+                if 'response' in webhook_data:
+                    response = webhook_data['response']
+                    if 'order' in response and len(response['order']) > 0:
+                        izipay_order = response['order'][0]
+                        payment_info['state_message'] = izipay_order.get('stateMessage')
+                        payment_info['transaction_uuid'] = izipay_order.get('uuid')
+        
+        return jsonify({
+            'success': True,
+            'order': {
+                'order_number': order.order_number,
+                'status': order.status.value,
+                'payment_method': order.payment_method,
+                'total': float(order.total),
+                'transaction_id': order.transaction_id,
+                'paid_at': order.paid_at.isoformat() if order.paid_at else None,
+                'created_at': order.created_at.isoformat() if order.created_at else None,
+                'payment_info': payment_info
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting Izipay payment status: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
         }), 500
 
 
