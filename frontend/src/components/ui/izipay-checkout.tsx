@@ -168,15 +168,6 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         </div>
       )}
 
-      {isPaymentReady && !paymentError && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-            <span className="text-green-700">Formulario de pago listo</span>
-          </div>
-        </div>
-      )}
-
       {/* Order Summary */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <h3 className="font-semibold text-gray-900 mb-2">Resumen de Pago</h3>
@@ -252,7 +243,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
               order,
               billingInfo,
               paymentConfig: { ...paymentConfig, token: '***' },
-              isPaymentReady,
+              isInitializing,
               paymentError,
             }, null, 2)}
           </pre>
