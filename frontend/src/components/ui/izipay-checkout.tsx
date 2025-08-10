@@ -86,6 +86,23 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           order: order.order_number
         });
 
+        // Clear any existing form content first
+        const formElement = document.getElementById('kr-payment-form');
+        if (formElement) {
+          formElement.innerHTML = '';
+        }
+
+        // Check if KR is already globally available to avoid multiple initializations
+        if (typeof window !== 'undefined' && (window as any).KR) {
+          console.log('KR already loaded globally, cleaning up...');
+          // Clear existing KR instance
+          try {
+            await (window as any).KR.removeForms();
+          } catch (e) {
+            console.log('Could not remove existing forms:', e);
+          }
+        }
+
         // Dynamically import KRGlue (client-side only)
         const KRGlue = (await import('@lyracom/embedded-form-glue')).default;
         console.log('KRGlue loaded from NPM');
@@ -100,6 +117,9 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         // Load the library - this will load the kr-payment-form.min.js automatically
         const { KR } = await KRGlue.loadLibrary(endPoint, publicKey);
         console.log('KR library initialized:', !!KR);
+
+        // Store KR globally to prevent multiple loads
+        (window as any).KR = KR;
 
         // Set up error handling FIRST
         KR.onError((error: any) => {
@@ -139,6 +159,17 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
     };
 
     initializePaymentForm();
+    
+    // Cleanup on component unmount
+    return () => {
+      try {
+        if (typeof window !== 'undefined' && (window as any).KR) {
+          (window as any).KR.removeForms?.();
+        }
+      } catch (error) {
+        console.log('Cleanup error (non-critical):', error);
+      }
+    };
   }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
 
   if (isLoading) {
