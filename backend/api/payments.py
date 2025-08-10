@@ -43,8 +43,10 @@ class IzipayConfig:
             'public_key': os.getenv('IZIPAY_PUBLIC_KEY'),
             'secret_key': os.getenv('IZIPAY_SECRET_KEY'),
             'hash_key': os.getenv('IZIPAY_HASH_KEY'),  # Para validar webhooks
+            'username': os.getenv('IZIPAY_USERNAME', os.getenv('IZIPAY_MERCHANT_CODE')),  # Fallback al merchant_code
+            'password': os.getenv('IZIPAY_PASSWORD', os.getenv('IZIPAY_SECRET_KEY')),  # Fallback al secret_key
             'mode': os.getenv('IZIPAY_MODE', 'SANDBOX'),
-            'api_url': os.getenv('IZIPAY_API_URL', 'https://sandbox-checkout.izipay.pe/apidemo/v1'),
+            'api_url': os.getenv('IZIPAY_API_BASE', 'https://api.micuentaweb.pe/api-payment/V4'),
             'webhook_url': os.getenv('IZIPAY_WEBHOOK_URL')
         }
     
@@ -86,8 +88,8 @@ class IzipayService:
         return str(current_time_unix)[:10]
     
     def _get_basic_auth(self):
-        """Genera la autenticación Basic para Izipay usando merchant_code:secret_key"""
-        auth_string = f"{self.config['merchant_code']}:{self.config['secret_key']}"
+        """Genera la autenticación Basic para Izipay usando username:password"""
+        auth_string = f"{self.config['username']}:{self.config['password']}"
         return base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
     
     def create_payment_token(self, transaction_id, order_data):
@@ -103,21 +105,17 @@ class IzipayService:
             
         WHY: La tokenización es requerida por Izipay antes de mostrar el checkout.
         """
-        # Estructura para generar form token en Izipay
+        # Estructura para generar form token según documentación Izipay
         token_payload = {
             'amount': int(float(order_data['amount']) * 100),  # En centavos (soles a centavos)
-            'currency': 604,  # Código ISO para PEN (soles peruanos)
+            'currency': 'PEN',  # Código de moneda
             'orderId': order_data['order_number'],
             'customer': {
                 'email': order_data.get('customer_email', 'test@example.com'),
                 'reference': order_data.get('customer_id', '')
             },
-            'transactionOptions': {
-                'cardOptions': {
-                    'captureDelay': 0,
-                    'manualValidation': 'NO'
-                }
-            }
+            'ctxMode': 'TEST',  # TEST para sandbox, PRODUCTION para producción
+            'formAction': 'PAYMENT'  # Flujo estándar de pago
         }
         
         # Headers según documentación Izipay
@@ -128,7 +126,7 @@ class IzipayService:
         
         try:
             # Endpoint correcto para generar form token en Izipay
-            url = f"{self.config['api_url']}/payments"
+            url = f"{self.config['api_url']}/Charge/CreatePayment"
             logger.info(f"Creating payment token for order {order_data['order_number']}")
             logger.info(f"Request URL: {url}")
             logger.info(f"Request payload: {token_payload}")
@@ -154,11 +152,13 @@ class IzipayService:
             result = response.json()
             
             # Extraer el formToken de la respuesta
-            form_token = result.get('answer', {}).get('formToken')
+            answer = result.get('answer', {})
+            form_token = answer.get('formToken')
             if not form_token:
+                logger.error(f"No formToken in response. Full response: {result}")
                 return {
                     'success': False,
-                    'error': 'No formToken received from Izipay',
+                    'error': f'No formToken received from Izipay. Response: {result}',
                     'transaction_id': transaction_id
                 }
             
