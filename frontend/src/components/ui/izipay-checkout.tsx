@@ -22,6 +22,18 @@ declare global {
   }
 }
 
+// Extend HTML div element for Krypton attributes
+declare module 'react' {
+  interface HTMLAttributes<T> {
+    'kr-public-key'?: string;
+    'kr-form-token'?: string;
+    'kr-api'?: string;
+    'kr-language'?: string;
+    'kr-post-url-success'?: string;
+    'kr-post-url-refused'?: string;
+  }
+}
+
 export interface IzipayCheckoutProps {
   /** Order details */
   order: {
@@ -80,93 +92,20 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   const checkoutInstanceRef = useRef<any>(null);
 
   /**
-   * Initialize Krypton V4 checkout form
-   * Using the official Krypton V4 SDK implementation
+   * Initialize Krypton V4 Smart Form
+   * No need for manual initialization - Smart Form handles everything
    */
-  const initializeCheckout = async () => {
-    if (!window.KR) {
-      setPaymentError('Krypton SDK not loaded. Please refresh the page.');
-      return;
-    }
-
-    setIsInitializing(true);
-    setPaymentError(null);
-
-    try {
-      // Set up error handling
-      window.KR.onError((error: any) => {
-        console.error('Krypton error:', error);
-        const errorMessage = error?.message || error?.detailedErrorMessage || 'Payment form error';
-        setPaymentError(`Error del formulario de pago: ${errorMessage}`);
-        toast.error('Error en el formulario de pago');
-      });
-
-      console.log('Initializing with public key:', paymentConfig.public_key);
-      console.log('Form token:', paymentConfig.token);
-
-      // Configure Krypton V4 with public key and token
-      const formConfig = {
-        'kr-public-key': paymentConfig.public_key,
-        'kr-post-url-success': `/izipay/retorno?orderNumber=${order.order_number}&status=success`,
-        'kr-language': 'es-ES'
-      };
-
-      // Create payment form
-      const paymentForm = await window.KR.createForm({
-        formToken: paymentConfig.token,
-        ...formConfig
-      });
-
-      checkoutInstanceRef.current = paymentForm;
-
-      // Render form in container
-      await paymentForm.render('#izipay-checkout-container');
-
-      console.log('Krypton form initialized successfully');
-      setIsPaymentReady(true);
-      toast.success('Formulario de pago cargado correctamente');
-      
-    } catch (error: any) {
-      console.error('Error initializing Krypton checkout:', error);
-      setPaymentError(error.message || 'Error inicializando el formulario de pago');
-      toast.error('Error cargando el formulario de pago');
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
-  /**
-   * Handle payment button click
-   */
-  const handlePayment = async () => {
-    if (!checkoutInstanceRef.current) {
-      await initializeCheckout();
-      return;
-    }
-    
-    try {
-      // Submit the payment form using Krypton V4 API
-      const result = await checkoutInstanceRef.current.submit();
-      console.log('Payment result:', result);
-      
-      if (result && result.clientAnswer && result.clientAnswer.orderStatus === 'PAID') {
-        onPaymentComplete(result);
-      } else {
-        // The form will handle redirection automatically
-        console.log('Payment processing...', result);
-      }
-    } catch (error: any) {
-      console.error('Payment submission error:', error);
-      onPaymentError({ error: error.message || 'Payment failed' });
-    }
-  };
-
-  // Auto-initialize when component mounts and token is available
   useEffect(() => {
-    if (paymentConfig.token && !isPaymentReady && !isInitializing) {
-      initializeCheckout();
+    if (paymentConfig.token && paymentConfig.public_key) {
+      console.log('Payment config ready:', {
+        token: paymentConfig.token.substring(0, 20) + '...',
+        publicKey: paymentConfig.public_key.substring(0, 20) + '...',
+        order: order.order_number
+      });
+      setIsPaymentReady(true);
+      toast.success('Formulario de pago listo');
     }
-  }, [paymentConfig.token, isPaymentReady, isInitializing]);
+  }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
 
   if (isLoading) {
     return (
@@ -225,32 +164,30 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         </div>
       </div>
 
-      {/* Izipay Container */}
-      <div id="izipay-checkout-container" ref={checkoutContainerRef} className="mb-6">
-        {/* Izipay form will be rendered here */}
-      </div>
-
-      {/* Payment Button */}
-      <div className="space-y-4">
-        <Button
-          onClick={handlePayment}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3"
-          disabled={isInitializing || (!isPaymentReady && !paymentError)}
-        >
-          <CreditCard className="w-5 h-5 mr-2" />
-          {isInitializing 
-            ? 'Inicializando pago...' 
-            : paymentError 
-              ? 'Reintentar pago'
-              : `Pagar ${order.currency} ${order.total.toFixed(2)}`
-          }
-        </Button>
-
-        {/* Security Notice */}
-        <div className="flex items-center justify-center text-sm text-gray-500">
-          <Lock className="w-4 h-4 mr-2" />
-          <span>Pago seguro procesado por Izipay Krypton</span>
+      {/* Krypton V4 Smart Form */}
+      {isPaymentReady && paymentConfig.token && paymentConfig.public_key ? (
+        <div className="mb-6">
+          <div
+            className="kr-smart-form"
+            kr-public-key={paymentConfig.public_key}
+            kr-form-token={paymentConfig.token}
+            kr-api="https://api.micuentaweb.pe"
+            kr-language="es-PE"
+            kr-post-url-success={`${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=success&transactionId=${paymentConfig.transaction_id}`}
+            kr-post-url-refused={`${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=refused&transactionId=${paymentConfig.transaction_id}`}
+          />
         </div>
+      ) : (
+        <div className="mb-6 p-8 bg-gray-50 rounded-lg text-center">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando formulario de pago...</p>
+        </div>
+      )}
+
+      {/* Security Notice */}
+      <div className="flex items-center justify-center text-sm text-gray-500">
+        <Lock className="w-4 h-4 mr-2" />
+        <span>Pago seguro procesado por Izipay Krypton</span>
       </div>
 
       {/* Debug Info (only in development) */}
