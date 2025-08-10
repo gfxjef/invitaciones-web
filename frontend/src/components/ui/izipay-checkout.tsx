@@ -139,11 +139,11 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         console.log('Form attached and displayed in container');
 
         // Check that form was actually rendered
-        const formElement = document.getElementById('kr-payment-form');
+        const renderedFormElement = document.getElementById('kr-payment-form');
         console.log('Form element check:', {
-          exists: !!formElement,
-          hasContent: formElement?.innerHTML?.length > 0,
-          height: formElement?.offsetHeight
+          exists: !!renderedFormElement,
+          hasContent: renderedFormElement?.innerHTML?.length > 0,
+          height: renderedFormElement?.offsetHeight
         });
 
         toast.success('Formulario de pago cargado');
