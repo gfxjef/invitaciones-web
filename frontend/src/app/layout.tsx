@@ -24,13 +24,9 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css" />
       </head>
       <body className={inter.className}>
-        {/* Load Krypton scripts before components mount - guaranteed order */}
+        {/* Load Krypton SDK before components mount */}
         <Script
           src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
-          strategy="beforeInteractive"
-        />
-        <Script
-          src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-glue.min.js"
           strategy="beforeInteractive"
         />
         
