@@ -92,29 +92,30 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
 
         // Initialize library with endpoint and public key
         const endPoint = 'https://api.micuentaweb.pe';
-        const { KR } = await KRGlue.loadLibrary(endPoint, paymentConfig.public_key);
-        console.log('KR library initialized');
+        const publicKey = paymentConfig.public_key;
+        
+        console.log('Initializing KRGlue with:', { endPoint, publicKey });
+        
+        // Load the library - this will load the kr-payment-form.min.js automatically
+        const { KR } = await KRGlue.loadLibrary(endPoint, publicKey);
+        console.log('KR library initialized:', !!KR);
 
-        // Configure form with token
-        await KR.setFormConfig({ 
-          formToken: paymentConfig.token,
-          'kr-language': 'es-PE',
-          'kr-post-url-success': `${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=success`,
-          'kr-post-url-refused': `${window.location.origin}/izipay/retorno?orderNumber=${order.order_number}&status=refused`
-        });
-        console.log('Form config set');
-
-        // Add form to container - this automatically renders it
-        await KR.addForm('#kr-payment-form');
-        console.log('Form added and rendered in container');
-
-        // Set up error handling
+        // Set up error handling FIRST
         KR.onError((error: any) => {
           console.error('KR error:', error);
           const errorMessage = error?.message || error?.detailedErrorMessage || 'Error del formulario';
           setPaymentError(errorMessage);
-          toast.error('Error en el formulario de pago');
         });
+
+        // Configure and render form
+        await KR.setFormConfig({ 
+          formToken: paymentConfig.token
+        });
+        console.log('Form config set with token');
+
+        // Render the form
+        await KR.renderElements('#kr-payment-form');
+        console.log('Form rendered in container');
 
         // Check that form was actually rendered
         const formElement = document.getElementById('kr-payment-form');
