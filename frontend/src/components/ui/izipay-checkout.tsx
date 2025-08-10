@@ -101,6 +101,8 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
       }
 
       try {
+        // Debug: Check SDK availability 
+        console.log('KR?', !!(window as any).KR, 'KRGlue?', !!(window as any).KRGlue);
         console.log('Initializing KRGlue with:', {
           publicKey: paymentConfig.public_key,
           token: paymentConfig.token.substring(0, 20) + '...'
@@ -114,6 +116,8 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           api: 'https://api.micuentaweb.pe'
         });
 
+        console.log('KRGlue.loadInit completed, KR instance:', !!KR);
+
         // Set up error handling
         KR.onError((error: any) => {
           console.error('KR error:', error);
@@ -122,10 +126,18 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         });
 
         // Configure form with token
+        console.log('Setting form config with token...');
         await KR.setFormConfig({ formToken: paymentConfig.token });
+        console.log('Form config set successfully');
 
         // Render form in container
+        console.log('Rendering form in #kr-payment-form...');
         await KR.render('#kr-payment-form');
+
+        // Debug: Check if content was actually rendered
+        const formElement = document.getElementById('kr-payment-form');
+        console.log('Rendered. innerHTML:', formElement?.innerHTML?.slice(0, 80));
+        console.log('Form element height:', formElement?.offsetHeight);
 
         console.log('KRGlue form rendered successfully');
         setIsPaymentReady(true);

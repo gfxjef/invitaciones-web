@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
 import Navigation from '@/components/ui/navigation'
@@ -19,13 +20,20 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Izipay Krypton V4 SDK */}
-        <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js" async></script>
-        <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-glue.min.js" async></script>
-        {/* Izipay Classic CSS (optional, improves styling) */}
+        {/* Izipay Classic CSS */}
         <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css" />
       </head>
       <body className={inter.className}>
+        {/* Load Krypton scripts before components mount - guaranteed order */}
+        <Script
+          src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+          strategy="beforeInteractive"
+        />
+        <Script
+          src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-glue.min.js"
+          strategy="beforeInteractive"
+        />
+        
         <Providers>
           <Navigation />
           {children}
