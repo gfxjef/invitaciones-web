@@ -104,13 +104,9 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         });
         console.log('Form config set');
 
-        // Add form to container and render
-        const form = await KR.addForm('#kr-payment-form');
-        console.log('Form added to container');
-        
-        // Validate and display the form
-        await form.validate();
-        console.log('Form rendered successfully');
+        // Add form to container - this automatically renders it
+        await KR.addForm('#kr-payment-form');
+        console.log('Form added and rendered in container');
 
         // Set up error handling
         KR.onError((error: any) => {
