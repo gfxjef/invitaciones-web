@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   CheckCircle, 
@@ -46,11 +46,7 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const isSuccess = searchParams.get('success') === 'true';
   const isFailed = searchParams.get('failed') === 'true';
 
-  useEffect(() => {
-    loadOrderDetails();
-  }, [params.orderNumber]);
-
-  const loadOrderDetails = async () => {
+  const loadOrderDetails = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -63,7 +59,11 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.orderNumber]);
+
+  useEffect(() => {
+    loadOrderDetails();
+  }, [loadOrderDetails]);
 
   const handleDownloadTemplate = (templateId: number, templateName: string) => {
     toast.success(`Descargando ${templateName}...`);

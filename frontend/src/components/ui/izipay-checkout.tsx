@@ -11,6 +11,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Script from 'next/script';
 import { Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -170,6 +171,13 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   }
 
   return (
+    <>
+      {/* Script de Izipay cargado de forma asíncrona */}
+      <Script 
+        src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js"
+        strategy="lazyOnload"
+      />
+      
     <div className="bg-white rounded-xl border shadow-sm p-6">
       <div className="flex items-center mb-6">
         <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
@@ -269,6 +277,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         </details>
       )}
     </div>
+    </>
   );
 };
 

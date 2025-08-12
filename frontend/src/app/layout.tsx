@@ -22,7 +22,6 @@ export default function RootLayout({
         {/* Estilos oficiales de Izipay según documentación */}
         <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic-reset.css" />
         <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css" />
-        <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js"></script>
       </head>
       <body className={inter.className}>
         <Providers>

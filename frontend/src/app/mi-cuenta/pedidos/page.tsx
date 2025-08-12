@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, 
@@ -172,7 +172,7 @@ export default function PedidosPage() {
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [orders, filters, sortBy, sortOrder]);
+  }, [applyFiltersAndSort]);
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -192,7 +192,7 @@ export default function PedidosPage() {
     }
   };
 
-  const applyFiltersAndSort = () => {
+  const applyFiltersAndSort = useCallback(() => {
     let result = [...orders];
 
     // Apply filters
@@ -252,7 +252,7 @@ export default function PedidosPage() {
     });
 
     setFilteredOrders(result);
-  };
+  }, [orders, filters, sortBy, sortOrder]);
 
   const handleDownloadInvitation = (orderId: number) => {
     toast.success('Descargando invitación...');
