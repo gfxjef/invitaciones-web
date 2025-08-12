@@ -69,18 +69,18 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
   useEffect(() => {
     const initializePaymentForm = async () => {
       try {
-        // Check if we have the required config
-        if (!paymentConfig.token || !paymentConfig.public_key) {
-          console.log('Waiting for payment config...', {
-            hasToken: !!paymentConfig.token,
-            hasPublicKey: !!paymentConfig.public_key
+        // Verificar configuración requerida
+        if (!paymentConfig.formToken || !paymentConfig.publicKey) {
+          console.log('Esperando configuración de pago...', {
+            hasFormToken: !!paymentConfig.formToken,
+            hasPublicKey: !!paymentConfig.publicKey
           });
           return;
         }
 
-        console.log('Initializing Izipay V1 SDK with:', {
-          publicKey: paymentConfig.public_key.substring(0, 30) + '...',
-          token: paymentConfig.token.substring(0, 30) + '...',
+        console.log('Inicializando Izipay con configuración oficial:', {
+          publicKey: paymentConfig.publicKey.substring(0, 30) + '...',
+          formToken: paymentConfig.formToken.substring(0, 30) + '...',
           order: order.order_number
         });
 
@@ -97,7 +97,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
 
         // Initialize library with endpoint and public key
         const endPoint = 'https://api.micuentaweb.pe';
-        const publicKey = (paymentConfig.public_key || '').trim();
+        const publicKey = paymentConfig.publicKey.trim();
         
         console.log('Initializing KRGlue V4 with:', { endPoint, publicKey: publicKey.substring(0, 30) + '...' });
         
@@ -117,7 +117,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
 
         // Configure form with enhanced settings
         await KR.setFormConfig({
-          formToken: paymentConfig.token,
+          formToken: paymentConfig.formToken,
           'kr-public-key': publicKey,
           'kr-language': 'es-PE'
         });
@@ -154,7 +154,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         console.log('Cleanup error (non-critical):', error);
       }
     };
-  }, [paymentConfig.token, paymentConfig.public_key, order.order_number, billingInfo.postalCode]);
+  }, [paymentConfig.formToken, paymentConfig.publicKey, order.order_number]);
 
   if (isLoading) {
     return (
