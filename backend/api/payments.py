@@ -122,15 +122,20 @@ class IzipayService:
             'amount': str(order_data['amount']),  # V1 API expects string format
         }
         
-        # V1 API headers - no auth needed for demo endpoint
+        # V1 API headers - add auth for standard endpoint
         headers = {
             'Content-Type': 'application/json',
             'transactionId': transaction_id,
+            'Authorization': f'Basic {self._get_basic_auth()}',  # Add auth for standard endpoint
         }
         
         try:
-            # V1 API endpoint - matches working example
-            url = 'https://sandbox-checkout.izipay.pe/apidemo/v1/Token/Generate'
+            # Try different V1 API endpoints
+            # Option 1: Demo endpoint (from example)
+            # url = 'https://sandbox-checkout.izipay.pe/apidemo/v1/Token/Generate'
+            
+            # Option 2: Standard V1 endpoint
+            url = 'https://sandbox-api-pw.izipay.pe/security/v1/Token/Generate'
             logger.info(f"Creating payment token for order {order_data['order_number']}")
             logger.info(f"Request URL: {url}")
             logger.info(f"Request payload: {token_payload}")
