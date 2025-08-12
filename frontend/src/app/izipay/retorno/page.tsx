@@ -25,26 +25,41 @@ export default function IzipayRetornoPage() {
   useEffect(() => {
     const processReturn = async () => {
       try {
-        // Obtener parámetros de la URL
-        const orderNumber = searchParams.get('orderNumber') || searchParams.get('order_number');
+        // Obtener parámetros de la URL (incluyendo nuevos parámetros del endpoint /result)
+        const orderNumber = searchParams.get('orderId') || searchParams.get('orderNumber') || searchParams.get('order_number');
+        const paymentSuccess = searchParams.get('success'); // true/false del endpoint /result
         const paymentStatus = searchParams.get('status') || searchParams.get('payment_status');
         const transactionId = searchParams.get('transactionId') || searchParams.get('transaction_id');
         const amount = searchParams.get('amount');
+        const currency = searchParams.get('currency');
         const errorMessage = searchParams.get('error') || searchParams.get('message');
 
         console.log('🔍 [IZIPAY RETORNO] Parámetros recibidos:', {
           orderNumber,
+          paymentSuccess,
           paymentStatus,
           transactionId,
           amount,
+          currency,
           errorMessage
         });
 
-        // Determinar el estado del pago
+        // Determinar el estado del pago (priorizar parámetro success del endpoint /result)
         let success = false;
         let message = 'Procesando pago...';
 
-        if (paymentStatus) {
+        if (paymentSuccess !== null) {
+          // Usar parámetro success del nuevo endpoint /result
+          success = paymentSuccess === 'true';
+          if (success) {
+            message = '¡Pago realizado con éxito!';
+          } else {
+            message = errorMessage === 'payment_failed' 
+              ? 'El pago no pudo ser procesado. Por favor, intenta nuevamente.'
+              : (errorMessage || 'El pago fue rechazado. Por favor, intenta nuevamente.');
+          }
+        } else if (paymentStatus) {
+          // Fallback a lógica anterior para compatibilidad
           const statusLower = paymentStatus.toLowerCase();
           if (statusLower === 'paid' || statusLower === 'success' || statusLower === 'authorized') {
             success = true;

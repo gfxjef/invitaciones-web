@@ -25,7 +25,8 @@
       "Bash(claude config get)",
       "mcp__embedded-react__fetch_Embedded_docs",
       "mcp__popin-flask__fetch_PopIn_docs",
-      "mcp__embedded-react__search_Embedded_code"
+      "mcp__embedded-react__search_Embedded_code",
+      "mcp__popin-flask__search_repo_docs"
     ],
     "deny": []
   },

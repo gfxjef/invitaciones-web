@@ -673,6 +673,116 @@ def payment_webhook():
         return jsonify({'ok': True, 'error': 'internal_error'}), 200
 
 
+@payments_bp.route('/result', methods=['POST'])
+def payment_result():
+    """
+    POST /api/payments/result
+    
+    Endpoint para recibir confirmación de pago exitoso desde el frontend.
+    Según documentación oficial app.py línea 66-80.
+    Usa kr-answer + kr-hash con HMACSHA256 (diferente del webhook que usa PASSWORD).
+    """
+    try:
+        # Validar que tenemos form data (no JSON)
+        if not request.form:
+            logger.warning("No form data received in payment result")
+            return jsonify({'error': 'No form data received'}), 400
+        
+        # Obtener kr-answer y kr-hash del form
+        kr_answer = request.form.get('kr-answer')
+        kr_hash = request.form.get('kr-hash')
+        
+        logger.info(f"Payment result received - Has kr-answer: {bool(kr_answer)}, Has kr-hash: {bool(kr_hash)}")
+        
+        if not kr_answer or not kr_hash:
+            logger.warning("Missing kr-answer or kr-hash in payment result")
+            return jsonify({'error': 'Missing kr-answer or kr-hash'}), 400
+        
+        # Validar firma usando checkHash con HMACSHA256 (frontend usa HMACSHA256, no PASSWORD)
+        if not checkHash(request.form, os.getenv('IZIPAY_HMACSHA256', '')):
+            logger.warning("Invalid signature in payment result")
+            return jsonify({'error': 'Invalid signature'}), 400
+        
+        # Parsear kr-answer JSON
+        try:
+            answer = json.loads(kr_answer)
+        except Exception as e:
+            logger.error(f"Error parsing kr-answer: {str(e)}")
+            return jsonify({'error': 'Invalid kr-answer JSON'}), 400
+        
+        # Extraer datos según estructura oficial
+        order_status = answer.get('orderStatus')  # PAID / UNPAID
+        order_details = answer.get('orderDetails', {})
+        order_id = order_details.get('orderId')
+        transactions = answer.get('transactions', [])
+        transaction = transactions[0] if transactions else {}
+        
+        logger.info(f"Payment result - OrderId: {order_id}, Status: {order_status}")
+        
+        # Buscar la orden para actualizar estado si es necesario
+        order = None
+        if order_id:
+            order = Order.query.filter(Order.order_number == order_id).first()
+        
+        # Preparar datos para respuesta
+        result_data = {
+            'success': order_status == 'PAID',
+            'orderStatus': order_status,
+            'orderId': order_id,
+            'amount': transaction.get('amount', 0) / 100,  # Convertir de centavos
+            'currency': transaction.get('currency', 'PEN'),
+            'transactionUuid': transaction.get('uuid'),
+            'order_found': bool(order)
+        }
+        
+        # Si encontramos la orden y el pago fue exitoso, marcarla como pagada
+        if order and order_status == 'PAID' and order.status != OrderStatus.PAID:
+            order.status = OrderStatus.PAID
+            order.paid_at = datetime.utcnow()
+            order.payment_method = 'IZIPAY'
+            
+            # Actualizar payment_data con información del result
+            current_payment_data = order.payment_data or {}
+            current_payment_data.update({
+                'payment_result': answer,
+                'result_received_at': datetime.utcnow().isoformat()
+            })
+            order.payment_data = current_payment_data
+            
+            db.session.commit()
+            logger.info(f"Order {order.order_number} marked as PAID via payment result")
+        
+        # En lugar de retornar JSON, redirigir al frontend con los datos
+        # Construir URL de redirección al frontend
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+        
+        if order_status == 'PAID':
+            redirect_url = f"{frontend_url}/izipay/retorno?success=true&orderId={order_id}&amount={transaction.get('amount', 0) / 100}&currency={transaction.get('currency', 'PEN')}"
+        else:
+            redirect_url = f"{frontend_url}/izipay/retorno?success=false&orderId={order_id}&error=payment_failed"
+        
+        # Retornar HTML de redirección
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Redirigiendo...</title>
+        </head>
+        <body>
+            <p>Procesando pago... Redirigiendo...</p>
+            <script>
+                window.location.href = '{redirect_url}';
+            </script>
+        </body>
+        </html>
+        """, 200
+        
+    except Exception as e:
+        logger.error(f"Error processing payment result: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Internal server error', 'success': False}), 500
+
+
 @payments_bp.route('/status/<int:order_id>', methods=['GET'])
 @jwt_required()
 def get_payment_status(order_id):
