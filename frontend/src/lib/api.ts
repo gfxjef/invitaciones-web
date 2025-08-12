@@ -423,10 +423,10 @@ export interface ProcessPaymentRequest {
 // API Methods - Payments
 export const paymentsApi = {
   /**
-   * Create payment token for Izipay checkout
+   * Create formToken for Izipay checkout (según documentación oficial)
    */
-  createPaymentToken: async (data: CreatePaymentTokenRequest): Promise<{success: boolean; token: string; transaction_id: string; config: any}> => {
-    const response = await apiClient.post('/payments/create-payment-token', data);
+  createPaymentToken: async (data: CreatePaymentTokenRequest): Promise<{success: boolean; formToken: string; publicKey: string; order_number: string}> => {
+    const response = await apiClient.post('/payments/formtoken', data);
     return response.data;
   },
 

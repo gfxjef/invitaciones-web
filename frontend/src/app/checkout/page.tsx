@@ -268,22 +268,19 @@ export default function CheckoutPage() {
         },
       };
       
-      console.log('🔒 [CHECKOUT] Creating payment token with data:', tokenData);
+      console.log('🔒 [CHECKOUT] Creating formToken with data:', tokenData);
       const tokenResponse = await paymentsApi.createPaymentToken(tokenData);
       
-      console.log('🔑 [CHECKOUT] Payment token response:', tokenResponse);
+      console.log('🔑 [CHECKOUT] FormToken response:', tokenResponse);
       
-      if (!tokenResponse.success || !tokenResponse.token) {
-        console.error('❌ [CHECKOUT] Payment token creation failed:', tokenResponse);
-        throw new Error('Failed to create payment token: ' + ((tokenResponse as any).error || 'Unknown error'));
+      if (!tokenResponse.success || !tokenResponse.formToken) {
+        console.error('❌ [CHECKOUT] FormToken creation failed:', tokenResponse);
+        throw new Error('Failed to create formToken: ' + ((tokenResponse as any).error || 'Unknown error'));
       }
       
       setPaymentConfig({
-        token: tokenResponse.token,
-        transaction_id: tokenResponse.transaction_id,
-        merchant_code: tokenResponse.config.merchant_code,
-        public_key: tokenResponse.config.public_key,
-        mode: tokenResponse.config.mode,
+        formToken: tokenResponse.formToken,
+        publicKey: tokenResponse.publicKey
       });
       
       // Move to payment step
@@ -330,7 +327,7 @@ export default function CheckoutPage() {
         order_id: currentOrder.id,
         payment_result: {
           status: 'SUCCESS',
-          transaction_id: paymentConfig.transaction_id,
+          transaction_id: currentOrder.order_number,
           izipay_data: paymentResult,
         },
       });
@@ -352,7 +349,7 @@ export default function CheckoutPage() {
           order_id: currentOrder.id,
           payment_result: {
             status: 'FAILED',
-            transaction_id: paymentConfig?.transaction_id || '',
+            transaction_id: currentOrder.order_number,
             izipay_data: error,
           },
         });

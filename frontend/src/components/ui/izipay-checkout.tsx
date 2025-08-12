@@ -237,8 +237,8 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
             <strong>Debug:</strong> 
-            Token: {paymentConfig.token ? '✅ ' + paymentConfig.token.substring(0, 20) + '...' : '❌ None'} | 
-            Public Key: {paymentConfig.public_key ? '✅ ' + paymentConfig.public_key.substring(0, 20) + '...' : '❌ None'}
+            FormToken: {paymentConfig.formToken ? '✅ ' + paymentConfig.formToken.substring(0, 20) + '...' : '❌ None'} | 
+            Public Key: {paymentConfig.publicKey ? '✅ ' + paymentConfig.publicKey.substring(0, 20) + '...' : '❌ None'}
             <br />
             <strong>Status:</strong> 
             Loading: {isInitializing ? '⏳' : '✅'} | 
@@ -261,7 +261,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
             {JSON.stringify({
               order,
               billingInfo,
-              paymentConfig: { ...paymentConfig, token: '***' },
+              paymentConfig: { ...paymentConfig, formToken: '***' },
               isInitializing,
               paymentError,
             }, null, 2)}
