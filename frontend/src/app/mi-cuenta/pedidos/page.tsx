@@ -166,14 +166,6 @@ export default function PedidosPage() {
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'status'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [applyFiltersAndSort]);
-
   const loadOrders = async () => {
     setIsLoading(true);
     try {
@@ -253,6 +245,14 @@ export default function PedidosPage() {
 
     setFilteredOrders(result);
   }, [orders, filters, sortBy, sortOrder]);
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [applyFiltersAndSort]);
 
   const handleDownloadInvitation = (orderId: number) => {
     toast.success('Descargando invitación...');
