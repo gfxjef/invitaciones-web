@@ -107,11 +107,18 @@ class IzipayService:
         """
         # Use V1 API for compatibility with Izipay V1 SDK (like working example)
         # This matches the pw.0085.izipay-examples-checkout implementation
+        
+        # Extract just the public key part (remove merchant_code prefix if present)
+        public_key = self.config['public_key']
+        if ':' in public_key:
+            # Format: "45259313:testpublickey_..." -> extract just "testpublickey_..."
+            public_key = public_key.split(':', 1)[1]
+        
         token_payload = {
             'requestSource': 'ECOMMERCE',
             'merchantCode': self.config['merchant_code'],
             'orderNumber': order_data['order_number'],
-            'publicKey': self.config['public_key'],
+            'publicKey': public_key,  # Only the key part, no merchant code prefix
             'amount': str(order_data['amount']),  # V1 API expects string format
         }
         
