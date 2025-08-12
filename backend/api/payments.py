@@ -563,7 +563,8 @@ def payment_webhook():
             return jsonify({'error': 'Missing kr-answer or kr-hash'}), 400
         
         # Validar firma usando checkHash según documentación oficial
-        if not checkHash(request.form, os.getenv('IZIPAY_HMACSHA256', '')):
+        # IPN webhook usa PASSWORD, no HMACSHA256 (ver app.py línea 88)
+        if not checkHash(request.form, os.getenv('IZIPAY_PASSWORD', '')):
             logger.warning("Invalid signature in webhook")
             return jsonify({'error': 'Invalid signature'}), 400
         
