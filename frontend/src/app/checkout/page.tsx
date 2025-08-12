@@ -262,7 +262,7 @@ export default function CheckoutPage() {
           city: data.city,
           state: data.state,
           country: data.country,
-          postalCode: data.zipCode || '15001',
+          postalCode: (data.zipCode || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001',
           document: data.documentNumber,
           documentType: data.documentType.toUpperCase(),
         },
@@ -611,7 +611,18 @@ export default function CheckoutPage() {
                     </label>
                     <input
                       type="text"
-                      {...register('zipCode')}
+                      {...register('zipCode', {
+                        pattern: {
+                          value: /^\d{0,5}$/,
+                          message: 'Solo se permiten números (5 dígitos)'
+                        }
+                      })}
+                      maxLength={5}
+                      onInput={(e) => {
+                        // Remove non-numeric characters as user types
+                        const target = e.target as HTMLInputElement;
+                        target.value = target.value.replace(/\D/g, '').slice(0, 5);
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       placeholder="15001"
                     />
@@ -719,7 +730,7 @@ export default function CheckoutPage() {
                     city: watch('city') || '',
                     state: watch('state') || '',
                     country: watch('country') || 'PE',
-                    postalCode: watch('zipCode') || '15001',
+                    postalCode: (watch('zipCode') || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001',
                     document: watch('documentNumber') || '',
                     documentType: (watch('documentType') || 'dni').toUpperCase() as 'DNI' | 'RUC',
                   }}
