@@ -105,28 +105,25 @@ class IzipayService:
             
         WHY: La tokenización es requerida por Izipay antes de mostrar el checkout.
         """
-        # Estructura para generar form token según documentación Izipay
+        # Use V1 API for compatibility with Izipay V1 SDK (like working example)
+        # This matches the pw.0085.izipay-examples-checkout implementation
         token_payload = {
-            'amount': int(float(order_data['amount']) * 100),  # En centavos (soles a centavos)
-            'currency': 'PEN',  # Código de moneda
-            'orderId': order_data['order_number'],
-            'customer': {
-                'email': order_data.get('customer_email', 'test@example.com'),
-                'reference': order_data.get('customer_id', '')
-            },
-            'ctxMode': 'TEST',  # TEST para sandbox, PRODUCTION para producción
-            'formAction': 'PAYMENT'  # Flujo estándar de pago
+            'requestSource': 'ECOMMERCE',
+            'merchantCode': self.config['merchant_code'],
+            'orderNumber': order_data['order_number'],
+            'publicKey': self.config['public_key'],
+            'amount': str(order_data['amount']),  # V1 API expects string format
         }
         
-        # Headers según documentación Izipay
+        # V1 API headers - no auth needed for demo endpoint
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {self._get_basic_auth()}',
+            'transactionId': transaction_id,
         }
         
         try:
-            # Endpoint correcto para generar form token en Izipay
-            url = f"{self.config['api_url']}/Charge/CreatePayment"
+            # V1 API endpoint - matches working example
+            url = 'https://sandbox-checkout.izipay.pe/apidemo/v1/Token/Generate'
             logger.info(f"Creating payment token for order {order_data['order_number']}")
             logger.info(f"Request URL: {url}")
             logger.info(f"Request payload: {token_payload}")
@@ -151,34 +148,39 @@ class IzipayService:
             
             result = response.json()
             
-            # Extraer el formToken de la respuesta
-            answer = result.get('answer', {})
-            form_token = answer.get('formToken')
+            # V1 API returns different structure than V4
+            # V1 format: { response: { token: "xxx", ... } }
+            # V4 format: { answer: { formToken: "xxx", ... } }
             
-            # LOGGING DETALLADO PARA VERIFICAR MERCHANT/SHOP COINCIDENCIA
-            logger.info(f"=== IZIPAY TOKEN VERIFICATION ===")
+            # Check for V1 API response format first
+            if 'response' in result:
+                # V1 API response format
+                api_response = result.get('response', {})
+                form_token = api_response.get('token')
+                
+                logger.info(f"=== IZIPAY V1 TOKEN VERIFICATION ===")
+                logger.info(f"V1 API Response received")
+                logger.info(f"Token present: {bool(form_token)}")
+                
+            else:
+                # V4 API response format (fallback)
+                answer = result.get('answer', {})
+                form_token = answer.get('formToken')
+                
+                logger.info(f"=== IZIPAY V4 TOKEN VERIFICATION ===")
+                logger.info(f"V4 API Response received")
+            
             logger.info(f"Used MERCHANT_CODE: {self.config['merchant_code']}")
             logger.info(f"Used PUBLIC_KEY starts with: {self.config['public_key'][:20]}...")
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Full Izipay response: {result}")
-            
-            # Verificar si hay información de shop en la respuesta
-            if 'shopId' in answer:
-                logger.info(f"Response shopId: {answer.get('shopId')}")
-            if 'merchantId' in answer:
-                logger.info(f"Response merchantId: {answer.get('merchantId')}")
-            if 'orderDetails' in answer:
-                order_details = answer.get('orderDetails', {})
-                logger.info(f"OrderDetails merchant: {order_details.get('merchantId', 'N/A')}")
-            
-            logger.info(f"Expected merchant code: {self.config['merchant_code']} (should match response)")
             logger.info(f"=== END VERIFICATION ===")
             
             if not form_token:
-                logger.error(f"No formToken in response. Full response: {result}")
+                logger.error(f"No token in response. Full response: {result}")
                 return {
                     'success': False,
-                    'error': f'No formToken received from Izipay. Response: {result}',
+                    'error': f'No token received from Izipay. Response: {result}',
                     'transaction_id': transaction_id
                 }
             
