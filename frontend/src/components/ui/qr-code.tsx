@@ -73,7 +73,7 @@ export function QRCodeDisplay({
       const qrUrl = `${baseUrl}/r/${shortCode}/qr`;
       
       // Check if image loads successfully
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         setQRImageUrl(qrUrl);
         setIsLoading(false);
