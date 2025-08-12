@@ -57,10 +57,6 @@ export function QRCodeDisplay({
   const downloadQR = useDownloadQRCode();
   const sizeConfig = SIZE_CONFIG[size];
 
-  useEffect(() => {
-    loadQRCode();
-  }, [shortCode, loadQRCode]);
-
   const loadQRCode = useCallback(async () => {
     if (!shortCode) {
       setError('Código corto no disponible');
@@ -94,6 +90,10 @@ export function QRCodeDisplay({
       setIsLoading(false);
     }
   }, [shortCode]);
+
+  useEffect(() => {
+    loadQRCode();
+  }, [loadQRCode]);
 
   const handleDownload = () => {
     if (shortCode) {
