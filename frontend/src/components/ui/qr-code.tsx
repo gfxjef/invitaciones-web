@@ -30,16 +30,19 @@ const SIZE_CONFIG = {
     container: 'w-24 h-24',
     image: 'w-full h-full',
     text: 'text-xs',
+    size: 96, // 24 * 4 = 96px
   },
   md: {
     container: 'w-32 h-32',
     image: 'w-full h-full', 
     text: 'text-sm',
+    size: 128, // 32 * 4 = 128px
   },
   lg: {
     container: 'w-48 h-48',
     image: 'w-full h-full',
     text: 'text-base',
+    size: 192, // 48 * 4 = 192px
   },
 };
 
