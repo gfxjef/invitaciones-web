@@ -262,7 +262,7 @@ export default function CheckoutPage() {
           city: data.city,
           state: data.state,
           country: data.country,
-          postalCode: data.zipCode,
+          postalCode: data.zipCode || '15001',
           document: data.documentNumber,
           documentType: data.documentType.toUpperCase(),
         },
@@ -719,7 +719,7 @@ export default function CheckoutPage() {
                     city: watch('city') || '',
                     state: watch('state') || '',
                     country: watch('country') || 'PE',
-                    postalCode: watch('zipCode'),
+                    postalCode: watch('zipCode') || '15001',
                     document: watch('documentNumber') || '',
                     documentType: (watch('documentType') || 'dni').toUpperCase() as 'DNI' | 'RUC',
                   }}

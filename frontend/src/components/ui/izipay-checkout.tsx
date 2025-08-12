@@ -121,7 +121,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
               city: billingInfo.city,
               state: billingInfo.state,
               country: billingInfo.country,
-              postalCode: billingInfo.postalCode || '00001',
+              postalCode: billingInfo.postalCode || '15001', // Valid Lima postal code
               document: billingInfo.document,
               documentType: billingInfo.documentType === 'DNI' 
                 ? (window as any).Izipay.enums.documentType.DNI 
