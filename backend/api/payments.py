@@ -188,16 +188,17 @@ class IzipayService:
     
     def verify_webhook_signature(self, payload, signature):
         """
-        Verifica la firma del webhook de Izipay.
+        Verifica la firma del webhook usando HMAC-SHA-256.
         
         WHY: Seguridad crítica - verificar que el webhook viene realmente de Izipay.
+        Usa la clave HMAC-SHA-256 oficial para validar kr-hash.
         """
         if not signature:
             return False
             
-        # Calculate expected signature using secret key
+        # Calcular firma esperada usando clave HMAC-SHA-256 oficial
         expected_signature = hmac.new(
-            self.config['secret_key'].encode('utf-8'),
+            self.config['hmac_key'].encode('utf-8'),
             payload.encode('utf-8'),
             hashlib.sha256
         ).hexdigest()
