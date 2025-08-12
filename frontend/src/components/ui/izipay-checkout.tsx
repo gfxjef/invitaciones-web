@@ -39,13 +39,10 @@ export interface IzipayCheckoutProps {
     documentType: 'DNI' | 'RUC';
   };
   
-  /** Payment token and configuration */
+  /** FormToken y configuración según documentación oficial */
   paymentConfig: {
-    token: string;
-    transaction_id: string;
-    merchant_code: string;
-    public_key: string;
-    mode: string;
+    formToken: string;
+    publicKey: string;
   };
   
   /** Callback when payment is completed */
