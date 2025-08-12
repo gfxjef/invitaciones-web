@@ -10,7 +10,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Download, QrCode, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -58,9 +59,9 @@ export function QRCodeDisplay({
 
   useEffect(() => {
     loadQRCode();
-  }, [shortCode]);
+  }, [shortCode, loadQRCode]);
 
-  const loadQRCode = async () => {
+  const loadQRCode = useCallback(async () => {
     if (!shortCode) {
       setError('Código corto no disponible');
       setIsLoading(false);
@@ -92,7 +93,7 @@ export function QRCodeDisplay({
       setError('Error al cargar el código QR');
       setIsLoading(false);
     }
-  };
+  }, [shortCode]);
 
   const handleDownload = () => {
     if (shortCode) {
@@ -126,9 +127,11 @@ export function QRCodeDisplay({
             </Button>
           </div>
         ) : qrImageUrl ? (
-          <img
+          <Image
             src={qrImageUrl}
             alt={`Código QR para ${title || shortCode}`}
+            width={sizeConfig.size}
+            height={sizeConfig.size}
             className={`${sizeConfig.image} object-contain`}
           />
         ) : (

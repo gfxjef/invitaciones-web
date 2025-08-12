@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { 
   ShoppingCart, 
   Trash2,
@@ -80,9 +81,11 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
             {cartItems.map((item) => (
               <div key={item.id} className="p-4 border-b last:border-b-0">
                 <div className="flex items-center gap-3">
-                  <img 
+                  <Image 
                     src={item.thumbnail_url || '/placeholder-template.jpg'}
                     alt={item.name}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-lg object-cover bg-gray-200"
                   />
                   <div className="flex-1 min-w-0">

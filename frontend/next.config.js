@@ -4,6 +4,13 @@ const nextConfig = {
   reactStrictMode: false, // Disable in production for faster builds
   swcMinify: true, // Use SWC for faster minification
   
+  // ESLint configuration - allow warnings but not errors
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: false,
+  },
+  
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',

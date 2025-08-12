@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -136,21 +136,21 @@ export function CouponForm({ mode, couponId, onSuccess, onCancel }: CouponFormPr
   };
 
   // Set default dates (today and 30 days from now)
-  const setDefaultDates = () => {
+  const setDefaultDates = useCallback(() => {
     const today = new Date();
     const futureDate = new Date(today);
     futureDate.setDate(today.getDate() + 30);
 
     setValue('valid_from', today.toISOString().split('T')[0]);
     setValue('valid_until', futureDate.toISOString().split('T')[0]);
-  };
+  }, [setValue]);
 
   // Initialize default values for create mode
   useEffect(() => {
     if (mode === 'create') {
       setDefaultDates();
     }
-  }, [mode]);
+  }, [mode, setDefaultDates]);
 
   const onSubmit = async (data: CouponFormData) => {
     try {

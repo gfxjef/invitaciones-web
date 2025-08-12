@@ -12,6 +12,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Trash2, Plus, Minus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,9 +64,11 @@ export function CartItemCard({
           {showImage && (
             <div className="flex-shrink-0">
               <div className={`${compact ? 'w-16 h-20' : 'w-24 h-30'} bg-gray-200 rounded-lg overflow-hidden`}>
-                <img 
+                <Image 
                   src={item.thumbnail_url || '/placeholder-template.jpg'}
                   alt={item.name}
+                  width={compact ? 64 : 96}
+                  height={compact ? 80 : 120}
                   className="w-full h-full object-cover"
                 />
               </div>
