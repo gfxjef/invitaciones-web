@@ -117,17 +117,13 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           setPaymentError(errorMessage);
         });
 
-        // Configure form with enhanced settings - CLEAN POSTAL CODE HERE
-        const cleanPostalCode = (billingInfo.postalCode || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001';
-        
+        // Configure form with enhanced settings
         await KR.setFormConfig({
           formToken: paymentConfig.token,
           'kr-public-key': publicKey,
-          'kr-language': 'es-PE',
-          // Override postal code in form config to ensure it's clean
-          'kr-postal-code': cleanPostalCode
+          'kr-language': 'es-PE'
         });
-        console.log('Form config set with clean postal code:', cleanPostalCode);
+        console.log('Form config set successfully');
 
         // Attach form to the container  
         await KR.attachForm('#izipay-payment-form');
@@ -160,7 +156,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         console.log('Cleanup error (non-critical):', error);
       }
     };
-  }, [paymentConfig.token, paymentConfig.public_key, order.order_number]);
+  }, [paymentConfig.token, paymentConfig.public_key, order.order_number, billingInfo.postalCode]);
 
   if (isLoading) {
     return (
