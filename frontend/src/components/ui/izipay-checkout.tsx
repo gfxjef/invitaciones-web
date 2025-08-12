@@ -1,10 +1,10 @@
 /**
- * Izipay Krypton V4 Checkout Component with NPM KRGlue
+ * Izipay V1 SDK Checkout Component
  * 
- * WHY: Integrates with Izipay payment gateway using @lyracom/embedded-form-glue NPM package.
- * This solves the CDN 404 issue and provides reliable form rendering.
+ * WHY: Integrates with Izipay payment gateway using the newer V1 SDK.
+ * This fixes the "invalid public key" error by using the correct SDK version.
  * 
- * WHAT: Component that uses KRGlue from NPM to initialize and render the payment form
+ * WHAT: Component that uses Izipay V1 SDK to initialize and render the payment form
  * with proper error handling and dynamic loading.
  */
 
@@ -80,88 +80,96 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           return;
         }
 
-        console.log('Initializing payment form with:', {
+        console.log('Initializing Izipay V1 SDK with:', {
           publicKey: paymentConfig.public_key.substring(0, 30) + '...',
           token: paymentConfig.token.substring(0, 30) + '...',
           order: order.order_number
         });
 
         // Clear any existing form content first
-        const formElement = document.getElementById('kr-payment-form');
+        const formElement = document.getElementById('izipay-payment-form');
         if (formElement) {
           formElement.innerHTML = '';
         }
 
-        // Check if KR is already globally available to avoid multiple initializations
-        if (typeof window !== 'undefined' && (window as any).KR) {
-          console.log('KR already loaded globally, cleaning up...');
-          // Clear existing KR instance
-          try {
-            await (window as any).KR.removeForms();
-          } catch (e) {
-            console.log('Could not remove existing forms:', e);
-          }
+        // Load Izipay V1 SDK if not already loaded
+        if (!(window as any).Izipay) {
+          await loadIzipaySDK();
         }
 
-        // Dynamically import KRGlue (client-side only)
-        const KRGlue = (await import('@lyracom/embedded-form-glue')).default;
-        console.log('KRGlue loaded from NPM');
+        // Prepare configuration for Izipay V1 SDK
+        const iziConfig = {
+          config: {
+            transactionId: paymentConfig.transaction_id,
+            action: (window as any).Izipay.enums.payActions.PAY,
+            merchantCode: paymentConfig.merchant_code,
+            order: {
+              orderNumber: order.order_number,
+              currency: order.currency,
+              amount: order.total.toFixed(2),
+              processType: (window as any).Izipay.enums.processType.AUTHORIZATION,
+              merchantBuyerId: 'web_user',
+              dateTimeTransaction: Date.now().toString() + '000',
+              payMethod: (window as any).Izipay.enums.showMethods.ALL,
+            },
+            billing: {
+              firstName: billingInfo.firstName,
+              lastName: billingInfo.lastName,
+              email: billingInfo.email,
+              phoneNumber: billingInfo.phoneNumber,
+              street: billingInfo.street,
+              city: billingInfo.city,
+              state: billingInfo.state,
+              country: billingInfo.country,
+              postalCode: billingInfo.postalCode || '00001',
+              document: billingInfo.document,
+              documentType: billingInfo.documentType === 'DNI' 
+                ? (window as any).Izipay.enums.documentType.DNI 
+                : (window as any).Izipay.enums.documentType.RUC,
+            },
+            render: {
+              typeForm: (window as any).Izipay.enums.typeForm.IFRAME,
+              container: '#izipay-payment-form',
+              showButtonProcessForm: true,
+            },
+            appearance: {
+              logo: 'https://via.placeholder.com/150x50/7c3aed/ffffff?text=raphica',
+            },
+          },
+        };
 
-        // Initialize library with endpoint and public key
-        const endPoint = 'https://api.micuentaweb.pe';
-        const publicKey = (paymentConfig.public_key || '').trim();
+        console.log('Izipay config prepared:', iziConfig);
+
+        // Callback for payment response
+        const callbackResponsePayment = (response: any) => {
+          console.log('Payment response:', response);
+          if (response.success) {
+            onPaymentComplete(response);
+            toast.success('¡Pago completado exitosamente!');
+          } else {
+            onPaymentError(response);
+            setPaymentError(response.error || 'Error en el pago');
+            toast.error('Error en el pago');
+          }
+        };
+
+        // Initialize Izipay checkout
+        const checkout = new (window as any).Izipay({ config: iziConfig.config });
         
-        // DETAILED LOGGING FOR PUBLIC KEY VERIFICATION
-        console.log('=== FRONTEND KEY VERIFICATION ===');
-        console.log('pubKey:', `"${publicKey}"`, 'len:', publicKey.length);
-        console.log('First 30 chars:', publicKey.substring(0, 30));
-        console.log('Starts with 45259313:', publicKey.startsWith('45259313'));
-        console.log('Contains testpublickey_:', publicKey.includes('testpublickey_'));
-        console.log('Original key from config:', `"${paymentConfig.public_key}"`);
-        console.log('Key after trim:', `"${publicKey}"`);
-        console.log('=== END KEY VERIFICATION ===');
-        
-        console.log('Initializing KRGlue with loadLibrary:', { endPoint, publicKey });
-        
-        // Load the library using loadLibrary (available method)
-        const { KR } = await KRGlue.loadLibrary(endPoint, publicKey);
-        console.log('KR library initialized with loadLibrary:', !!KR);
+        if (checkout) {
+          checkout.LoadForm({
+            authorization: paymentConfig.token,
+            keyRSA: 'RSA',
+            callbackResponse: callbackResponsePayment,
+          });
 
-        // Store KR globally to prevent multiple loads
-        (window as any).KR = KR;
-
-        // Set up error handling FIRST
-        KR.onError((error: any) => {
-          console.error('KR error:', error);
-          const errorMessage = error?.message || error?.detailedErrorMessage || 'Error del formulario';
-          setPaymentError(errorMessage);
-        });
-
-        // Configure form with enhanced settings
-        await KR.setFormConfig({
-          formToken: paymentConfig.token,
-          'kr-public-key': publicKey,        // Extra validation to prevent mismatch
-          'kr-language': 'es-PE'             // Set language explicitly
-        });
-        console.log('Form config set with enhanced settings');
-
-        // Attach form to the container  
-        await KR.attachForm('#kr-payment-form');
-        console.log('Form attached and displayed in container');
-
-        // Check that form was actually rendered
-        const renderedFormElement = document.getElementById('kr-payment-form');
-        console.log('Form element check:', {
-          exists: !!renderedFormElement,
-          hasContent: renderedFormElement?.innerHTML?.length > 0,
-          height: renderedFormElement?.offsetHeight
-        });
-
-        toast.success('Formulario de pago cargado');
-        setPaymentError(null);
+          console.log('Izipay V1 form loaded successfully');
+          toast.success('Formulario de pago cargado');
+          setPaymentError(null);
+        }
 
       } catch (error: any) {
-        console.error('Error initializing payment form:', error);
+        console.error('Error initializing Izipay V1 SDK:', error);
         setPaymentError(error.message || 'No se pudo inicializar el pago');
         toast.error('Error al cargar el formulario de pago');
       } finally {
@@ -169,13 +177,40 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
       }
     };
 
+    // Helper function to load Izipay SDK
+    const loadIzipaySDK = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        if ((window as any).Izipay) {
+          resolve();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = paymentConfig.mode === 'test' 
+          ? 'https://sandbox-checkout.izipay.pe/payments/v1/js/index.js'
+          : 'https://checkout.izipay.pe/payments/v1/js/index.js';
+        
+        script.onload = () => {
+          console.log('Izipay V1 SDK loaded successfully');
+          resolve();
+        };
+        
+        script.onerror = () => {
+          reject(new Error('Failed to load Izipay V1 SDK'));
+        };
+
+        document.head.appendChild(script);
+      });
+    };
+
     initializePaymentForm();
     
     // Cleanup on component unmount
     return () => {
       try {
-        if (typeof window !== 'undefined' && (window as any).KR) {
-          (window as any).KR.removeForms?.();
+        const formElement = document.getElementById('izipay-payment-form');
+        if (formElement) {
+          formElement.innerHTML = '';
         }
       } catch (error) {
         console.log('Cleanup error (non-critical):', error);
@@ -231,13 +266,13 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
         </div>
       </div>
 
-      {/* Krypton V4 Form with KRGlue */}
+      {/* Izipay V1 SDK Form */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingresa los datos de tu tarjeta</h3>
         
-        {/* Form container where KRGlue will render */}
+        {/* Form container where Izipay V1 SDK will render */}
         <div 
-          id="kr-payment-form" 
+          id="izipay-payment-form" 
           style={{ minHeight: '420px' }}
           className="border rounded-lg p-4"
         />
@@ -275,7 +310,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
       {/* Security Notice */}
       <div className="flex items-center justify-center text-sm text-gray-500">
         <Lock className="w-4 h-4 mr-2" />
-        <span>Pago seguro procesado por Izipay Krypton</span>
+        <span>Pago seguro procesado por Izipay</span>
       </div>
 
       {/* Debug Info (only in development) */}
