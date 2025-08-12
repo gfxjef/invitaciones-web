@@ -105,37 +105,29 @@ class IzipayService:
             
         WHY: La tokenización es requerida por Izipay antes de mostrar el checkout.
         """
-        # Use V1 API for compatibility with Izipay V1 SDK (like working example)
-        # This matches the pw.0085.izipay-examples-checkout implementation
-        
-        # Extract just the public key part (remove merchant_code prefix if present)
-        public_key = self.config['public_key']
-        if ':' in public_key:
-            # Format: "45259313:testpublickey_..." -> extract just "testpublickey_..."
-            public_key = public_key.split(':', 1)[1]
-        
+        # REVERT TO V4 API - V1 endpoints not working with our credentials
+        # Use V4 API that was working originally, but with postal code fixes
         token_payload = {
-            'requestSource': 'ECOMMERCE',
-            'merchantCode': self.config['merchant_code'],
-            'orderNumber': order_data['order_number'],
-            'publicKey': public_key,  # Only the key part, no merchant code prefix
-            'amount': str(order_data['amount']),  # V1 API expects string format
+            'amount': int(float(order_data['amount']) * 100),  # En centavos (soles a centavos)
+            'currency': 'PEN',  # Código de moneda
+            'orderId': order_data['order_number'],
+            'customer': {
+                'email': order_data.get('customer_email', 'test@example.com'),
+                'reference': order_data.get('customer_id', '')
+            },
+            'ctxMode': 'TEST',  # TEST para sandbox, PRODUCTION para producción
+            'formAction': 'PAYMENT'  # Flujo estándar de pago
         }
         
-        # V1 API headers - add auth for standard endpoint
+        # Headers según documentación Izipay V4
         headers = {
             'Content-Type': 'application/json',
-            'transactionId': transaction_id,
-            'Authorization': f'Basic {self._get_basic_auth()}',  # Add auth for standard endpoint
+            'Authorization': f'Basic {self._get_basic_auth()}',
         }
         
         try:
-            # Try different V1 API endpoints
-            # Option 1: Demo endpoint (from example)
-            # url = 'https://sandbox-checkout.izipay.pe/apidemo/v1/Token/Generate'
-            
-            # Option 2: Standard V1 endpoint
-            url = 'https://sandbox-api-pw.izipay.pe/security/v1/Token/Generate'
+            # V4 API endpoint that was working
+            url = f"{self.config['api_url']}/Charge/CreatePayment"
             logger.info(f"Creating payment token for order {order_data['order_number']}")
             logger.info(f"Request URL: {url}")
             logger.info(f"Request payload: {token_payload}")
@@ -160,27 +152,14 @@ class IzipayService:
             
             result = response.json()
             
-            # V1 API returns different structure than V4
-            # V1 format: { response: { token: "xxx", ... } }
-            # V4 format: { answer: { formToken: "xxx", ... } }
+            # V4 API response format
+            answer = result.get('answer', {})
+            form_token = answer.get('formToken')
             
-            # Check for V1 API response format first
-            if 'response' in result:
-                # V1 API response format
-                api_response = result.get('response', {})
-                form_token = api_response.get('token')
-                
-                logger.info(f"=== IZIPAY V1 TOKEN VERIFICATION ===")
-                logger.info(f"V1 API Response received")
-                logger.info(f"Token present: {bool(form_token)}")
-                
-            else:
-                # V4 API response format (fallback)
-                answer = result.get('answer', {})
-                form_token = answer.get('formToken')
-                
-                logger.info(f"=== IZIPAY V4 TOKEN VERIFICATION ===")
-                logger.info(f"V4 API Response received")
+            # LOGGING DETALLADO PARA VERIFICAR MERCHANT/SHOP COINCIDENCIA
+            logger.info(f"=== IZIPAY V4 TOKEN VERIFICATION ===")
+            logger.info(f"V4 API Response received")
+            logger.info(f"Token present: {bool(form_token)}")
             
             logger.info(f"Used MERCHANT_CODE: {self.config['merchant_code']}")
             logger.info(f"Used PUBLIC_KEY starts with: {self.config['public_key'][:20]}...")

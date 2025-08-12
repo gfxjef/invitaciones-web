@@ -92,82 +92,49 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           formElement.innerHTML = '';
         }
 
-        // Load Izipay V1 SDK if not already loaded
-        if (!(window as any).Izipay) {
-          await loadIzipaySDK();
-        }
+        // REVERT TO V4 SDK (KRGlue) - V1 API not working with our setup
+        // Load KRGlue V4 SDK
+        const KRGlue = (await import('@lyracom/embedded-form-glue')).default;
+        console.log('KRGlue V4 loaded from NPM');
 
-        // Prepare configuration for Izipay V1 SDK
-        const iziConfig = {
-          config: {
-            transactionId: paymentConfig.transaction_id,
-            action: (window as any).Izipay.enums.payActions.PAY,
-            merchantCode: paymentConfig.merchant_code,
-            order: {
-              orderNumber: order.order_number,
-              currency: order.currency,
-              amount: order.total.toFixed(2),
-              processType: (window as any).Izipay.enums.processType.AUTHORIZATION,
-              merchantBuyerId: 'web_user',
-              dateTimeTransaction: Date.now().toString() + '000',
-              payMethod: (window as any).Izipay.enums.showMethods.ALL,
-            },
-            billing: {
-              firstName: billingInfo.firstName,
-              lastName: billingInfo.lastName,
-              email: billingInfo.email,
-              phoneNumber: billingInfo.phoneNumber,
-              street: billingInfo.street,
-              city: billingInfo.city,
-              state: billingInfo.state,
-              country: billingInfo.country,
-              // Clean postal code - remove non-numeric characters and ensure 5 digits
-              postalCode: (billingInfo.postalCode || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001',
-              document: billingInfo.document,
-              documentType: billingInfo.documentType === 'DNI' 
-                ? (window as any).Izipay.enums.documentType.DNI 
-                : (window as any).Izipay.enums.documentType.RUC,
-            },
-            render: {
-              typeForm: (window as any).Izipay.enums.typeForm.IFRAME,
-              container: '#izipay-payment-form',
-              showButtonProcessForm: true,
-            },
-            appearance: {
-              logo: 'https://via.placeholder.com/150x50/7c3aed/ffffff?text=raphica',
-            },
-          },
-        };
-
-        console.log('Izipay config prepared:', iziConfig);
-
-        // Callback for payment response
-        const callbackResponsePayment = (response: any) => {
-          console.log('Payment response:', response);
-          if (response.success) {
-            onPaymentComplete(response);
-            toast.success('¡Pago completado exitosamente!');
-          } else {
-            onPaymentError(response);
-            setPaymentError(response.error || 'Error en el pago');
-            toast.error('Error en el pago');
-          }
-        };
-
-        // Initialize Izipay checkout
-        const checkout = new (window as any).Izipay({ config: iziConfig.config });
+        // Initialize library with endpoint and public key
+        const endPoint = 'https://api.micuentaweb.pe';
+        const publicKey = (paymentConfig.public_key || '').trim();
         
-        if (checkout) {
-          checkout.LoadForm({
-            authorization: paymentConfig.token,
-            keyRSA: 'RSA',
-            callbackResponse: callbackResponsePayment,
-          });
+        console.log('Initializing KRGlue V4 with:', { endPoint, publicKey: publicKey.substring(0, 30) + '...' });
+        
+        // Load the library using loadLibrary
+        const { KR } = await KRGlue.loadLibrary(endPoint, publicKey);
+        console.log('KR library initialized:', !!KR);
 
-          console.log('Izipay V1 form loaded successfully');
-          toast.success('Formulario de pago cargado');
-          setPaymentError(null);
-        }
+        // Store KR globally to prevent multiple loads
+        (window as any).KR = KR;
+
+        // Set up error handling FIRST
+        KR.onError((error: any) => {
+          console.error('KR error:', error);
+          const errorMessage = error?.message || error?.detailedErrorMessage || 'Error del formulario';
+          setPaymentError(errorMessage);
+        });
+
+        // Configure form with enhanced settings - CLEAN POSTAL CODE HERE
+        const cleanPostalCode = (billingInfo.postalCode || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001';
+        
+        await KR.setFormConfig({
+          formToken: paymentConfig.token,
+          'kr-public-key': publicKey,
+          'kr-language': 'es-PE',
+          // Override postal code in form config to ensure it's clean
+          'kr-postal-code': cleanPostalCode
+        });
+        console.log('Form config set with clean postal code:', cleanPostalCode);
+
+        // Attach form to the container  
+        await KR.attachForm('#izipay-payment-form');
+        console.log('KR V4 form attached successfully');
+
+        toast.success('Formulario de pago cargado');
+        setPaymentError(null);
 
       } catch (error: any) {
         console.error('Error initializing Izipay V1 SDK:', error);
@@ -178,31 +145,7 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
       }
     };
 
-    // Helper function to load Izipay SDK
-    const loadIzipaySDK = (): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        if ((window as any).Izipay) {
-          resolve();
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = paymentConfig.mode === 'test' 
-          ? 'https://sandbox-checkout.izipay.pe/payments/v1/js/index.js'
-          : 'https://checkout.izipay.pe/payments/v1/js/index.js';
-        
-        script.onload = () => {
-          console.log('Izipay V1 SDK loaded successfully');
-          resolve();
-        };
-        
-        script.onerror = () => {
-          reject(new Error('Failed to load Izipay V1 SDK'));
-        };
-
-        document.head.appendChild(script);
-      });
-    };
+    // No longer needed - using KRGlue V4 SDK directly
 
     initializePaymentForm();
     
