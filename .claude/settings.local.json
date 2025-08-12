@@ -9,15 +9,61 @@
       "Bash(gh issue create:*)",
       "Bash(git push:*)",
       "Bash(python:*)",
-      "Bash(venvScriptspython init_db.py test)",
+      "Bash(venvScripts python init_db.py test)",
       "Bash(curl:*)",
       "Bash(git checkout:*)",
       "Bash(git rm:*)",
       "Bash(npm run build:*)",
       "Bash(npm ls:*)",
       "Bash(rm:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(where claude)",
+      "Bash(claude mcp:*)",
+      "Bash(mcp list-servers:*)",
+      "Bash(npx:*)",
+      "WebFetch(domain:developers.lyra.com)",
+      "Bash(claude config get)",
+      "mcp__embedded-react__fetch_Embedded_docs",
+      "mcp__popin-flask__fetch_PopIn_docs",
+      "mcp__embedded-react__search_Embedded_code"
     ],
     "deny": []
+  },
+  "mcpServers": {
+    "PopIn-Python-Flask": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/izipay-pe/PopIn-PaymentForm-Python-Flask"
+      ]
+    },
+    "Redirect-Python-Flask": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/izipay-pe/Redirect-PaymentForm-Python-Flask"
+      ]
+    },
+    "Embedded-React": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/izipay-pe/Embedded-PaymentForm-React"
+      ]
+    },
+    "Embedded-JS": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/izipay-pe/Embedded-PaymentForm-JavaScript"
+      ]
+    },
+    "Server-FormToken-JS": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://gitmcp.io/izipay-pe/Server-FormToken-Javascript"
+      ]
+    }
   }
 }

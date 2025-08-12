@@ -197,13 +197,21 @@ class IzipayService:
             return False
             
         # Calcular firma esperada usando clave HMAC-SHA-256 oficial
-        expected_signature = hmac.new(
-            self.config['hmac_key'].encode('utf-8'),
-            payload.encode('utf-8'),
-            hashlib.sha256
-        ).hexdigest()
-        
-        return hmac.compare_digest(expected_signature, signature)
+
+
+def checkHash(response, key):
+    """
+    Función oficial de Izipay para validar kr-hash.
+    
+    Según documentación repostiroio-izipay/Popin-PaymentForm-Python-Flask/app.py líneas 102-105
+    """
+    try:
+        answer = response['kr-answer'].encode('utf-8')
+        calculate_hash = hmac.new(key.encode('utf-8'), answer, hashlib.sha256).hexdigest()
+        return calculate_hash == response['kr-hash']
+    except Exception as e:
+        logger.error(f"Error in checkHash: {str(e)}")
+        return False
 
 
 # Initialize service
@@ -530,90 +538,70 @@ def payment_webhook():
     """
     POST /api/payments/webhook
     
-    Webhook actualizado para recibir notificaciones de Izipay con estructura actual.
-    Usa payloadHttp + signature (Base64 HMAC-SHA-256).
+    Webhook IPN oficial de Izipay según documentación repostiroio-izipay.
+    Usa kr-answer + kr-hash con HMAC-SHA-256 y clave IZIPAY_HMACSHA256.
     
-    Estructura esperada:
-    {
-        "payloadHttp": "{\"response\":{\"order\":[{...}]}}",
-        "signature": "Base64SignatureHMAC"
-    }
+    Estructura esperada según app.py líneas 82-99:
+    Form data:
+    - kr-answer: JSON string con detalles del pago
+    - kr-hash: HMAC-SHA-256 signature
     """
     try:
-        # Obtener el body completo
-        body = request.get_json(force=True, silent=True) or {}
+        # Validar que tenemos form data (no JSON)
+        if not request.form:
+            logger.warning("No form data received in webhook")
+            return jsonify({'error': 'No form data received'}), 400
         
-        # IPN trae 'payloadHttp' y 'signature' en el body (y a veces 'Signature' en header)
-        payload_http = body.get('payloadHttp', '')
-        signature = body.get('signature') or request.headers.get('Signature', '')
+        # Obtener kr-answer y kr-hash del form
+        kr_answer = request.form.get('kr-answer')
+        kr_hash = request.form.get('kr-hash')
         
-        logger.info(f"Webhook received - Has payloadHttp: {bool(payload_http)}, Has signature: {bool(signature)}")
+        logger.info(f"Webhook received - Has kr-answer: {bool(kr_answer)}, Has kr-hash: {bool(kr_hash)}")
         
-        if not payload_http or not signature:
-            logger.warning("Missing payloadHttp or signature in webhook")
-            return jsonify({'ok': False, 'error': 'missing_fields'}), 400
+        if not kr_answer or not kr_hash:
+            logger.warning("Missing kr-answer or kr-hash in webhook")
+            return jsonify({'error': 'Missing kr-answer or kr-hash'}), 400
         
-        # Verificar la firma usando HMAC-SHA-256 con la hash_key
-        hash_key = os.getenv('IZIPAY_HASH_KEY', '').encode('utf-8')
-        if not hash_key:
-            logger.error("IZIPAY_HASH_KEY not configured")
-            return jsonify({'ok': False, 'error': 'server_config_error'}), 500
+        # Validar firma usando checkHash según documentación oficial
+        if not checkHash(request.form, os.getenv('IZIPAY_HMACSHA256', '')):
+            logger.warning("Invalid signature in webhook")
+            return jsonify({'error': 'Invalid signature'}), 400
         
-        # Calcular la firma esperada
-        mac = hmac.new(hash_key, payload_http.encode('utf-8'), hashlib.sha256).digest()
-        expected_signature = base64.b64encode(mac).decode('utf-8')
-        
-        # Comparar firmas de forma segura
-        if not hmac.compare_digest(expected_signature, signature):
-            logger.warning(f"Invalid signature: expected={expected_signature[:20]}... got={signature[:20]}...")
-            return jsonify({'ok': False, 'error': 'invalid_signature'}), 400
-        
-        # Parsear el payload original (texto JSON dentro de payloadHttp)
+        # Parsear kr-answer JSON
         try:
-            original = json.loads(payload_http)
+            answer = json.loads(kr_answer)
         except Exception as e:
-            logger.error(f"Error parsing payloadHttp: {str(e)}")
-            return jsonify({'ok': False, 'error': 'invalid_payload'}), 400
+            logger.error(f"Error parsing kr-answer: {str(e)}")
+            return jsonify({'error': 'Invalid kr-answer JSON'}), 400
         
-        # Extraer información del pedido según estructura de Izipay
-        # La estructura puede variar, aquí los campos más comunes
-        response = original.get('response', {})
-        orders = response.get('order', [])
+        # Extraer datos según estructura oficial (app.py líneas 91-97)
+        transaction = answer.get('transactions', [{}])[0]
+        order_status = answer.get('orderStatus')  # PAID / UNPAID
+        order_details = answer.get('orderDetails', {})
+        order_id = order_details.get('orderId')
+        transaction_uuid = transaction.get('uuid')
         
-        if orders and len(orders) > 0:
-            order_data = orders[0]
-        else:
-            # Fallback para otras estructuras posibles
-            order_data = response
+        logger.info(f"Webhook data - OrderId: {order_id}, Status: {order_status}, UUID: {transaction_uuid}")
         
-        # Extraer campos relevantes
-        order_number = order_data.get('orderNumber') or order_data.get('orderId')
-        state_message = order_data.get('stateMessage') or order_data.get('status')
-        transaction_id = order_data.get('transactionId') or order_data.get('uuid')
-        amount = order_data.get('amount')
-        currency = order_data.get('currency')
-        
-        logger.info(f"Webhook data - Order: {order_number}, Status: {state_message}, Transaction: {transaction_id}")
-        
-        if not order_number:
-            logger.warning("No order number in webhook data")
-            return jsonify({'ok': True, 'warning': 'no_order_number'}), 200
+        if not order_id:
+            logger.warning("No orderId in webhook kr-answer")
+            return jsonify({'ok': True, 'message': 'No orderId found'}), 200
         
         # Buscar la orden en la base de datos
         order = Order.query.filter(
-            (Order.order_number == order_number) |
-            (Order.transaction_id == transaction_id)
+            (Order.order_number == order_id) |
+            (Order.transaction_id == transaction_uuid)
         ).first()
         
         if not order:
-            logger.warning(f"Order not found for webhook: {order_number}")
+            logger.warning(f"Order not found for webhook: {order_id}")
             # Retornar 200 para evitar reintentos de Izipay
             return jsonify({'ok': True, 'warning': 'order_not_found'}), 200
         
-        # Actualizar el estado del pedido según el mensaje de estado
-        state_lower = (state_message or '').lower()
+        # Actualizar el estado del pedido según orderStatus oficial
+        # orderStatus puede ser: PAID, UNPAID, CANCELLED, etc.
         
-        if 'paid' in state_lower or 'authorized' in state_lower or 'captured' in state_lower:
+        if order_status == 'PAID':
             if order.status != OrderStatus.PAID:
                 order.status = OrderStatus.PAID
                 order.paid_at = datetime.utcnow()
@@ -622,70 +610,60 @@ def payment_webhook():
                 # Guardar toda la información del webhook
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
-                    'webhook_confirmation': original,
+                    'webhook_confirmation': answer,
                     'webhook_received_at': datetime.utcnow().isoformat(),
-                    'transaction_id': transaction_id,
-                    'state_message': state_message
+                    'transaction_id': transaction_uuid,
+                    'order_status': order_status
                 })
                 order.payment_data = current_payment_data
                 
                 logger.info(f"Webhook confirmed payment for order {order.order_number}")
         
-        elif 'refused' in state_lower or 'failed' in state_lower or 'error' in state_lower:
+        elif order_status == 'UNPAID':
             if order.status == OrderStatus.PENDING:
                 order.status = OrderStatus.FAILED
                 
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
-                    'webhook_failure': original,
+                    'webhook_failure': answer,
                     'webhook_received_at': datetime.utcnow().isoformat(),
-                    'failure_reason': state_message
+                    'order_status': order_status
                 })
                 order.payment_data = current_payment_data
                 
                 logger.info(f"Webhook confirmed payment failure for order {order.order_number}")
         
-        elif 'cancelled' in state_lower or 'canceled' in state_lower:
+        elif order_status == 'CANCELLED':
             if order.status == OrderStatus.PENDING:
                 order.status = OrderStatus.CANCELLED
                 
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
-                    'webhook_cancellation': original,
-                    'webhook_received_at': datetime.utcnow().isoformat()
+                    'webhook_cancellation': answer,
+                    'webhook_received_at': datetime.utcnow().isoformat(),
+                    'order_status': order_status
                 })
                 order.payment_data = current_payment_data
                 
                 logger.info(f"Webhook confirmed cancellation for order {order.order_number}")
         
-        elif 'refunded' in state_lower:
-            order.status = OrderStatus.REFUNDED
-            
-            current_payment_data = order.payment_data or {}
-            current_payment_data.update({
-                'webhook_refund': original,
-                'webhook_received_at': datetime.utcnow().isoformat()
-            })
-            order.payment_data = current_payment_data
-            
-            logger.info(f"Webhook confirmed refund for order {order.order_number}")
-        
         else:
             # Estado no reconocido, guardar de todos modos
             current_payment_data = order.payment_data or {}
             current_payment_data.update({
-                'webhook_unknown': original,
+                'webhook_unknown': answer,
                 'webhook_received_at': datetime.utcnow().isoformat(),
-                'unknown_state': state_message
+                'unknown_status': order_status
             })
             order.payment_data = current_payment_data
             
-            logger.warning(f"Unknown payment state for order {order.order_number}: {state_message}")
+            logger.warning(f"Unknown payment status for order {order.order_number}: {order_status}")
         
         # Guardar cambios
         db.session.commit()
         
-        return jsonify({'ok': True}), 200
+        # Retorno según documentación oficial (app.py línea 99)
+        return f'OK! OrderStatus is {order_status}', 200
         
     except Exception as e:
         db.session.rollback()
