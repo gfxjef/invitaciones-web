@@ -57,31 +57,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-lg">g</span>
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">raphica</h1>
-            <p className="text-xs text-gray-600 -mt-1">EVENTOS</p>
-          </div>
-        </div>
-        
-        <div className="hidden md:flex items-center gap-8">
-          <a href="#inicio" className="text-gray-700 hover:text-purple-600 transition-colors">Inicio</a>
-          <a href="#precios" className="text-gray-700 hover:text-purple-600 transition-colors">Precios</a>
-          <a href="#proceso" className="text-gray-700 hover:text-purple-600 transition-colors">Proceso</a>
-          <a href="#testimonios" className="text-gray-700 hover:text-purple-600 transition-colors">Testimonios</a>
-          <a href="#cuenta" className="text-gray-700 hover:text-purple-600 transition-colors">Mi cuenta</a>
-          <div className="flex items-center gap-1 text-gray-700">
-            <ShoppingCart className="w-4 h-4" />
-            <span className="text-red-500 font-medium">S/ 0.00</span>
-          </div>
-          <span className="text-sm text-gray-600">en</span>
-        </div>
-      </nav>
 
       {/* Hero Section */}
       <section id="inicio" className="px-6 py-16 max-w-7xl mx-auto">
@@ -703,7 +678,7 @@ export default function Home() {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-gray-800">¿Quiénes somos?</h3>
               <p className="text-gray-600 leading-relaxed">
-                Somos Graphica Digital Projects, una <strong>agencia de Desarrollo Web con más de 8 años de experiencia</strong> liderando proyectos en diferentes países de Latinoamérica y Norteamérica. Tenemos experiencia en diferentes sectores.
+                Somos AmiraGift, una <strong>agencia especializada en invitaciones digitales con más de 8 años de experiencia</strong> liderando proyectos en diferentes países de Latinoamérica y Norteamérica. Tenemos experiencia en diferentes sectores.
               </p>
               <a href="#" className="text-purple-600 hover:text-purple-700 transition-colors font-medium">
                 Políticas de Privacidad
@@ -762,7 +737,7 @@ export default function Home() {
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
                   </svg>
-                  <span className="text-gray-700 font-medium">s@graphica.pe</span>
+                  <span className="text-gray-700 font-medium">info@amiragift.com</span>
                 </div>
               </div>
 
@@ -781,7 +756,7 @@ export default function Home() {
           {/* Bottom Copyright */}
           <div className="border-t border-gray-300 mt-12 pt-8 text-center">
             <p className="text-gray-600">
-              © 2024 Graphica Eventos. Todos los derechos reservados.
+              © 2024 AmiraGift. Todos los derechos reservados.
             </p>
           </div>
         </div>

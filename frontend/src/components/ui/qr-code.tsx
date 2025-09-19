@@ -311,3 +311,6 @@ export function QRCodeModal({
     </div>
   );
 }
+
+// Export QRCode as an alias to QRCodeDisplay for compatibility
+export const QRCode = QRCodeDisplay;

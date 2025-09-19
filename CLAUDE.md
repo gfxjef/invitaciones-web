@@ -4,47 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack digital wedding invitation platform with two main service tiers (Standard and Exclusive plans). The architecture consists of a Flask backend API and a Next.js frontend.
-
-### Business Model
-- **Standard Plan (S/ 290)**: Pre-designed templates, basic features
-- **Exclusive Plan (S/ 690)**: Custom designs, personalized invitations, advanced features
-
-## Technology Stack
-
-### Backend (Flask)
-- **Framework**: Flask with SQLAlchemy ORM
-- **Database**: MySQL (configured for production PostgreSQL)
-- **Authentication**: Flask-JWT-Extended with access/refresh token pattern
-- **Payment Integration**: Izipay payment gateway
-- **Extensions**: Flask-CORS, Flask-Migrate, Flask-Marshmallow
-
-### Frontend (Next.js)
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with Shadcn/ui components
-- **State Management**: Zustand + React Query
-- **Payment UI**: Lyracom Embedded Form Glue for Izipay integration
+Digital wedding invitation platform with Flask backend and Next.js frontend, offering Standard (S/ 290) and Exclusive (S/ 690) service tiers with pre-designed templates and custom designs respectively.
 
 ## Development Commands
 
-### Backend Commands
+### Backend
 ```bash
-# Navigate to backend
 cd backend
-
-# Virtual environment setup
 python -m venv venv
-# Windows: venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
 
-# Database initialization
-python init_db.py
+# Database setup
+python init_db.py  # Creates tables and admin user
 
-# Run development server
+# Run server
 python app.py
 # Or with environment variables:
 FLASK_DEBUG=true FLASK_PORT=5000 python app.py
@@ -53,86 +31,62 @@ FLASK_DEBUG=true FLASK_PORT=5000 python app.py
 flask db init
 flask db migrate -m "Description"
 flask db upgrade
+
+# Run tests
+python test_api.py  # Quick API verification
+python test_complete.py  # Full system test
+python test_invitation_editor.py  # Editor endpoints test
 ```
 
-### Frontend Commands
+### Frontend
 ```bash
-# Navigate to frontend
 cd frontend
-
-# Install dependencies
 npm install
-
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Linting
-npm run lint
+npm run dev  # Development server
+npm run build  # Production build
+npm start  # Production server
+npm run lint  # Linting
 ```
 
-## Core Architecture Patterns
+## Architecture
 
-### Backend Architecture
-- **Centralized Extensions**: All Flask extensions initialized in `extensions.py` to avoid circular imports
-- **Blueprint Organization**: API endpoints organized by feature in `/api` directory
-- **Model Structure**: SQLAlchemy models in `/models` with relationship mappings
-- **JWT Pattern**: Access tokens (15min) + refresh tokens (7 days) with automatic rotation
+### Backend
+- **Extensions Management**: All Flask extensions initialized in `backend/extensions.py` to prevent circular imports
+- **API Organization**: Blueprint-based endpoints in `backend/api/` directory (auth, payments, orders, invitations, cart, coupons, invitation_editor)
+- **Models**: SQLAlchemy models in `backend/models/` with relationships (User, Order, Invitation, Template, InvitationData, InvitationMedia, InvitationEvent)
+- **Authentication**: JWT with access (15min) and refresh (7 days) tokens using Flask-JWT-Extended
+- **File Storage**: FTP integration via `backend/utils/ftp_manager.py` for media uploads to kossomet.com
+- **Payment Gateway**: Izipay integration in `backend/api/payments.py` with webhook handling
 
-### Frontend Architecture
-- **API Client**: Centralized axios instance in `lib/api.ts` with interceptors for auth token management
-- **Store Pattern**: Zustand for client state, React Query for server state
-- **Component Structure**: 
-  - `/components/ui`: Reusable UI components (Shadcn/ui based)
-  - `/components/auth`: Authentication-related components
-  - `/components/admin`: Admin panel components
-- **Route Organization**: App Router with nested layouts and protected routes
+### Frontend
+- **API Client**: Centralized axios instance in `frontend/src/lib/api.ts` with automatic token refresh interceptors
+- **State Management**: Zustand for client state (`frontend/src/store/`), React Query for server state
+- **Component Organization**:
+  - `frontend/src/components/ui/`: Reusable Shadcn/ui components
+  - `frontend/src/components/editor/`: Invitation editor with auto-save and validation
+  - `frontend/src/components/auth/`: Authentication components
+  - `frontend/src/components/admin/`: Admin panel
+- **Custom Hooks** (`frontend/src/lib/hooks/`):
+  - `useInvitationEditor`: Main editor state with validation
+  - `useAutoSave`: Debounced auto-saving with retry logic
+  - `useFileUpload`: File uploads with progress tracking
+  - `useAuth`: Authentication state management
+- **Performance**: Extensive use of `useMemo` and `useCallback` to prevent render loops in editor components
 
 ### Authentication Flow
-1. Login returns access_token + refresh_token
-2. API client automatically adds Authorization header
-3. On 401 response, automatically attempts token refresh
-4. On refresh failure, redirects to login and clears storage
+1. Login endpoint returns `access_token` and `refresh_token`
+2. API client adds `Authorization: Bearer {token}` header automatically
+3. On 401 response, interceptor attempts token refresh
+4. On refresh failure, redirects to login
 
 ### Payment Integration (Izipay)
-- **Backend**: Creates payment tokens via Izipay API in `/api/payments.py`
-- **Frontend**: Uses `@lyracom/embedded-form-glue` for secure payment forms
-- **Flow**: Cart → Order → Payment Token → Izipay Checkout → Webhook → Order Status Update
+- Backend creates payment tokens via Izipay API
+- Frontend uses `@lyracom/embedded-form-glue` for secure payment forms
+- Webhook endpoint at `/api/payments/webhook` for status updates
+- Fallback redirect flow at `frontend/src/app/izipay/retorno/page.tsx`
 
-## Key File Locations
+## Environment Variables
 
-### Configuration
-- `backend/.env`: Environment variables (database, API keys, JWT secret)
-- `backend/app.py`: Main Flask application factory
-- `backend/extensions.py`: Centralized extension configuration
-- `frontend/src/lib/api.ts`: API client and type definitions
-
-### Models & Database
-- `backend/models/`: SQLAlchemy models for all entities
-- `backend/migrations/`: Database migration files
-- Key models: User, Order, Invitation, Template, Coupon, InvitationURL
-
-### API Endpoints
-- `backend/api/auth.py`: Authentication (login, register, profile)
-- `backend/api/payments.py`: Izipay payment integration
-- `backend/api/orders.py`: Order management
-- `backend/api/invitations.py`: Invitation CRUD operations
-- `backend/api/cart.py`: Shopping cart functionality
-- `backend/api/coupons.py`: Discount coupon system
-
-### Frontend Pages
-- `frontend/src/app/`: Next.js App Router pages
-- Key pages: `/checkout`, `/mi-cuenta`, `/plantillas`, `/invitacion/[id]`
-- `frontend/src/components/ui/izipay-checkout.tsx`: Payment form component
-
-## Environment Setup
-
-### Required Environment Variables
 ```bash
 # Database
 DB_HOST=localhost
@@ -145,75 +99,115 @@ DB_PORT=3306
 SECRET_KEY=your-secret-key
 JWT_SECRET=your-jwt-secret
 
-# Payment Gateway
-IZIPAY_API_KEY=your-izipay-key
+# Payment
+IZIPAY_USERNAME=your-username
+IZIPAY_PASSWORD=your-password
 IZIPAY_PUBLIC_KEY=your-public-key
-IZIPAY_MERCHANT_CODE=your-merchant-code
+IZIPAY_HMACSHA256=your-hmac-key
+IZIPAY_MODE=SANDBOX
+
+# FTP (Media uploads)
+FTP_HOST=ftp.kossomet.com
+FTP_USER=marketing@kossomet.com
+FTP_PASS=your-password
 
 # CORS
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 
-# Admin User
+# Admin
 ADMIN_EMAIL=admin@invitaciones.com
 ADMIN_PASSWORD=admin123
 ```
 
-### Development Database Setup
-1. Create MySQL database: `invitaciones_web`
-2. Run `python backend/init_db.py` to create tables and admin user
-3. Database will auto-create on first Flask run if properly configured
+## Key Files
 
-## Testing & Quality
+### Configuration
+- `backend/.env`: Environment variables
+- `backend/app.py`: Flask application factory
+- `backend/extensions.py`: Centralized extension initialization
+- `frontend/src/lib/api.ts`: API client and TypeScript types
 
-### Backend Testing
-- Test file: `backend/test_api.py`
-- Run tests: `python -m pytest test_api.py -v`
+### Database & Models
+- `backend/models/`: SQLAlchemy models
+- `backend/migrations/`: Alembic migration files
+- `backend/init_db.py`: Database initialization script
+
+### API Endpoints
+- `backend/api/auth.py`: Authentication (login, register, refresh, profile)
+- `backend/api/payments.py`: Izipay payment processing
+- `backend/api/orders.py`: Order management
+- `backend/api/invitations.py`: Invitation CRUD
+- `backend/api/invitation_editor.py`: 15+ editor endpoints (data, media, events, publishing)
+- `backend/api/cart.py`: Shopping cart
+- `backend/api/coupons.py`: Discount system
+
+### Frontend Pages
+- `frontend/src/app/`: Next.js App Router pages
+- `frontend/src/app/invitacion/[id]/edit/`: Invitation editor
+- `frontend/src/app/checkout/`: Payment flow
+- `frontend/src/app/mi-cuenta/`: User dashboard
+
+### Invitation Editor Components
+- `frontend/src/components/editor/InvitationEditor.tsx`: Main editor orchestrator
+- `frontend/src/components/editor/upload/`: File upload components
+- `frontend/src/components/editor/gallery/`: Image gallery management
+- `frontend/src/components/editor/schedule/`: Event timeline management
+
+## Testing
+
+### Backend Tests
+- `test_api.py`: Core API functionality
+- `test_invitation_editor.py`: Editor endpoints
+- `test_ftp_system.py`: FTP integration
+- `test_complete.py`: End-to-end testing
+- Run: `python test_api.py` or `python -m pytest test_api.py -v`
 
 ### Frontend TypeScript
-- Strict TypeScript configuration in `tsconfig.json`
+- Strict mode enabled in `tsconfig.json`
 - Type definitions in `frontend/src/types/`
-- API types defined in `frontend/src/lib/api.ts`
+- API types in `frontend/src/lib/api.ts`
 
-## Common Development Tasks
+## Common Workflows
 
-### Adding New API Endpoints
+### Adding API Endpoints
 1. Create/update model in `backend/models/`
-2. Add API routes in appropriate `backend/api/` file
-3. Update frontend types in `frontend/src/lib/api.ts`
-4. Add API methods to relevant API object (e.g., `ordersApi`, `authApi`)
+2. Add route in `backend/api/{feature}.py`
+3. Update types in `frontend/src/lib/api.ts`
+4. Add method to appropriate API object
 
 ### Database Changes
 1. Modify model in `backend/models/`
 2. Run `flask db migrate -m "Description"`
-3. Review generated migration in `backend/migrations/versions/`
+3. Review migration in `backend/migrations/versions/`
 4. Run `flask db upgrade`
 
-### Payment Flow Debugging
-- Backend logs payment requests in `/api/payments.py`
-- Frontend payment component in `components/ui/izipay-checkout.tsx`
-- Check Izipay dashboard for transaction status
-- Webhook endpoint: `/api/payments/webhook` (configured in Izipay dashboard)
+### Invitation Editor Workflow
+1. User navigates to `/invitacion/[id]/edit`
+2. Editor loads with auto-save and validation
+3. Components use memoization to prevent re-renders
+4. File uploads go through FTP to kossomet.com
+5. Data validation per-section and overall
+6. Publishing validates completeness
 
-## Known Issues & Workarounds
+## Known Issues & Solutions
 
-### CORS Configuration
-- Backend CORS configured for `http://localhost:3000` by default
-- Update `CORS_ORIGIN` in `.env` for different frontend URLs
-- Supports credentials for cookie-based auth if needed
+### CORS
+- Frontend may run on port 3001 if 3000 is occupied
+- Update `CORS_ORIGIN` in `.env` accordingly
+- Supports multiple origins: `http://localhost:3000,http://localhost:3001`
 
-### JWT Token Management
+### JWT Tokens
 - Access tokens expire in 15 minutes
-- Refresh happens automatically via API interceptors
-- Manual refresh available via `authStore.refreshTokens()`
+- Automatic refresh via API interceptors
+- Manual refresh: `authStore.refreshTokens()`
+
+### React Performance
+- Use `useMemo` for expensive calculations
+- Use `useCallback` for editor functions
+- Handle file upload progress/errors properly
+- Check session persistence between page navigations
 
 ### Payment Integration
 - Izipay requires specific public key format
-- V4 SDK used for embedded forms
-- Redirect flow available as fallback in `frontend/src/app/izipay/retorno/page.tsx`
-
-## Support & Documentation
-
-- **Izipay Integration**: MCP servers available for `izipay-pe` repositories
-- **Database Migrations**: Flask-Migrate documentation
-- **Frontend Components**: Shadcn/ui documentation
-- **Payment Testing**: Use Izipay sandbox credentials and test cards
+- Use sandbox credentials for testing
+- Check webhook logs for payment status issues

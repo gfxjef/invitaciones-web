@@ -34,12 +34,31 @@ class Invitation(db.Model):
     
     # URLs y configuración
     unique_url = db.Column(db.String(100), unique=True, nullable=False)
+    custom_url = db.Column(
+        db.String(100), 
+        unique=True,
+        nullable=True,
+        comment="Custom URL slug for invitation (user-defined)"
+    )
     template_name = db.Column(db.String(100))
     custom_colors = db.Column(db.JSON)
+    
+    # Privacy and security
+    privacy_password = db.Column(
+        db.String(100),
+        nullable=True,
+        comment="Password protection for private invitations"
+    )
     
     # Estados
     is_active = db.Column(db.Boolean, default=True)
     is_published = db.Column(db.Boolean, default=False)
+    status = db.Column(
+        db.Enum('draft', 'published', 'archived', name='invitation_status_enum'),
+        default='draft',
+        nullable=False,
+        comment="Invitation status: draft, published, archived"
+    )
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -55,6 +74,77 @@ class Invitation(db.Model):
         if not self.unique_url:
             self.unique_url = str(uuid.uuid4())[:8]
     
+    def publish(self):
+        """
+        Publish the invitation and update status.
+        
+        WHY: Centralizes publish logic with proper timestamp tracking
+        and status synchronization between old and new status fields.
+        """
+        self.status = 'published'
+        self.is_published = True
+        self.published_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+    
+    def archive(self):
+        """
+        Archive the invitation.
+        
+        WHY: Provides clean way to archive invitations while preserving
+        data for historical reference and analytics.
+        """
+        self.status = 'archived'
+        self.is_active = False
+        self.updated_at = datetime.utcnow()
+    
+    def set_privacy_password(self, password: str):
+        """
+        Set password protection for invitation.
+        
+        Args:
+            password: Plain text password to hash and store
+            
+        WHY: Enables private invitations with password protection.
+        Hashes password for security.
+        """
+        from werkzeug.security import generate_password_hash
+        self.privacy_password = generate_password_hash(password)
+        self.updated_at = datetime.utcnow()
+    
+    def check_privacy_password(self, password: str) -> bool:
+        """
+        Check if provided password matches stored password.
+        
+        Args:
+            password: Plain text password to verify
+            
+        Returns:
+            True if password matches
+            
+        WHY: Enables password verification for private invitation access.
+        """
+        if not self.privacy_password:
+            return True  # No password protection
+        
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.privacy_password, password)
+    
+    def is_password_protected(self) -> bool:
+        """Check if invitation has password protection."""
+        return bool(self.privacy_password)
+    
+    def get_url_slug(self) -> str:
+        """
+        Get the URL slug for this invitation.
+        
+        Returns:
+            Custom URL if set, otherwise unique URL
+            
+        WHY: Provides consistent URL generation with preference for
+        custom URLs when available.
+        """
+        return self.custom_url or self.unique_url
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -68,8 +158,13 @@ class Invitation(db.Model):
             'reception_address': self.reception_address,
             'main_photo_url': self.main_photo_url,
             'unique_url': self.unique_url,
+            'custom_url': self.custom_url,
             'is_published': self.is_published,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'status': self.status,
+            'is_password_protected': self.is_password_protected(),
+            'url_slug': self.get_url_slug(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'published_at': self.published_at.isoformat() if self.published_at else None
         }
 
 

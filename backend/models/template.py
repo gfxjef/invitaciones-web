@@ -18,7 +18,11 @@ class Template(db.Model):
     # Configuración
     supported_features = db.Column(db.JSON)  # Lista de características soportadas
     default_colors = db.Column(db.JSON)  # Paleta de colores por defecto
-    
+
+    # Sistema modular de secciones
+    template_type = db.Column(db.String(20), default='legacy')  # 'legacy' or 'modular'
+    sections_config = db.Column(db.JSON)  # Configuración de secciones para templates modulares
+
     # Plan asociado
     plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'))
     
@@ -43,7 +47,7 @@ class Template(db.Model):
         self.is_active = False
     
     def to_dict(self):
-        """WHY: Serializes template data for API responses, including 
+        """WHY: Serializes template data for API responses, including
         all relevant fields for frontend consumption including plan pricing"""
         data = {
             'id': self.id,
@@ -52,11 +56,14 @@ class Template(db.Model):
             'category': self.category,
             'preview_image_url': self.preview_image_url,
             'thumbnail_url': self.thumbnail_url,
+            'template_file': self.template_file,  # Added missing template_file field
             'is_premium': self.is_premium,
             'is_active': self.is_active,
             'display_order': self.display_order,
             'supported_features': self.supported_features,
             'default_colors': self.default_colors,
+            'template_type': self.template_type,  # New field for modular system
+            'sections_config': self.sections_config,  # New field for modular sections
             'plan_id': self.plan_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

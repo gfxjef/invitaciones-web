@@ -21,5 +21,9 @@ marshmallow-sqlalchemy>=0.29.0
 # Payment Gateway
 requests>=2.31.0
 
+# File Processing & Storage
+Pillow>=10.1.0
+ftplib3>=0.8.0
+
 # Production
 gunicorn>=21.2.0

@@ -10,6 +10,10 @@
  */
 
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import { InvitationMedia, InvitationEvent } from '@/types/invitation';
+
+// Re-export types for component usage
+export type { InvitationEvent, InvitationMedia } from '@/types/invitation';
 
 // Base configuration
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -1030,6 +1034,322 @@ export const invitationUrlsApi = {
    */
   getUserPlan: async (): Promise<UserPlan> => {
     const response = await apiClient.get('/user/plan');
+    return response.data;
+  },
+};
+
+// Preview and Public URL types
+export interface PreviewData {
+  invitation: Invitation;
+  custom_data: Record<string, any>;
+  media: Record<string, InvitationMedia[]>;
+  events: InvitationEvent[];
+  preview_url: string;
+  generated_at: string;
+}
+
+export interface PublicURLRequest {
+  invitation_id: number;
+  custom_slug?: string;
+  title: string;
+  description?: string;
+  enable_seo?: boolean;
+  enable_analytics?: boolean;
+  password_protected?: boolean;
+  password?: string;
+}
+
+export interface PublicURLResponse {
+  success: boolean;
+  public_url: string;
+  full_url: string;
+  seo_preview: {
+    title: string;
+    description: string;
+    og_image: string;
+    twitter_card: string;
+  };
+  analytics_enabled: boolean;
+}
+
+export interface URLAnalytics {
+  url: string;
+  total_visits: number;
+  unique_visitors: number;
+  daily_visits: Array<{
+    date: string;
+    visits: number;
+    unique_visits: number;
+  }>;
+  referrer_stats: Record<string, number>;
+  device_stats: {
+    mobile: number;
+    tablet: number;
+    desktop: number;
+  };
+  location_stats: Record<string, number>;
+  social_shares: Record<string, number>;
+}
+
+export interface StaticGenerationRequest {
+  invitation_id: number;
+  force_regenerate?: boolean;
+  optimize_images?: boolean;
+  include_analytics?: boolean;
+}
+
+export interface StaticGenerationResponse {
+  success: boolean;
+  static_url: string;
+  cdn_url: string;
+  assets: {
+    html: string;
+    css: string[];
+    js: string[];
+    images: string[];
+  };
+  cache_duration: number;
+  expires_at: string;
+}
+
+// API Methods - Preview System
+export const previewApi = {
+  /**
+   * Get invitation preview data for template rendering
+   */
+  getPreviewData: async (invitationId: number): Promise<PreviewData> => {
+    const response = await apiClient.get(`/invitation-editor/${invitationId}/preview`);
+    return response.data;
+  },
+
+  /**
+   * Generate static preview for social sharing
+   */
+  generateStaticPreview: async (invitationId: number, options?: {
+    device?: 'mobile' | 'tablet' | 'desktop';
+    format?: 'png' | 'jpg' | 'webp';
+    width?: number;
+    height?: number;
+  }): Promise<{ image_url: string; expires_at: string }> => {
+    const response = await apiClient.post(`/invitation-editor/${invitationId}/preview/static`, options);
+    return response.data;
+  },
+
+  /**
+   * Validate invitation data for preview generation
+   */
+  validatePreviewData: async (invitationId: number): Promise<{
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    completeness: number;
+  }> => {
+    const response = await apiClient.get(`/invitation-editor/${invitationId}/preview/validate`);
+    return response.data;
+  },
+
+  /**
+   * Get preview templates and styles
+   */
+  getPreviewTemplates: async (): Promise<{
+    templates: Record<string, any>;
+    styles: Record<string, string>;
+    fonts: string[];
+  }> => {
+    const response = await apiClient.get('/preview/templates');
+    return response.data;
+  },
+};
+
+// API Methods - Public URL Management
+export const publicUrlApi = {
+  /**
+   * Generate public URL for invitation
+   */
+  generatePublicURL: async (data: PublicURLRequest): Promise<PublicURLResponse> => {
+    const response = await apiClient.post('/public-urls/generate', data);
+    return response.data;
+  },
+
+  /**
+   * Check custom slug availability
+   */
+  checkSlugAvailability: async (slug: string, excludeInvitationId?: number): Promise<{
+    available: boolean;
+    message: string;
+    suggestions?: string[];
+  }> => {
+    const response = await apiClient.get(`/public-urls/check-slug/${slug}`, {
+      params: { exclude_id: excludeInvitationId }
+    });
+    return response.data;
+  },
+
+  /**
+   * Update public URL settings
+   */
+  updatePublicURL: async (invitationId: number, updates: Partial<PublicURLRequest>): Promise<PublicURLResponse> => {
+    const response = await apiClient.put(`/public-urls/${invitationId}`, updates);
+    return response.data;
+  },
+
+  /**
+   * Delete public URL (unpublish)
+   */
+  deletePublicURL: async (invitationId: number): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.delete(`/public-urls/${invitationId}`);
+    return response.data;
+  },
+
+  /**
+   * Get public URL analytics
+   */
+  getURLAnalytics: async (invitationId: number, dateRange?: {
+    start_date: string;
+    end_date: string;
+  }): Promise<URLAnalytics> => {
+    const response = await apiClient.get(`/public-urls/${invitationId}/analytics`, {
+      params: dateRange
+    });
+    return response.data;
+  },
+
+  /**
+   * Generate QR code for public URL
+   */
+  generateQRCode: async (invitationId: number, options?: {
+    size?: number;
+    format?: 'png' | 'svg';
+    error_correction?: 'L' | 'M' | 'Q' | 'H';
+  }): Promise<{ qr_code_url: string; download_url: string }> => {
+    const response = await apiClient.post(`/public-urls/${invitationId}/qr-code`, options);
+    return response.data;
+  },
+};
+
+// API Methods - Static Generation
+export const staticGenerationApi = {
+  /**
+   * Generate static files for invitation
+   */
+  generateStaticFiles: async (data: StaticGenerationRequest): Promise<StaticGenerationResponse> => {
+    const response = await apiClient.post('/static-generation/generate', data);
+    return response.data;
+  },
+
+  /**
+   * Get static file status
+   */
+  getStaticStatus: async (invitationId: number): Promise<{
+    has_static: boolean;
+    last_generated: string;
+    static_url: string;
+    cdn_url: string;
+    expires_at: string;
+  }> => {
+    const response = await apiClient.get(`/static-generation/status/${invitationId}`);
+    return response.data;
+  },
+
+  /**
+   * Invalidate static cache
+   */
+  invalidateStaticCache: async (invitationId: number): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.delete(`/static-generation/cache/${invitationId}`);
+    return response.data;
+  },
+
+  /**
+   * Upload to CDN/FTP
+   */
+  uploadToFTP: async (invitationId: number, files: {
+    html: string;
+    assets: string[];
+  }): Promise<{
+    success: boolean;
+    ftp_url: string;
+    uploaded_files: string[];
+  }> => {
+    const response = await apiClient.post(`/static-generation/upload/${invitationId}`, files);
+    return response.data;
+  },
+};
+
+// API Methods - Social Sharing
+export const socialSharingApi = {
+  /**
+   * Generate social media preview
+   */
+  generateSocialPreview: async (invitationId: number, platform: 'facebook' | 'twitter' | 'whatsapp' | 'instagram'): Promise<{
+    preview_url: string;
+    title: string;
+    description: string;
+    image_url: string;
+    share_url: string;
+  }> => {
+    const response = await apiClient.post(`/social-sharing/${invitationId}/preview`, { platform });
+    return response.data;
+  },
+
+  /**
+   * Track social share
+   */
+  trackSocialShare: async (invitationId: number, platform: string, metadata?: Record<string, any>): Promise<void> => {
+    await apiClient.post(`/social-sharing/${invitationId}/track`, { platform, metadata });
+  },
+
+  /**
+   * Get sharing statistics
+   */
+  getSharingStats: async (invitationId: number): Promise<{
+    total_shares: number;
+    platform_breakdown: Record<string, number>;
+    conversion_rate: number;
+    viral_coefficient: number;
+  }> => {
+    const response = await apiClient.get(`/social-sharing/${invitationId}/stats`);
+    return response.data;
+  },
+};
+
+// API Methods - Export and Print
+export const exportApi = {
+  /**
+   * Export invitation as PDF
+   */
+  exportToPDF: async (invitationId: number, options?: {
+    format?: 'A4' | 'letter' | 'A5' | 'custom';
+    orientation?: 'portrait' | 'landscape';
+    quality?: 'high' | 'medium' | 'low';
+    include_rsvp?: boolean;
+  }): Promise<{ pdf_url: string; download_url: string; expires_at: string }> => {
+    const response = await apiClient.post(`/export/${invitationId}/pdf`, options);
+    return response.data;
+  },
+
+  /**
+   * Export invitation as image
+   */
+  exportToImage: async (invitationId: number, options?: {
+    format?: 'png' | 'jpg' | 'webp';
+    width?: number;
+    height?: number;
+    quality?: number;
+    device?: 'mobile' | 'tablet' | 'desktop';
+  }): Promise<{ image_url: string; download_url: string; expires_at: string }> => {
+    const response = await apiClient.post(`/export/${invitationId}/image`, options);
+    return response.data;
+  },
+
+  /**
+   * Get print-optimized HTML
+   */
+  getPrintHTML: async (invitationId: number, options?: {
+    include_styles?: boolean;
+    optimize_fonts?: boolean;
+    high_resolution?: boolean;
+  }): Promise<{ html: string; css: string; fonts: string[] }> => {
+    const response = await apiClient.get(`/export/${invitationId}/print-html`, { params: options });
     return response.data;
   },
 };

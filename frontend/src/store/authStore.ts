@@ -84,6 +84,8 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('auth_token', response.access_token);
           localStorage.setItem('refresh_token', response.refresh_token);
           localStorage.setItem('user_data', JSON.stringify(response.user));
+          localStorage.setItem('last_login_time', Date.now().toString());
+          localStorage.setItem('last_session_check', Date.now().toString());
         }
       }),
 
@@ -100,6 +102,8 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('auth_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user_data');
+          localStorage.removeItem('last_login_time');
+          localStorage.removeItem('last_session_check');
           
           // Redirect to login if requested
           if (redirect) {
@@ -129,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('auth_token', accessToken);
           localStorage.setItem('refresh_token', refreshToken);
           localStorage.setItem('last_login_time', Date.now().toString());
+          localStorage.setItem('last_session_check', Date.now().toString());
         }
       }),
 
@@ -174,18 +179,17 @@ export const useAuthStore = create<AuthState>()(
 
               // Skip verification if we just logged in (token is fresh)
               const lastLogin = localStorage.getItem('last_login_time');
-              const isRecentLogin = lastLogin && (Date.now() - parseInt(lastLogin)) < 30000; // 30 seconds
+              const isRecentLogin = lastLogin && (Date.now() - parseInt(lastLogin)) < 120000; // 2 minutes instead of 30 seconds
               
               if (!isRecentLogin) {
-                // Only verify session if it's not a recent login
-                const isValid = await state.verifySession();
-                if (!isValid) {
-                  // Try to refresh tokens
+                // Only verify session if token is close to expiring or expired
+                if (state.isTokenExpired() || state.shouldRefreshToken()) {
                   const refreshed = await state.refreshTokens();
                   if (!refreshed) {
                     state.logout(false);
                   }
                 }
+                // Don't call verifySession here - it's too aggressive and causes logouts
               }
             }
           }
@@ -340,9 +344,9 @@ export const useAuthTokens = () => useAuthStore(state => ({
   accessToken: state.accessToken,
   refreshToken: state.refreshToken,
   expiresAt: state.expiresAt,
-  isTokenExpired: state.isTokenExpired(),
-  shouldRefreshToken: state.shouldRefreshToken(),
-  getAuthHeaders: state.getAuthHeaders(),
+  isTokenExpired: state.isTokenExpired,
+  shouldRefreshToken: state.shouldRefreshToken,
+  getAuthHeaders: state.getAuthHeaders,
 }));
 
 export const useUser = () => useAuthStore(state => state.user);

@@ -75,11 +75,11 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">g</span>
+              <span className="text-white font-bold text-lg">A</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">raphica</h1>
-              <p className="text-xs text-gray-600 -mt-1">EVENTOS</p>
+              <h1 className="text-xl font-bold text-gray-800">AmiraGift</h1>
+              <p className="text-xs text-gray-600 -mt-1">INVITACIONES DIGITALES</p>
             </div>
           </Link>
 

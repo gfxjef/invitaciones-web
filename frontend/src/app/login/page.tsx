@@ -94,11 +94,11 @@ export default function LoginPage() {
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-xl">g</span>
+              <span className="text-white font-bold text-xl">A</span>
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-gray-800">raphica</h1>
-              <p className="text-sm text-gray-600 -mt-1">EVENTOS</p>
+              <h1 className="text-2xl font-bold text-gray-800">AmiraGift</h1>
+              <p className="text-sm text-gray-600 -mt-1">INVITACIONES DIGITALES</p>
             </div>
           </Link>
           

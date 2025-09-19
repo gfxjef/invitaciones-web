@@ -22,6 +22,8 @@ class TemplateCreateSchema(Schema):
     template_file = fields.Str(validate=validate.Length(max=200))
     supported_features = fields.List(fields.Str())
     default_colors = fields.Dict()
+    template_type = fields.Str(validate=validate.OneOf(['legacy', 'modular']))
+    sections_config = fields.Dict()
     plan_id = fields.Int(allow_none=True)
     is_premium = fields.Bool()
     display_order = fields.Int()
@@ -38,6 +40,8 @@ class TemplateUpdateSchema(Schema):
     template_file = fields.Str(validate=validate.Length(max=200))
     supported_features = fields.List(fields.Str())
     default_colors = fields.Dict()
+    template_type = fields.Str(validate=validate.OneOf(['legacy', 'modular']))
+    sections_config = fields.Dict()
     plan_id = fields.Int(allow_none=True)
     is_premium = fields.Bool()
     is_active = fields.Bool()
@@ -52,11 +56,14 @@ class TemplateResponseSchema(Schema):
     category = fields.Str()
     preview_image_url = fields.Str()
     thumbnail_url = fields.Str()
+    template_file = fields.Str()  # Added missing template_file field
     is_premium = fields.Bool()
     is_active = fields.Bool()
     display_order = fields.Int()
     supported_features = fields.List(fields.Raw())
     default_colors = fields.Dict()
+    template_type = fields.Str()  # New field for modular system
+    sections_config = fields.Dict()  # New field for modular sections
     plan_id = fields.Int()
     plan = fields.Dict()
     price = fields.Float()
@@ -252,6 +259,8 @@ def create_template():
             template_file=data.get('template_file'),
             supported_features=data.get('supported_features', []),
             default_colors=data.get('default_colors', {}),
+            template_type=data.get('template_type', 'legacy'),
+            sections_config=data.get('sections_config'),
             plan_id=data.get('plan_id'),
             is_premium=data.get('is_premium', False),
             display_order=data.get('display_order', 0)

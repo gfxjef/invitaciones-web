@@ -43,7 +43,7 @@ import toast from 'react-hot-toast';
 // Mock invitation data - in real app, this would come from API
 const mockInvitation = {
   id: 1,
-  name: 'Boda María & Carlos',
+  name: 'Boda Jefferson & Rosmery',
   event_type: 'boda',
   event_date: '2024-09-15T18:00:00Z',
   url_slug: 'maria-carlos-2024',

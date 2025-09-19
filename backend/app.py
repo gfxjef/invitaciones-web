@@ -30,6 +30,10 @@ def create_app(config_name=None):
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # File Upload Configuration
+    app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'uploads'))
+    app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
+    
     # JWT Configuration - WHY: Enhanced JWT config with proper error handling
     jwt_secret = os.getenv('JWT_SECRET')
     if not jwt_secret:
@@ -104,7 +108,7 @@ def create_app(config_name=None):
     with app.app_context():
         try:
             # Import all models - all exist now after recovery
-            from models import User, Plan, Template, Invitation, Order, OrderItem, OrderStatus, Cart, CartItem, Coupon, CouponUsage, InvitationURL, Claim, Testimonial
+            from models import User, Plan, Template, Invitation, Order, OrderItem, OrderStatus, Cart, CartItem, Coupon, CouponUsage, InvitationURL, Claim, Testimonial, InvitationData, InvitationMedia, InvitationEvent, InvitationResponse
             
             # Create all tables if they don't exist
             db.create_all()
@@ -139,6 +143,7 @@ def create_app(config_name=None):
     from api.plans import plans_bp
     from api.invitations import invitations_bp
     from api.invitation_urls import invitation_urls_bp
+    from api.invitation_editor import invitation_editor_bp
     from api.redirect import redirect_bp
     from api.orders import orders_bp
     from api.admin import admin_bp
@@ -146,12 +151,14 @@ def create_app(config_name=None):
     from api.payments import payments_bp
     from api.coupons import coupons_bp
     from api.cart import cart_bp
+    from api.modular_templates import modular_templates_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/user')
     app.register_blueprint(plans_bp, url_prefix='/api/plans')
     app.register_blueprint(invitations_bp, url_prefix='/api/invitations')
     app.register_blueprint(invitation_urls_bp, url_prefix='/api/invitation-urls')
+    app.register_blueprint(invitation_editor_bp, url_prefix='/api/invitations')  # Editor endpoints under /api/invitations/{id}/...
     app.register_blueprint(redirect_bp)  # No prefix - needs to be at root for /r/{code}
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
@@ -159,6 +166,7 @@ def create_app(config_name=None):
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(coupons_bp, url_prefix='/api/coupons')
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
+    app.register_blueprint(modular_templates_bp, url_prefix='/api/modular-templates')
     
     # Root endpoint
     @app.route('/')

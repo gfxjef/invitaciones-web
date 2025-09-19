@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font Utilities */
+.font-great-vibes {
+  font-family: var(--font-great-vibes), cursive;
+}
+
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

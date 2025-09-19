@@ -16,7 +16,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { 
   useAuthStore, 
-  useAuth, 
+  useAuth as useAuthFromStore, 
   useAuthActions,
   useIsAuthenticated,
   useAuthInitializing 
@@ -28,7 +28,7 @@ import { authApi, LoginRequest, RegisterRequest } from '@/lib/api';
  * Provides user data, auth state, and common auth actions
  */
 export function useAuthHook() {
-  const auth = useAuth();
+  const auth = useAuthFromStore();
   const actions = useAuthActions();
   
   return {
@@ -183,20 +183,32 @@ export function useSessionCheck(intervalMs: number = 5 * 60 * 1000) { // 5 minut
       try {
         // If token is expired, try to refresh
         if (isTokenExpired()) {
+          console.log('Token expired, refreshing...');
           await refreshTokens();
           return;
         }
 
         // If token should be refreshed soon, refresh it
         if (shouldRefreshToken()) {
+          console.log('Token needs refresh, refreshing...');
           await refreshTokens();
           return;
         }
 
-        // Otherwise, just verify the session
-        await verifySession();
+        // For periodic checks, only verify if it's been a while since last verification
+        const lastVerification = localStorage.getItem('last_session_check');
+        const shouldVerify = !lastVerification || (Date.now() - parseInt(lastVerification)) > 600000; // 10 minutes
+        
+        if (shouldVerify) {
+          console.log('Verifying session...');
+          const isValid = await verifySession();
+          if (isValid) {
+            localStorage.setItem('last_session_check', Date.now().toString());
+          }
+        }
       } catch (error) {
         console.error('Session check failed:', error);
+        // Don't logout on session check errors - let the user continue
       }
     };
 
@@ -272,3 +284,6 @@ export function useAuthInit() {
 
   return { isInitializing };
 }
+
+// Export useAuth as an alias to useAuthHook for compatibility
+export const useAuth = useAuthHook;
