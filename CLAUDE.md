@@ -211,3 +211,84 @@ ADMIN_PASSWORD=admin123
 - Izipay requires specific public key format
 - Use sandbox credentials for testing
 - Check webhook logs for payment status issues
+
+## Agent Task Documentation
+
+### IMPORTANT: Post-Task Documentation Requirement
+When using specialized agents (Task tool), they MUST update a file called `ultima_modificacion.md` at the end of their work. This file should be created/updated in the main project directory (same location as CLAUDE.md and README.md).
+
+The file must contain:
+- Date and time of the changes
+- Detailed summary of all modifications made
+- List of files created, modified, or deleted
+- Any important notes or considerations for future development
+- Agent type that performed the work
+
+This documentation is CRITICAL for tracking changes and maintaining project history.
+
+## Development Server Policy
+
+### IMPORTANT: Do NOT Run Frontend or Backend Servers
+- **DO NOT** execute `npm run dev`, `python app.py`, or any server startup commands
+- **DO NOT** start development servers automatically
+- The user will ALWAYS have both frontend and backend servers running manually
+- This prevents port conflicts and background processes
+
+### Testing and Development
+- If testing is required, ASK the user first before running any server commands
+- User maintains control of all running services
+- Focus on code modifications, not server management
+
+## Agent Usage Policy
+
+### MANDATORY: Always Use Specialized Agents
+- **ALWAYS** analyze the task and determine which agent from `.claude/agents/` should handle it
+- **NEVER** work directly on frontend or backend tasks without using the appropriate agent
+- Available agents in the project:
+  - `flask-enterprise-backend`: For all Flask backend development, APIs, database, security
+  - `frontend-technical-auditor`: For Next.js frontend verification, testing, debugging
+  - `flask-security-architect`: For backend security and architecture
+  - `github-operations-manager`: For Git/GitHub operations
+  - `project-issue-generator`: For breaking down projects into actionable tasks
+  - `seo-optimization-specialist`: For SEO improvements
+
+### Agent Selection Rules
+- **Backend tasks** (Flask, APIs, database, authentication): Use `flask-enterprise-backend`
+- **Frontend tasks** (Next.js, React, components, UI): Use `frontend-technical-auditor`
+- **Security/Architecture**: Use `flask-security-architect`
+- **Git operations**: Use `github-operations-manager`
+- **Project planning**: Use `project-issue-generator`
+
+### NEVER work without agents on:
+- API endpoint modifications
+- Component development or fixes
+- Database changes
+- Authentication/authorization
+- Security implementations
+- Performance optimizations
+- Testing and debugging
+
+## Project Context Requirement
+
+### MANDATORY: Always Read ultima_modificacion.md
+- **BEFORE** starting any task, ALWAYS read `ultima_modificacion.md` to understand recent changes
+- This file contains the complete history of the last modifications made to the project
+- Understanding recent changes is CRITICAL for:
+  - Avoiding conflicts with existing implementations
+  - Building upon previous work correctly
+  - Maintaining consistency with recent architectural decisions
+  - Understanding the current state of components and systems
+
+### Context Integration Workflow
+1. **First Step**: Read `ultima_modificacion.md` to understand recent project state
+2. **Analysis**: Identify how the new task relates to recent changes
+3. **Agent Selection**: Choose appropriate agent based on task type and recent context
+4. **Implementation**: Execute with full awareness of recent modifications
+5. **Documentation Update**: Ensure `ultima_modificacion.md` is updated after completion
+
+### Why This Matters
+- Prevents overwriting recent improvements
+- Maintains architectural consistency
+- Avoids duplicate implementations
+- Ensures continuity between development sessions
+- Preserves context across different agents and tasks

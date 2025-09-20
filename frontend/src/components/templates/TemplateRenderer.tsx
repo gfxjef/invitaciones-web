@@ -22,6 +22,8 @@ import { TemplateBuilder } from './TemplateBuilder';
 interface TemplateRendererProps extends TemplateProps {
   // Optional override for template selection
   templateOverride?: string;
+  // Custom preview data from customizer (takes priority over regular data)
+  customPreviewData?: any;
 }
 
 export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
@@ -34,8 +36,12 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
   events,
   isPreview = false,
   isEditing = false,
-  templateOverride
+  templateOverride,
+  customPreviewData
 }) => {
+
+  // Use custom preview data if available, otherwise use regular data
+  const renderData = customPreviewData || data;
 
   // Determine template type and rendering approach
   const renderingDecision = useMemo(() => {
@@ -105,7 +111,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
       return (
         <TemplateBuilder
           invitation={invitation}
-          data={data}
+          data={renderData}
           template={template}
           colors={colors}
           features={features}
@@ -122,7 +128,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
       return (
         <LegacyComponent
           invitation={invitation}
-          data={data}
+          data={renderData}
           template={template}
           colors={colors}
           features={features}

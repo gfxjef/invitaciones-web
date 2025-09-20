@@ -122,6 +122,10 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if data is already transformed (from customizer)
+  const isTransformedData = data && typeof data === 'object' &&
+    ('hero' in data || 'welcome' in data || 'couple' in data);
+
   // Detect development mode - when URL contains /demo/ or no real invitation ID
   const isDevelopmentMode = typeof window !== 'undefined' && (
     window.location.pathname.includes('/demo/') ||
@@ -129,9 +133,18 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     invitation?.id === 7 // Demo invitation
   );
 
-  // Fetch modular data from API ONLY if NOT in development mode
+  // Fetch modular data from API ONLY if NOT in development mode and data is not already transformed
   useEffect(() => {
     const fetchModularData = async () => {
+      // If data is already transformed (from customizer), use it directly
+      if (isTransformedData) {
+        console.log('🎨 Customizer Mode: Using transformed data');
+        setModularData(data as ModularData);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
       // In development mode, skip API and use component defaults
       if (isDevelopmentMode) {
         console.log('🔧 Development Mode: Using component defaults for hot reload');
@@ -166,7 +179,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     };
 
     fetchModularData();
-  }, [invitation?.id, isDevelopmentMode]);
+  }, [invitation?.id, isDevelopmentMode, isTransformedData, data]);
 
   // Create fallback props using legacy data (backup plan)
   const createFallbackProps = (): ModularData => {
@@ -274,71 +287,36 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   return (
     <div className="font-serif bg-white">
 
-      {/* Render sections in order based on configuration - ALWAYS render if section configured */}
+      {/* Render sections in order based on database configuration - DYNAMIC ORDER */}
+      {(() => {
+        // If template has sections_config_ordered (from backend), use that for correct order
+        const templateData = template as any;
+        let sectionOrder: string[];
 
-      {sectionsConfig.hero && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.hero}
-          sectionType="hero"
-          props={modularData?.hero || {}} // Empty object will trigger component defaults
-        />
-      )}
+        if (templateData?.sections_config_ordered) {
+          // Use the ordered list from backend that preserves database order
+          sectionOrder = templateData.sections_config_ordered.map((item: [string, string]) => item[0]);
+        } else {
+          // Fallback to Object.keys (which may be alphabetical due to JSON serialization)
+          sectionOrder = Object.keys(sectionsConfig);
+        }
 
-      {sectionsConfig.welcome && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.welcome}
-          sectionType="welcome"
-          props={modularData?.welcome || {}}
-        />
-      )}
+        return sectionOrder;
+      })().map((sectionType) => {
+        const sectionKey = sectionsConfig[sectionType as keyof SectionsConfig];
 
-      {sectionsConfig.couple && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.couple}
-          sectionType="couple"
-          props={modularData?.couple || {}}
-        />
-      )}
+        // Only render if section is configured
+        if (!sectionKey) return null;
 
-      {sectionsConfig.countdown && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.countdown}
-          sectionType="countdown"
-          props={modularData?.countdown || {}}
-        />
-      )}
-
-      {sectionsConfig.story && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.story}
-          sectionType="story"
-          props={modularData?.story || {}}
-        />
-      )}
-
-      {sectionsConfig.video && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.video}
-          sectionType="video"
-          props={modularData?.video || {}}
-        />
-      )}
-
-      {sectionsConfig.gallery && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.gallery}
-          sectionType="gallery"
-          props={modularData?.gallery || {}}
-        />
-      )}
-
-      {sectionsConfig.footer && (
-        <SectionWrapper
-          sectionKey={sectionsConfig.footer}
-          sectionType="footer"
-          props={modularData?.footer || {}}
-        />
-      )}
+        return (
+          <SectionWrapper
+            key={sectionType}
+            sectionKey={sectionKey}
+            sectionType={sectionType}
+            props={modularData?.[sectionType] || {}} // Empty object will trigger component defaults
+          />
+        );
+      })}
 
       {/* Debug info for development */}
       {isPreview && process.env.NODE_ENV === 'development' && (

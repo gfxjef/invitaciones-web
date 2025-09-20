@@ -49,7 +49,9 @@
       "Read(/C:\\Users\\USER\\Pictures\\Screenshots/**)",
       "Read(/C:\\Users\\USER\\Pictures\\Screenshots/**)",
       "Bash(netstat:*)",
-      "Read(//c/Users/USER/Pictures/Screenshots/**)"
+      "Read(//c/Users/USER/Pictures/Screenshots/**)",
+      "Bash(npm:*)",
+      "Bash(findstr:*)"
     ],
     "deny": []
   },

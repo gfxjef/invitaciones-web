@@ -1,5 +1,7 @@
 from extensions import db
 from datetime import datetime
+from collections import OrderedDict
+import json
 
 
 class Template(db.Model):
@@ -21,7 +23,25 @@ class Template(db.Model):
 
     # Sistema modular de secciones
     template_type = db.Column(db.String(20), default='legacy')  # 'legacy' or 'modular'
-    sections_config = db.Column(db.JSON)  # Configuración de secciones para templates modulares
+    _sections_config = db.Column('sections_config', db.Text)  # Campo TEXT en BD
+
+    @property
+    def sections_config(self):
+        """Puente transparente: TEXT → dict automáticamente"""
+        if self._sections_config:
+            try:
+                return json.loads(self._sections_config)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return {}
+
+    @sections_config.setter
+    def sections_config(self, value):
+        """Puente transparente: dict → TEXT automáticamente"""
+        if value:
+            self._sections_config = json.dumps(value)
+        else:
+            self._sections_config = None
 
     # Plan asociado
     plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'))
@@ -39,8 +59,35 @@ class Template(db.Model):
     # Relationships
     plan = db.relationship('Plan', backref='templates')
     
+    def _preserve_sections_order(self):
+        """WHY: Preserves the order of sections_config keys during JSON serialization.
+        Enforces specific order to ensure consistency across API responses."""
+        if not self.sections_config:
+            return None
+
+        # Force the specific order expected by frontend
+        desired_order = ['hero', 'story', 'video', 'couple', 'footer', 'gallery', 'welcome', 'countdown']
+
+        if isinstance(self.sections_config, dict):
+            # Create OrderedDict with desired order
+            ordered_sections = OrderedDict()
+
+            # Add sections in desired order if they exist
+            for section_name in desired_order:
+                if section_name in self.sections_config:
+                    ordered_sections[section_name] = self.sections_config[section_name]
+
+            # Add any remaining sections that weren't in desired_order
+            for section_name, section_value in self.sections_config.items():
+                if section_name not in ordered_sections:
+                    ordered_sections[section_name] = section_value
+
+            return ordered_sections
+
+        return self.sections_config
+
     def soft_delete(self):
-        """WHY: Implements soft delete by marking the template as deleted 
+        """WHY: Implements soft delete by marking the template as deleted
         instead of removing it from database to preserve data integrity"""
         self.is_deleted = True
         self.deleted_at = datetime.utcnow()
@@ -63,7 +110,7 @@ class Template(db.Model):
             'supported_features': self.supported_features,
             'default_colors': self.default_colors,
             'template_type': self.template_type,  # New field for modular system
-            'sections_config': self.sections_config,  # New field for modular sections
+            'sections_config': self._preserve_sections_order(),  # Preserve order from database
             'plan_id': self.plan_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

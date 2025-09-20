@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTemplate } from '@/lib/hooks/use-templates';
 import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
+import { DynamicCustomizer } from '@/components/customizer';
 import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent } from '@/types/template';
 
 interface TemplateDemoPageProps {
@@ -248,8 +249,11 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
         </div>
       </div>
 
-      {/* Main Template Content */}
-      <div>
+      {/* Main Template Content with Dynamic Customizer */}
+      <DynamicCustomizer
+        templateData={template}
+        sectionsConfig={template.sections_config}
+      >
         <TemplateRenderer
           invitation={demoInvitationData.invitation}
           data={demoInvitationData.data}
@@ -261,7 +265,7 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
           isPreview={true}
           isEditing={false}
         />
-      </div>
+      </DynamicCustomizer>
 
       {/* Demo Notice - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 text-white text-center py-2 px-4">

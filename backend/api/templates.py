@@ -23,7 +23,7 @@ class TemplateCreateSchema(Schema):
     supported_features = fields.List(fields.Str())
     default_colors = fields.Dict()
     template_type = fields.Str(validate=validate.OneOf(['legacy', 'modular']))
-    sections_config = fields.Dict()
+    sections_config = fields.Raw()
     plan_id = fields.Int(allow_none=True)
     is_premium = fields.Bool()
     display_order = fields.Int()
@@ -41,7 +41,7 @@ class TemplateUpdateSchema(Schema):
     supported_features = fields.List(fields.Str())
     default_colors = fields.Dict()
     template_type = fields.Str(validate=validate.OneOf(['legacy', 'modular']))
-    sections_config = fields.Dict()
+    sections_config = fields.Raw()
     plan_id = fields.Int(allow_none=True)
     is_premium = fields.Bool()
     is_active = fields.Bool()
@@ -63,7 +63,7 @@ class TemplateResponseSchema(Schema):
     supported_features = fields.List(fields.Raw())
     default_colors = fields.Dict()
     template_type = fields.Str()  # New field for modular system
-    sections_config = fields.Dict()  # New field for modular sections
+    sections_config = fields.Raw()  # Preserve order - use Raw instead of Dict
     plan_id = fields.Int()
     plan = fields.Dict()
     price = fields.Float()
@@ -166,9 +166,8 @@ def get_templates():
             error_out=False
         )
         
-        # Serialize results
-        schema = TemplateResponseSchema(many=True)
-        templates_data = schema.dump([t.to_dict() for t in pagination.items])
+        # Skip schema to preserve sections_config order from OrderedDict
+        templates_data = [t.to_dict() for t in pagination.items]
         
         return jsonify({
             'templates': templates_data,
@@ -206,9 +205,19 @@ def get_template(template_id):
         if not template:
             return jsonify({'message': 'Template not found'}), 404
         
-        schema = TemplateResponseSchema()
-        template_data = schema.dump(template.to_dict())
-        
+        # Get template data with preserved sections order
+        template_data = template.to_dict()
+
+        # Add ordered sections list to guarantee order preservation across JSON serialization
+        if template_data.get('sections_config'):
+            raw_sections = template.sections_config
+
+            # Create ordered list based on database order
+            db_order = list(raw_sections.keys())
+            sections_ordered = [[k, raw_sections[k]] for k in db_order if k in raw_sections]
+
+            template_data['sections_config_ordered'] = sections_ordered
+
         return jsonify({'template': template_data}), 200
         
     except Exception as e:
