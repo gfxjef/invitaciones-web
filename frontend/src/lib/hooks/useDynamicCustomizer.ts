@@ -17,15 +17,15 @@ import {
 } from '@/components/customizer/types';
 import { getAvailableFields, detectActiveSections, getFieldsByOrderedSections, SECTION_FIELDS_MAP } from '@/components/customizer/sectionFieldsMap';
 
-// Import default props from section components (single source of truth)
-import { Hero1DefaultProps } from '@/components/templates/sections/hero/Hero1';
-import { Welcome1DefaultProps } from '@/components/templates/sections/welcome/Welcome1';
-import { Couple1DefaultProps } from '@/components/templates/sections/couple/Couple1';
-import { Countdown1DefaultProps } from '@/components/templates/sections/countdown/Countdown1';
-import { Gallery1DefaultProps } from '@/components/templates/sections/gallery/Gallery1';
-import { Story1DefaultProps } from '@/components/templates/sections/story/Story1';
-import { Video1DefaultProps } from '@/components/templates/sections/video/Video1';
-import { Footer1DefaultProps } from '@/components/templates/sections/footer/Footer1';
+// Import default props from wedding section components (single source of truth)
+import { Hero1DefaultProps } from '@/components/templates/categories/weddings/sections/hero/Hero1';
+import { Welcome1DefaultProps } from '@/components/templates/categories/weddings/sections/welcome/Welcome1';
+import { Couple1DefaultProps } from '@/components/templates/categories/weddings/sections/couple/Couple1';
+import { Countdown1DefaultProps } from '@/components/templates/categories/weddings/sections/countdown/Countdown1';
+import { Gallery1DefaultProps } from '@/components/templates/categories/weddings/sections/gallery/Gallery1';
+import { Story1DefaultProps } from '@/components/templates/categories/weddings/sections/story/Story1';
+import { Video1DefaultProps } from '@/components/templates/categories/weddings/sections/video/Video1';
+import { Footer1DefaultProps } from '@/components/templates/categories/weddings/sections/footer/Footer1';
 
 interface UseDynamicCustomizerProps {
   initialData?: any;

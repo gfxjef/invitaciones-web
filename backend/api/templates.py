@@ -11,12 +11,93 @@ import math
 templates_bp = Blueprint('templates', __name__)
 
 
+# WHY: Category validation constants for template system
+VALID_CATEGORIES = ['weddings', 'kids', 'corporate', 'quinceañeras', 'classic', 'modern', 'romantic', 'elegant']
+
+# WHY: Section configuration by category - defines which sections are valid for each category
+CATEGORY_SECTION_MAP = {
+    'weddings': {
+        'required': ['hero', 'welcome'],
+        'optional': ['story', 'couple', 'video', 'gallery', 'countdown', 'footer'],
+        'forbidden': []
+    },
+    'kids': {
+        'required': ['hero', 'welcome'],
+        'optional': ['celebration', 'activities', 'gallery', 'birthday_info', 'countdown', 'footer'],
+        'forbidden': ['story', 'couple']  # Not appropriate for kids parties
+    },
+    'corporate': {
+        'required': ['hero', 'welcome'],
+        'optional': ['services', 'team', 'testimonials', 'contact', 'footer'],
+        'forbidden': ['story', 'couple', 'celebration', 'birthday_info']
+    },
+    'quinceañeras': {
+        'required': ['hero', 'welcome'],
+        'optional': ['story', 'celebration', 'gallery', 'countdown', 'footer', 'court_of_honor'],
+        'forbidden': ['couple']  # Different from weddings
+    }
+}
+
+
+def validate_sections_for_category(sections_config, category):
+    """
+    WHY: Validates that the sections configuration is appropriate for the template category
+
+    Args:
+        sections_config (dict): The sections configuration to validate
+        category (str): The template category
+
+    Returns:
+        tuple: (is_valid, errors_list)
+    """
+    if not category or category not in CATEGORY_SECTION_MAP:
+        return True, []  # No validation for unknown categories
+
+    if not sections_config:
+        return True, []  # Empty config is valid
+
+    category_rules = CATEGORY_SECTION_MAP[category]
+    errors = []
+
+    # Check for forbidden sections
+    for section in sections_config.keys():
+        if section in category_rules.get('forbidden', []):
+            errors.append(f"Section '{section}' is not allowed for category '{category}'")
+
+    # Check for required sections (optional validation - could be enforced later)
+    # for required_section in category_rules.get('required', []):
+    #     if required_section not in sections_config:
+    #         errors.append(f"Required section '{required_section}' missing for category '{category}'")
+
+    return len(errors) == 0, errors
+
+
+def get_valid_sections_for_category(category):
+    """
+    WHY: Returns the list of valid sections for a given category
+
+    Args:
+        category (str): The template category
+
+    Returns:
+        list: List of valid section names for the category
+    """
+    if not category or category not in CATEGORY_SECTION_MAP:
+        # Return all possible sections if category is unknown
+        return ['hero', 'welcome', 'story', 'couple', 'video', 'gallery', 'countdown', 'footer',
+                'celebration', 'activities', 'birthday_info', 'services', 'team', 'testimonials',
+                'contact', 'court_of_honor']
+
+    category_rules = CATEGORY_SECTION_MAP[category]
+    return category_rules.get('required', []) + category_rules.get('optional', [])
+
+
 class TemplateCreateSchema(Schema):
     """WHY: Validates input data for creating new templates, ensuring
     all required fields are present and properly formatted"""
     name = fields.Str(required=True, validate=validate.Length(min=1, max=200))
     description = fields.Str(validate=validate.Length(max=1000))
-    category = fields.Str(validate=validate.Length(max=100))
+    category = fields.Str(validate=validate.OneOf(VALID_CATEGORIES))
     preview_image_url = fields.Url(validate=validate.Length(max=500))
     thumbnail_url = fields.Url(validate=validate.Length(max=500))
     template_file = fields.Str(validate=validate.Length(max=200))
@@ -34,7 +115,7 @@ class TemplateUpdateSchema(Schema):
     to allow partial updates"""
     name = fields.Str(validate=validate.Length(min=1, max=200))
     description = fields.Str(validate=validate.Length(max=1000))
-    category = fields.Str(validate=validate.Length(max=100))
+    category = fields.Str(validate=validate.OneOf(VALID_CATEGORIES))
     preview_image_url = fields.Url(validate=validate.Length(max=500))
     thumbnail_url = fields.Url(validate=validate.Length(max=500))
     template_file = fields.Str(validate=validate.Length(max=200))
@@ -246,6 +327,18 @@ def create_template():
             data = schema.load(request.json or {})
         except ValidationError as err:
             return jsonify({'errors': err.messages}), 400
+
+        # Validate sections configuration for category
+        if data.get('sections_config') and data.get('category'):
+            is_valid, section_errors = validate_sections_for_category(
+                data['sections_config'],
+                data['category']
+            )
+            if not is_valid:
+                return jsonify({
+                    'message': 'Invalid sections configuration for category',
+                    'errors': section_errors
+                }), 400
         
         # Check if template name already exists
         existing_template = Template.query.filter(
@@ -324,6 +417,21 @@ def update_template(template_id):
             data = schema.load(request.json or {})
         except ValidationError as err:
             return jsonify({'errors': err.messages}), 400
+
+        # Validate sections configuration for category
+        category_to_check = data.get('category', template.category)
+        sections_to_check = data.get('sections_config', template.sections_config)
+
+        if sections_to_check and category_to_check:
+            is_valid, section_errors = validate_sections_for_category(
+                sections_to_check,
+                category_to_check
+            )
+            if not is_valid:
+                return jsonify({
+                    'message': 'Invalid sections configuration for category',
+                    'errors': section_errors
+                }), 400
         
         # Check for name conflicts if name is being updated
         if 'name' in data and data['name'] != template.name:
@@ -390,7 +498,52 @@ def delete_template(template_id):
         db.session.commit()
         
         return jsonify({'message': 'Template deleted successfully'}), 200
-        
+
     except Exception as e:
         db.session.rollback()
+        return jsonify({'message': 'Internal server error'}), 500
+
+
+@templates_bp.route('/categories', methods=['GET'])
+def get_categories():
+    """
+    GET /api/templates/categories - Get available template categories
+
+    WHY: Public endpoint to retrieve all available template categories
+    for frontend category filtering and validation
+    """
+    try:
+        return jsonify({
+            'categories': VALID_CATEGORIES,
+            'category_rules': CATEGORY_SECTION_MAP
+        }), 200
+
+    except Exception as e:
+        return jsonify({'message': 'Internal server error'}), 500
+
+
+@templates_bp.route('/categories/<category>/sections', methods=['GET'])
+def get_category_sections(category):
+    """
+    GET /api/templates/categories/:category/sections - Get valid sections for category
+
+    WHY: Public endpoint to retrieve valid sections for a specific category,
+    useful for frontend validation and template building
+    """
+    try:
+        if category not in VALID_CATEGORIES:
+            return jsonify({'message': 'Invalid category'}), 400
+
+        valid_sections = get_valid_sections_for_category(category)
+        category_rules = CATEGORY_SECTION_MAP.get(category, {})
+
+        return jsonify({
+            'category': category,
+            'valid_sections': valid_sections,
+            'required_sections': category_rules.get('required', []),
+            'optional_sections': category_rules.get('optional', []),
+            'forbidden_sections': category_rules.get('forbidden', [])
+        }), 200
+
+    except Exception as e:
         return jsonify({'message': 'Internal server error'}), 500
