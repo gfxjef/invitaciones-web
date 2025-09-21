@@ -58,7 +58,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                   type="text"
                   placeholder="Ej: Carlos Eduardo"
                   value={data.couple_groom_name || ''}
-                  onChange={(e) => onUpdate('couple', 'couple_groom_name', e.target.value)}
+                  onChange={(e) => onUpdate('couple_groom_name', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
@@ -75,7 +75,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                   type="text"
                   placeholder="Ej: María Isabel"
                   value={data.couple_bride_name || ''}
-                  onChange={(e) => onUpdate('couple', 'couple_bride_name', e.target.value)}
+                  onChange={(e) => onUpdate('couple_bride_name', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
@@ -89,7 +89,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
               <textarea
                 placeholder="Ej: Con gran alegría te invitamos a celebrar nuestro matrimonio..."
                 value={data.couple_welcome_message || ''}
-                onChange={(e) => onUpdate('couple', 'couple_welcome_message', e.target.value)}
+                onChange={(e) => onUpdate('couple_welcome_message', e.target.value)}
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                 maxLength={500}
@@ -108,7 +108,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                 type="text"
                 placeholder='Ej: "Dos almas, un corazón"'
                 value={data.couple_quote || ''}
-                onChange={(e) => onUpdate('couple', 'couple_quote', e.target.value)}
+                onChange={(e) => onUpdate('couple_quote', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 maxLength={200}
               />
@@ -135,7 +135,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                 <input
                   type="date"
                   value={data.event_date || ''}
-                  onChange={(e) => onUpdate('event', 'event_date', e.target.value)}
+                  onChange={(e) => onUpdate('event_date', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   min={new Date().toISOString().split('T')[0]}
                 />
@@ -152,7 +152,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                 <input
                   type="time"
                   value={data.event_time || ''}
-                  onChange={(e) => onUpdate('event', 'event_time', e.target.value)}
+                  onChange={(e) => onUpdate('event_time', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
@@ -169,7 +169,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                   type="text"
                   placeholder="Ej: Salón Los Jardines"
                   value={data.event_venue_name || ''}
-                  onChange={(e) => onUpdate('event', 'event_venue_name', e.target.value)}
+                  onChange={(e) => onUpdate('event_venue_name', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 />
               </div>
@@ -185,7 +185,7 @@ export const BasicInformationStep: React.FC<WizardStepProps> = ({
                 <textarea
                   placeholder="Ej: Av. Primavera 123, San Borja, Lima"
                   value={data.event_venue_address || ''}
-                  onChange={(e) => onUpdate('event', 'event_venue_address', e.target.value)}
+                  onChange={(e) => onUpdate('event_venue_address', e.target.value)}
                   rows={3}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                 />

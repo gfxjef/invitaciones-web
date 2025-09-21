@@ -145,8 +145,8 @@ export const ReviewPublishStep: React.FC<WizardStepProps> = ({
       
       const url = `https://invitaciones.com/${customSlug}`;
       setPublishedUrl(url);
-      onUpdate('meta', 'published_url', url);
-      onUpdate('meta', 'status', 'published');
+      onUpdate('published_url', url);
+      onUpdate('status', 'published');
     } catch (error) {
       console.error('Error publishing invitation:', error);
     } finally {

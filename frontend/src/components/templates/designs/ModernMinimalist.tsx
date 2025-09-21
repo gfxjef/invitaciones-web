@@ -138,6 +138,7 @@ export const ModernMinimalist: React.FC<TemplateProps> = ({
           {features.includes('countdown') && (
             <div className="mb-12">
               <CountdownTimer
+                data={data}
                 targetDate={data.event_date}
                 colors={heroImage ? {
                   ...colors,

@@ -28,11 +28,11 @@ export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Bienvenida',
     icon: '👋',
     fields: [
-      'welcomeText',
-      'title',
-      'description',
-      'couplePhotoUrl',
-      'bannerImageUrl'
+      'welcome_welcomeText',
+      'welcome_title',
+      'welcome_description',
+      'welcome_couplePhotoUrl',
+      'welcome_bannerImageUrl'
     ]
   },
 
@@ -40,8 +40,8 @@ export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Los Novios',
     icon: '💑',
     fields: [
-      'sectionTitle',
-      'sectionSubtitle',
+      'couple_sectionTitle',
+      'couple_sectionSubtitle',
       'bride_name',
       'bride_role',
       'bride_description',
@@ -57,10 +57,10 @@ export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Cuenta Regresiva',
     icon: '⏰',
     fields: [
-      'weddingDate',
-      'backgroundImageUrl',
-      'preTitle',
-      'title'
+      'countdown_weddingDate',
+      'countdown_backgroundImageUrl',
+      'countdown_preTitle',
+      'countdown_title'
     ]
   },
 
@@ -128,10 +128,10 @@ export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Video',
     icon: '🎥',
     fields: [
-      'backgroundImageUrl',
-      'videoEmbedUrl',
-      'preTitle',
-      'title'
+      'video_backgroundImageUrl',
+      'video_videoEmbedUrl',
+      'video_preTitle',
+      'video_title'
     ]
   },
 
@@ -139,10 +139,10 @@ export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Pie de Página',
     icon: '📝',
     fields: [
-      'coupleNames',
-      'eventDate',
-      'eventLocation',
-      'copyrightText'
+      'footer_coupleNames',
+      'footer_eventDate',
+      'footer_eventLocation',
+      'footer_copyrightText'
     ]
   }
 };
@@ -154,7 +154,6 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'coupleNames',
     label: 'Nombres de la Pareja',
     type: 'text',
-    placeholder: 'Ej: Jefferson & Rosmery',
     section: 'hero',
     category: 'Pareja'
   },
@@ -163,7 +162,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'eventDate',
     label: 'Fecha del Evento',
     type: 'text',
-    placeholder: 'Ej: 15 December, 2024',
+    // placeholder:'Ej: 15 December, 2024',
     section: 'hero',
     category: 'Evento'
   },
@@ -172,7 +171,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'eventLocation',
     label: 'Lugar del Evento',
     type: 'text',
-    placeholder: 'Ej: Lima, Perú',
+    // placeholder:'Ej: LIMA - PERÚ',
     section: 'hero',
     category: 'Evento'
   },
@@ -181,72 +180,72 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'heroImageUrl',
     label: 'Imagen de Portada',
     type: 'url',
-    placeholder: 'URL de la imagen de fondo',
+    // placeholder:'URL de la imagen de fondo',
     section: 'hero',
     category: 'Imágenes'
   },
 
   // Welcome section fields
-  welcomeText: {
-    key: 'welcomeText',
+  welcome_welcomeText: {
+    key: 'welcome_welcomeText',
     label: 'Texto de Bienvenida',
     type: 'text',
-    placeholder: 'Ej: Hola & Bienvenidos',
+    // placeholder:'Ej: Hola & Bienvenidos',
     section: 'welcome',
     category: 'Mensajes'
   },
 
-  title: {
-    key: 'title',
+  welcome_title: {
+    key: 'welcome_title',
     label: 'Título Principal',
     type: 'text',
-    placeholder: 'Ej: Nos Vamos a Casar!!!!',
+    // placeholder:'Ej: Nos Vamos a Casar!!!!',
     section: 'welcome',
     category: 'Mensajes'
   },
 
-  description: {
-    key: 'description',
+  welcome_description: {
+    key: 'welcome_description',
     label: 'Descripción',
     type: 'textarea',
-    placeholder: 'Mensaje de amor y compromiso...',
+    // placeholder:'Mensaje de amor y compromiso...',
     section: 'welcome',
     category: 'Mensajes'
   },
 
-  couplePhotoUrl: {
-    key: 'couplePhotoUrl',
+  welcome_couplePhotoUrl: {
+    key: 'welcome_couplePhotoUrl',
     label: 'Foto de la Pareja',
     type: 'url',
-    placeholder: 'URL de la foto de la pareja',
+    // placeholder:'URL de la foto de la pareja',
     section: 'welcome',
     category: 'Imágenes'
   },
 
-  bannerImageUrl: {
-    key: 'bannerImageUrl',
+  welcome_bannerImageUrl: {
+    key: 'welcome_bannerImageUrl',
     label: 'Imagen de Banner',
     type: 'url',
-    placeholder: 'URL de la imagen de banner',
+    // placeholder:'URL de la imagen de banner',
     section: 'welcome',
     category: 'Imágenes'
   },
 
   // Couple section fields
-  sectionTitle: {
-    key: 'sectionTitle',
+  couple_sectionTitle: {
+    key: 'couple_sectionTitle',
     label: 'Título de Sección',
     type: 'text',
-    placeholder: 'Ej: Futuros Felices Esposos',
+    // placeholder:'Ej: Futuros Felices Esposos',
     section: 'couple',
     category: 'Títulos'
   },
 
-  sectionSubtitle: {
-    key: 'sectionSubtitle',
+  couple_sectionSubtitle: {
+    key: 'couple_sectionSubtitle',
     label: 'Subtítulo de Sección',
     type: 'text',
-    placeholder: 'Ej: MARIDO & MUJER',
+    // placeholder:'Ej: MARIDO & MUJER',
     section: 'couple',
     category: 'Títulos'
   },
@@ -255,7 +254,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'bride_name',
     label: 'Nombre de la Novia',
     type: 'text',
-    placeholder: 'Ej: Rosmery Guiterrez',
+    // placeholder:'Ej: Rosmery Guiterrez',
     section: 'couple',
     category: 'Novia'
   },
@@ -264,7 +263,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'bride_role',
     label: 'Rol de la Novia',
     type: 'text',
-    placeholder: 'Ej: La Novia',
+    // placeholder:'Ej: La Novia',
     section: 'couple',
     category: 'Novia'
   },
@@ -273,7 +272,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'bride_description',
     label: 'Descripción de la Novia',
     type: 'textarea',
-    placeholder: 'Mensaje personal para la novia...',
+    // placeholder:'Mensaje personal para la novia...',
     section: 'couple',
     category: 'Novia'
   },
@@ -282,7 +281,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'bride_imageUrl',
     label: 'Foto de la Novia',
     type: 'url',
-    placeholder: 'URL de la foto de la novia',
+    // placeholder:'URL de la foto de la novia',
     section: 'couple',
     category: 'Novia'
   },
@@ -291,7 +290,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'groom_name',
     label: 'Nombre del Novio',
     type: 'text',
-    placeholder: 'Ej: Jefferson Camacho',
+    // placeholder:'Ej: Jefferson Camacho',
     section: 'couple',
     category: 'Novio'
   },
@@ -300,7 +299,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'groom_role',
     label: 'Rol del Novio',
     type: 'text',
-    placeholder: 'Ej: El Novio',
+    // placeholder:'Ej: El Novio',
     section: 'couple',
     category: 'Novio'
   },
@@ -309,7 +308,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'groom_description',
     label: 'Descripción del Novio',
     type: 'textarea',
-    placeholder: 'Mensaje personal para el novio...',
+    // placeholder:'Mensaje personal para el novio...',
     section: 'couple',
     category: 'Novio'
   },
@@ -318,47 +317,83 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'groom_imageUrl',
     label: 'Foto del Novio',
     type: 'url',
-    placeholder: 'URL de la foto del novio',
+    // placeholder:'URL de la foto del novio',
     section: 'couple',
     category: 'Novio'
   },
 
   // Countdown section fields
-  weddingDate: {
-    key: 'weddingDate',
+  countdown_weddingDate: {
+    key: 'countdown_weddingDate',
     label: 'Fecha de la Boda (ISO)',
-    type: 'datetime-local',
-    placeholder: '2025-12-15T17:00:00',
+    type: 'text', // TODO: Support datetime-local type
+    // placeholder:'2025-12-15T17:00:00',
     section: 'countdown',
     category: 'Evento'
   },
 
-  backgroundImageUrl: {
-    key: 'backgroundImageUrl',
+  countdown_backgroundImageUrl: {
+    key: 'countdown_backgroundImageUrl',
     label: 'Imagen de Fondo',
     type: 'url',
-    placeholder: 'URL de la imagen de fondo',
+    // placeholder:'URL de la imagen de fondo',
     section: 'countdown',
     category: 'Imágenes'
   },
 
-  preTitle: {
-    key: 'preTitle',
+  countdown_preTitle: {
+    key: 'countdown_preTitle',
     label: 'Pre-título',
     type: 'text',
-    placeholder: 'Ej: DENTRO DE POCO SEREMOS UNA FAMILIA',
+    // placeholder:'Ej: DENTRO DE POCO SEREMOS UNA FAMILIA',
+    section: 'countdown',
+    category: 'Títulos'
+  },
+
+  countdown_title: {
+    key: 'countdown_title',
+    label: 'Título Principal',
+    type: 'text',
+    // placeholder:'Ej: CUENTA REGRESIVA',
     section: 'countdown',
     category: 'Títulos'
   },
 
   // Video section fields
-  videoEmbedUrl: {
-    key: 'videoEmbedUrl',
+  video_backgroundImageUrl: {
+    key: 'video_backgroundImageUrl',
+    label: 'Imagen de Fondo',
+    type: 'url',
+    // placeholder:'URL de la imagen de fondo',
+    section: 'video',
+    category: 'Imágenes'
+  },
+
+  video_videoEmbedUrl: {
+    key: 'video_videoEmbedUrl',
     label: 'URL del Video (Embed)',
     type: 'url',
-    placeholder: 'https://www.youtube.com/embed/...',
+    // placeholder:'https://www.youtube.com/embed/...',
     section: 'video',
     category: 'Multimedia'
+  },
+
+  video_preTitle: {
+    key: 'video_preTitle',
+    label: 'Pre-título',
+    type: 'text',
+    // placeholder:'Ej: NUESTRO VIDEO',
+    section: 'video',
+    category: 'Títulos'
+  },
+
+  video_title: {
+    key: 'video_title',
+    label: 'Título Principal',
+    type: 'text',
+    // placeholder:'Ej: REPRODUCIR VIDEO',
+    section: 'video',
+    category: 'Títulos'
   },
 
   // Story section fields - 3 moments
@@ -366,7 +401,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_1_date',
     label: 'Momento 1 - Fecha',
     type: 'text',
-    placeholder: 'Ej: 20 DE JULIO, 2010',
+    // placeholder:'Ej: 20 DE JULIO, 2010',
     section: 'story',
     category: 'Momento 1'
   },
@@ -375,7 +410,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_1_title',
     label: 'Momento 1 - Título',
     type: 'text',
-    placeholder: 'Ej: Así Nos Conocimos',
+    // placeholder:'Ej: Así Nos Conocimos',
     section: 'story',
     category: 'Momento 1'
   },
@@ -384,7 +419,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_1_description',
     label: 'Momento 1 - Descripción',
     type: 'textarea',
-    placeholder: 'Describe este momento especial de su historia...',
+    // placeholder:'Describe este momento especial de su historia...',
     section: 'story',
     category: 'Momento 1'
   },
@@ -393,7 +428,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_1_imageUrl',
     label: 'Momento 1 - Imagen',
     type: 'url',
-    placeholder: 'URL de la imagen del momento',
+    // placeholder:'URL de la imagen del momento',
     section: 'story',
     category: 'Momento 1'
   },
@@ -402,7 +437,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_2_date',
     label: 'Momento 2 - Fecha',
     type: 'text',
-    placeholder: 'Ej: 1 DE AGOSTO, 2016',
+    // placeholder:'Ej: 1 DE AGOSTO, 2016',
     section: 'story',
     category: 'Momento 2'
   },
@@ -411,7 +446,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_2_title',
     label: 'Momento 2 - Título',
     type: 'text',
-    placeholder: 'Ej: Nuestra Primera Cita',
+    // placeholder:'Ej: Nuestra Primera Cita',
     section: 'story',
     category: 'Momento 2'
   },
@@ -420,7 +455,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_2_description',
     label: 'Momento 2 - Descripción',
     type: 'textarea',
-    placeholder: 'Describe este momento especial de su historia...',
+    // placeholder:'Describe este momento especial de su historia...',
     section: 'story',
     category: 'Momento 2'
   },
@@ -429,7 +464,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_2_imageUrl',
     label: 'Momento 2 - Imagen',
     type: 'url',
-    placeholder: 'URL de la imagen del momento',
+    // placeholder:'URL de la imagen del momento',
     section: 'story',
     category: 'Momento 2'
   },
@@ -438,7 +473,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_3_date',
     label: 'Momento 3 - Fecha',
     type: 'text',
-    placeholder: 'Ej: 25 DE JUNIO, 2022',
+    // placeholder:'Ej: 25 DE JUNIO, 2022',
     section: 'story',
     category: 'Momento 3'
   },
@@ -447,7 +482,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_3_title',
     label: 'Momento 3 - Título',
     type: 'text',
-    placeholder: 'Ej: Nos Comprometimos',
+    // placeholder:'Ej: Nos Comprometimos',
     section: 'story',
     category: 'Momento 3'
   },
@@ -456,7 +491,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_3_description',
     label: 'Momento 3 - Descripción',
     type: 'textarea',
-    placeholder: 'Describe este momento especial de su historia...',
+    // placeholder:'Describe este momento especial de su historia...',
     section: 'story',
     category: 'Momento 3'
   },
@@ -465,7 +500,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'story_moment_3_imageUrl',
     label: 'Momento 3 - Imagen',
     type: 'url',
-    placeholder: 'URL de la imagen del momento',
+    // placeholder:'URL de la imagen del momento',
     section: 'story',
     category: 'Momento 3'
   },
@@ -475,7 +510,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_1_url',
     label: 'Imagen 1 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -484,7 +519,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_1_alt',
     label: 'Imagen 1 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -493,7 +528,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_1_category',
     label: 'Imagen 1 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -502,7 +537,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_2_url',
     label: 'Imagen 2 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -511,7 +546,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_2_alt',
     label: 'Imagen 2 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -520,7 +555,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_2_category',
     label: 'Imagen 2 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -529,7 +564,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_3_url',
     label: 'Imagen 3 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -538,7 +573,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_3_alt',
     label: 'Imagen 3 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -547,7 +582,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_3_category',
     label: 'Imagen 3 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -556,7 +591,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_4_url',
     label: 'Imagen 4 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -565,7 +600,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_4_alt',
     label: 'Imagen 4 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -574,7 +609,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_4_category',
     label: 'Imagen 4 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -583,7 +618,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_5_url',
     label: 'Imagen 5 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -592,7 +627,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_5_alt',
     label: 'Imagen 5 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -601,7 +636,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_5_category',
     label: 'Imagen 5 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -610,7 +645,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_6_url',
     label: 'Imagen 6 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -619,7 +654,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_6_alt',
     label: 'Imagen 6 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -628,7 +663,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_6_category',
     label: 'Imagen 6 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -637,7 +672,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_7_url',
     label: 'Imagen 7 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -646,7 +681,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_7_alt',
     label: 'Imagen 7 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -655,7 +690,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_7_category',
     label: 'Imagen 7 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -664,7 +699,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_8_url',
     label: 'Imagen 8 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -673,7 +708,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_8_alt',
     label: 'Imagen 8 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -682,7 +717,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_8_category',
     label: 'Imagen 8 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -691,7 +726,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_9_url',
     label: 'Imagen 9 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -700,7 +735,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_9_alt',
     label: 'Imagen 9 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -709,7 +744,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_9_category',
     label: 'Imagen 9 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
@@ -718,7 +753,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_10_url',
     label: 'Imagen 10 - URL',
     type: 'url',
-    placeholder: 'URL de la imagen',
+    // placeholder:'URL de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -727,7 +762,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_10_alt',
     label: 'Imagen 10 - Descripción',
     type: 'text',
-    placeholder: 'Descripción de la imagen',
+    // placeholder:'Descripción de la imagen',
     section: 'gallery',
     category: 'Galería'
   },
@@ -736,17 +771,44 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'gallery_image_10_category',
     label: 'Imagen 10 - Categoría',
     type: 'text',
-    placeholder: 'ceremony, party, couple',
+    // placeholder:'ceremony, party, couple',
     section: 'gallery',
     category: 'Galería'
   },
 
   // Footer section fields
-  copyrightText: {
-    key: 'copyrightText',
+  footer_coupleNames: {
+    key: 'footer_coupleNames',
+    label: 'Nombres de la Pareja',
+    type: 'text',
+    // placeholder:'Ej: María & Carlos',
+    section: 'footer',
+    category: 'Footer'
+  },
+
+  footer_eventDate: {
+    key: 'footer_eventDate',
+    label: 'Fecha del Evento',
+    type: 'text',
+    // placeholder:'Ej: 15 DICIEMBRE 2024',
+    section: 'footer',
+    category: 'Footer'
+  },
+
+  footer_eventLocation: {
+    key: 'footer_eventLocation',
+    label: 'Lugar del Evento',
+    type: 'text',
+    // placeholder:'Ej: Lima, Perú',
+    section: 'footer',
+    category: 'Footer'
+  },
+
+  footer_copyrightText: {
+    key: 'footer_copyrightText',
     label: 'Texto de Copyright',
     type: 'text',
-    placeholder: 'Hecho con Amor. All right reserved...',
+    // placeholder:'Hecho con Amor. All right reserved...',
     section: 'footer',
     category: 'Footer'
   }

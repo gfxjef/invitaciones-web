@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
-Migración de Datos para Campos Modulares
+DEPRECATED: Migración de Datos para Campos Modulares
 
-WHY: Agrega campos predeterminados a InvitationData para que todas las invitaciones
-existentes tengan los datos necesarios para las secciones modulares.
+⚠️  IMPORTANTE: Este archivo ya NO ES NECESARIO
 
-WHAT: Inserta 42 campos nuevos con valores predeterminados inteligentes basados
-en datos existentes de cada invitación.
+WHY DEPRECATED: El sistema ahora usa los componentes de frontend como single source of truth.
+Los valores default se obtienen directamente de:
+- frontend/src/components/templates/sections/*/DefaultProps
 
-Usage: python migrate_modular_fields.py
+El backend solo devuelve datos RAW de la BD, sin aplicar defaults hardcodeados.
+
+LEGACY INFO: Anteriormente agregaba campos predeterminados a InvitationData con
+valores hardcodeados en inglés que causaban inconsistencias.
+
+DO NOT RUN: Este script insertaría datos hardcodeados que entrarían en conflicto
+con el nuevo sistema unificado.
 """
 
 import sys

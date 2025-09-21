@@ -89,7 +89,7 @@ export function ResponsivePreviewFrame({
         const handleInteractionEvent = (type: 'click' | 'scroll' | 'hover') => (event: Event) => {
           onInteraction?.(type, {
             element: event.target,
-            coordinates: 'clientX' in event ? { x: event.clientX, y: event.clientY } : null,
+            coordinates: 'clientX' in event && 'clientY' in event ? { x: (event as any).clientX, y: (event as any).clientY } : null,
             timestamp: Date.now(),
             device: device.name
           });

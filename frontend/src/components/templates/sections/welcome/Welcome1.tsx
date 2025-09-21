@@ -64,3 +64,12 @@ export const Welcome1: React.FC<Welcome1Props> = ({
     </section>
   );
 };
+
+// Export default props for centralized access
+export const Welcome1DefaultProps = {
+  bannerImageUrl: 'https://i.imgur.com/svWa52m.png',
+  couplePhotoUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/couple.png',
+  welcomeText: 'Hola & Bienvenidos',
+  title: "Nos Vamos a Casarrrrrr!!!!",
+  description: "Hoy y siempre, más allá del mañana, necesito que estés a mi lado como mi mejor amigo, amante y alma gemela; te prometo ternura, compañía y apoyo incondicional para construir juntos un hogar de confianza y cariño, celebrar el amor que nos une y cuidarnos mutuamente toda la vida."
+};

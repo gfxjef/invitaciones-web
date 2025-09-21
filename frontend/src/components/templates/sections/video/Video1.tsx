@@ -93,3 +93,10 @@ export const Video1: React.FC<Video1Props> = ({
     </>
   );
 };
+
+export const Video1DefaultProps = {
+  backgroundImageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg',
+  videoEmbedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  preTitle: 'INCIO NUESTRA HISTORIA',
+  title: 'Mira nuestra Historia de Amor'
+};

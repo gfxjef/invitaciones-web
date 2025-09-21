@@ -139,3 +139,28 @@ export const Story1: React.FC<Story1Props> = ({
     </section>
   );
 };
+
+export const Story1DefaultProps = {
+  sectionSubtitle: 'JEFFERSON & ROSMERY',
+  sectionTitle: 'Nuestra Historia ♥',
+  storyMoments: [
+    {
+      date: '20 DE JULIO, 2010',
+      title: 'Asi Nos Conocimos',
+      description: 'La primera vez que nos vimos, un instante que marcó el inicio de nuestra historia. Un encuentro lleno de emoción y destino, donde sin saberlo comenzaba el amor que cambiaría nuestras vidas.',
+      imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4.jpg',
+    },
+    {
+      date: '1 DE AGOSTO, 2016',
+      title: 'Nuestra Primera Cita',
+      description: 'Una noche maravillosa bajo las estrellas que marcó el inicio de nuestro camino juntos. La conversación fluyó tan fácil como el vino, y ambos supimos que aquello era algo especial y único.',
+      imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/2.jpg',
+    },
+    {
+      date: '25 DE JUNIO, 2022',
+      title: 'La Propuesta',
+      description: 'En un hermoso día, rodeados de naturaleza, llegó la pregunta que cambiaría nuestras vidas para siempre. Fue un momento de alegría pura, sorpresa y amor inmenso que atesoraremos por siempre.',
+      imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1.jpg',
+    },
+  ]
+};

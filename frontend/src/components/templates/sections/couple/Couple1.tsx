@@ -136,3 +136,31 @@ export const Couple1: React.FC<Couple1Props> = ({
     </section>
   );
 };
+
+// Export default props for centralized access
+export const Couple1DefaultProps = {
+  sectionTitle: 'Futuros Felices Esposos',
+  sectionSubtitle: 'MARIDO & MUJER',
+  brideData: {
+    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
+    name: 'Rosmery Guiterrez',
+    role: 'La Novia',
+    description: 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
+    socialLinks: {
+      facebook: '#',
+      twitter: '#',
+      instagram: '#'
+    }
+  },
+  groomData: {
+    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png',
+    name: 'Jefferson Camacho',
+    role: 'El Novio',
+    description: 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
+    socialLinks: {
+      facebook: '#',
+      twitter: '#',
+      instagram: '#'
+    }
+  }
+};

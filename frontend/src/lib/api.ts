@@ -179,6 +179,12 @@ export interface Template {
   display_order: number;
   supported_features: string[];
   default_colors: Record<string, string>;
+  // TODO: Test these properties - remove comments if system works correctly
+  template_file?: string; // Key for template registry (required by TemplateRenderer)
+  template_type?: string; // Template type (modular, legacy, etc.)
+  sections_config?: Record<string, any>;
+  sections_config_ordered?: string[];
+  featured?: boolean; // Template featured status (for TemplateSelector)
   plan_id?: number;
   plan?: {
     id: number;

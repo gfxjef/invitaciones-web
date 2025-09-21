@@ -59,7 +59,9 @@ export const GallerySetupStep: React.FC<WizardStepProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [showPreview, setShowPreview] = useState<GalleryImage | null>(null);
 
-  const { uploadFile } = useFileUpload();
+  const { uploadFile } = useFileUpload({
+    invitationId: 1 // TODO: Get actual invitation ID from props
+  });
 
   const handleFileSelect = useCallback((files: File[]) => {
     const validFiles = files.filter(file => {
@@ -83,7 +85,7 @@ export const GallerySetupStep: React.FC<WizardStepProps> = ({
 
     // Set hero image if this is the first image
     if (newImages.length > 0 && !data.gallery_hero_image) {
-      onUpdate('gallery', 'gallery_hero_image', newImages[0].url);
+      onUpdate('gallery_hero_image', newImages[0].url);
     }
   }, [images.length, data.gallery_hero_image, onUpdate]);
 
@@ -121,7 +123,7 @@ export const GallerySetupStep: React.FC<WizardStepProps> = ({
     
     const heroImage = images.find(img => img.id === imageId);
     if (heroImage) {
-      onUpdate('gallery', 'gallery_hero_image', heroImage.url);
+      onUpdate('gallery_hero_image', heroImage.url);
     }
   }, [images, onUpdate]);
 
@@ -133,7 +135,7 @@ export const GallerySetupStep: React.FC<WizardStepProps> = ({
       if (remainingImages.length > 0) {
         handleSetHero(remainingImages[0].id);
       } else {
-        onUpdate('gallery', 'gallery_hero_image', '');
+        onUpdate('gallery_hero_image', '');
       }
     }
     

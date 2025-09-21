@@ -79,3 +79,11 @@ export const Footer1: React.FC<Footer1Props> = ({
     </footer>
   );
 };
+
+// Export default props for centralized access
+export const Footer1DefaultProps = {
+  coupleNames: 'Jefferson & Rosmery',
+  eventDate: '24 DECEMBER 2026',
+  eventLocation: 'Lima, Peru',
+  copyrightText: 'Hecho con Amor. All right reserved Amiras Gift.'
+};

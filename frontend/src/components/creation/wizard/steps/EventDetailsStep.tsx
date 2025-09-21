@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WizardStep, StepSection, StepField } from '../WizardStep';
 import { WizardStepProps } from '../InvitationWizard';
-import { InvitationEvent } from '@/types/invitation';
+import { InvitationEvent } from '@/types/template';
 
 export const EventDetailsStep: React.FC<WizardStepProps> = ({
   data,
@@ -49,16 +49,14 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
       id: 1,
       invitation_id: 1,
       event_type: 'ceremony',
-      title: 'Ceremonia Religiosa',
+      name: 'Ceremonia Religiosa',
       description: '',
       date: data.event_date || '',
       time: data.event_time || '',
       venue_name: data.event_venue_name || '',
       venue_address: data.event_venue_address || '',
-      duration_minutes: 60,
-      is_main_event: true,
       display_order: 1,
-      created_at: new Date().toISOString()
+      is_active: true
     }
   ]);
 
@@ -67,16 +65,14 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
       id: Date.now(),
       invitation_id: 1,
       event_type: 'reception',
-      title: '',
+      name: '',
       description: '',
       date: data.event_date || '',
       time: '',
       venue_name: '',
       venue_address: '',
-      duration_minutes: 180,
-      is_main_event: false,
       display_order: events.length + 1,
-      created_at: new Date().toISOString()
+      is_active: true
     });
     setShowAddEvent(true);
   };
@@ -147,7 +143,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                 type="text"
                 placeholder="Formal"
                 value={data.dress_code || ''}
-                onChange={(e) => onUpdate('extra', 'dress_code', e.target.value)}
+                onChange={(e) => onUpdate('dress_code', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               />
             </StepField>
@@ -159,7 +155,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
               <textarea
                 placeholder="Ej: Se sugiere evitar los colores blanco y negro"
                 value={data.dress_code_details || ''}
-                onChange={(e) => onUpdate('extra', 'dress_code_details', e.target.value)}
+                onChange={(e) => onUpdate('dress_code_details', e.target.value)}
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
               />
@@ -179,7 +175,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                 <textarea
                   placeholder="Ej: Estacionamiento gratuito disponible. Servicio de shuttle desde el hotel."
                   value={data.transport_info || ''}
-                  onChange={(e) => onUpdate('extra', 'transport_info', e.target.value)}
+                  onChange={(e) => onUpdate('transport_info', e.target.value)}
                   rows={3}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                 />
@@ -194,7 +190,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                 <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <select
                   value={data.age_restriction || ''}
-                  onChange={(e) => onUpdate('extra', 'age_restriction', e.target.value)}
+                  onChange={(e) => onUpdate('age_restriction', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
                   <option value="">Sin restricción</option>
@@ -214,7 +210,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                 <textarea
                   placeholder="Ej: El evento será al aire libre. Se recomienda traer una chaqueta."
                   value={data.special_notes || ''}
-                  onChange={(e) => onUpdate('extra', 'special_notes', e.target.value)}
+                  onChange={(e) => onUpdate('special_notes', e.target.value)}
                   rows={3}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                 />
@@ -236,10 +232,10 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-3 h-3 rounded-full bg-purple-600"></div>
-                        <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                        {event.is_main_event && (
+                        <h4 className="font-semibold text-gray-900">{event.name}</h4>
+                        {/* {event.is_main_event && (
                           <Badge variant="outline" className="text-xs">Principal</Badge>
-                        )}
+                        )} */}
                       </div>
                       
                       <div className="ml-6 space-y-1 text-sm text-gray-600">
@@ -251,7 +247,7 @@ export const EventDetailsStep: React.FC<WizardStepProps> = ({
                               minute: '2-digit',
                               hour12: true
                             })}
-                            {event.duration_minutes && ` (${event.duration_minutes} min)`}
+                            {/* {event.duration_minutes && ` (${event.duration_minutes} min)`} */}
                           </span>
                         </div>
                         
@@ -337,10 +333,10 @@ const EventCard: React.FC<EventCardProps> = ({
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <h4 className="font-semibold text-gray-900">{event.title}</h4>
-              {event.is_main_event && (
+              <h4 className="font-semibold text-gray-900">{event.name}</h4>
+              {/* {event.is_main_event && (
                 <Badge className="bg-purple-600 text-white text-xs">Principal</Badge>
-              )}
+              )} */}
             </div>
             
             <div className="flex items-center gap-2">
@@ -351,7 +347,7 @@ const EventCard: React.FC<EventCardProps> = ({
               >
                 Editar
               </Button>
-              {!event.is_main_event && (
+              {true && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -430,8 +426,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               <StepField label="Título del Evento" required>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   placeholder="Ej: Recepción"
                 />
@@ -506,8 +502,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             <StepField label="Duración (minutos)">
               <input
                 type="number"
-                value={formData.duration_minutes || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || undefined }))}
+                value={'' /* formData.duration_minutes || '' */}
+                onChange={(e) => {/* setFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || undefined })) */}}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 placeholder="60"
                 min="1"

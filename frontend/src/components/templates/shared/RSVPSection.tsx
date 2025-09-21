@@ -102,8 +102,8 @@ export const RSVPSection: React.FC<RSVPSectionProps> = ({
             onChange={(e) => setGuestCount(Number(e.target.value))}
             className="w-full px-3 py-2 border rounded-lg focus:ring-2"
             style={{
-              borderColor: colors.border,
-              focusRingColor: colors.primary
+              borderColor: colors.border
+              // focusRingColor: colors.primary // Invalid CSS property
             }}
             disabled={isPreview}
           >
@@ -123,8 +123,8 @@ export const RSVPSection: React.FC<RSVPSectionProps> = ({
             rows={3}
             className="w-full px-3 py-2 border rounded-lg resize-none focus:ring-2"
             style={{
-              borderColor: colors.border,
-              focusRingColor: colors.primary
+              borderColor: colors.border
+              // focusRingColor: colors.primary // Invalid CSS property
             }}
             placeholder="Deja un mensaje de felicitaciones..."
             disabled={isPreview}

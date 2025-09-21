@@ -14,6 +14,9 @@ export interface TemplateMetadata {
   preview_image_url: string;
   thumbnail_url: string;
   template_file: string; // Key for template registry
+  template_type?: string; // Template type (modular, legacy, etc.)
+  sections_config?: Record<string, any>;
+  sections_config_ordered?: string[];
   supported_features: string[];
   default_colors: TemplateColors;
   plan_id: number;

@@ -361,7 +361,7 @@ export const CreationProgress: React.FC<CreationProgressProps> = ({
 
 // Individual Section Progress Item
 interface ProgressSectionItemProps {
-  section: ReturnType<typeof PROGRESS_SECTIONS.map>[0] & {
+  section: ProgressSection & {
     completion: number;
     isComplete: boolean;
     isPartial: boolean;

@@ -48,20 +48,19 @@ def get_invitation_modular_data(invitation_id: int) -> Dict[str, Any]:
     }
 
 def extract_hero_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Hero section"""
-    general = data_dict.get('general', {})
+    """Extract data for Hero section - raw data only, frontend handles defaults"""
     couple = data_dict.get('couple', {})
     event = data_dict.get('event', {})
     gallery = data_dict.get('gallery', {})
 
-    # Build couple names
-    bride_name = get_field_value(couple, 'couple_bride_name', 'María')
-    groom_name = get_field_value(couple, 'couple_groom_name', 'Carlos')
-    couple_names = f"{bride_name} & {groom_name}"
+    # Build couple names from raw data only
+    bride_name = get_field_value(couple, 'couple_bride_name')
+    groom_name = get_field_value(couple, 'couple_groom_name')
+    couple_names = f"{bride_name} & {groom_name}" if bride_name and groom_name else None
 
-    # Format event date
-    event_date = get_field_value(event, 'event_date', '15 December, 2024')
-    if isinstance(event_date, str) and 'T' in event_date:
+    # Format event date from raw data only
+    event_date = get_field_value(event, 'event_date')
+    if event_date and isinstance(event_date, str) and 'T' in event_date:
         # Convert ISO format to readable format
         from datetime import datetime
         try:
@@ -73,72 +72,56 @@ def extract_hero_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
     return {
         'coupleNames': couple_names,
         'eventDate': event_date,
-        'eventLocation': get_field_value(event, 'event_venue_city', 'New York'),
-        'heroImageUrl': get_field_value(gallery, 'gallery_hero_image',
-            'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260'),
-        'navigationItems': [
-            { 'href': '#home', 'label': 'Home' },
-            { 'href': '#couple', 'label': 'Couple' },
-            { 'href': '#story', 'label': 'Story' },
-            { 'href': '#events', 'label': 'Events' },
-            { 'href': '#gallery', 'label': 'Gallery' },
-            { 'href': '#rsvp', 'label': 'R.S.V.P' }
-        ]
+        'eventLocation': get_field_value(event, 'event_venue_city'),
+        'heroImageUrl': get_field_value(gallery, 'gallery_hero_image')
     }
 
 def extract_welcome_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Welcome section"""
+    """Extract data for Welcome section - raw data only, frontend handles defaults"""
     welcome = data_dict.get('welcome', {})
 
     return {
-        'bannerImageUrl': get_field_value(welcome, 'welcome_banner_image',
-            'https://i.imgur.com/svWa52m.png'),
-        'couplePhotoUrl': get_field_value(welcome, 'welcome_couple_photo',
-            'https://i.imgur.com/OFaT2vQ.png'),
-        'welcomeText': get_field_value(welcome, 'welcome_text_custom', 'HELLO & WELCOME'),
-        'title': get_field_value(welcome, 'welcome_title_custom', "We're getting married!"),
-        'description': get_field_value(welcome, 'welcome_description',
-            "Today and always, beyond tomorrow, I need you beside me, always as my best friend, lover and forever soul mate.")
+        'bannerImageUrl': get_field_value(welcome, 'welcome_banner_image'),
+        'couplePhotoUrl': get_field_value(welcome, 'welcome_couple_photo'),
+        'welcomeText': get_field_value(welcome, 'welcome_text_custom'),
+        'title': get_field_value(welcome, 'welcome_title_custom'),
+        'description': get_field_value(welcome, 'welcome_description')
     }
 
 def extract_couple_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Couple section"""
+    """Extract data for Couple section - raw data only, frontend handles defaults"""
     couple = data_dict.get('couple', {})
     social = data_dict.get('social', {})
 
     return {
-        'sectionTitle': 'Happy Couple',
-        'sectionSubtitle': 'BRIDE & GROOM',
+        'sectionTitle': get_field_value(couple, 'couple_section_title'),
+        'sectionSubtitle': get_field_value(couple, 'couple_section_subtitle'),
         'brideData': {
-            'imageUrl': get_field_value(couple, 'couple_bride_photo',
-                'https://i.imgur.com/u1wA4oo.png'),
-            'name': get_field_value(couple, 'couple_bride_name', 'María'),
-            'role': get_field_value(couple, 'couple_bride_role', 'The Bride'),
-            'description': get_field_value(couple, 'couple_bride_description',
-                'A beautiful soul with a heart full of love and dreams.'),
+            'imageUrl': get_field_value(couple, 'couple_bride_photo'),
+            'name': get_field_value(couple, 'couple_bride_name'),
+            'role': get_field_value(couple, 'couple_bride_role'),
+            'description': get_field_value(couple, 'couple_bride_description'),
             'socialLinks': {
-                'facebook': get_field_value(social, 'social_facebook', '#'),
-                'twitter': get_field_value(social, 'social_twitter', '#'),
-                'instagram': get_field_value(social, 'social_instagram', '#')
+                'facebook': get_field_value(social, 'social_facebook'),
+                'twitter': get_field_value(social, 'social_twitter'),
+                'instagram': get_field_value(social, 'social_instagram')
             }
         },
         'groomData': {
-            'imageUrl': get_field_value(couple, 'couple_groom_photo',
-                'https://i.imgur.com/qL42vPA.png'),
-            'name': get_field_value(couple, 'couple_groom_name', 'Carlos'),
-            'role': get_field_value(couple, 'couple_groom_role', 'The Groom'),
-            'description': get_field_value(couple, 'couple_groom_description',
-                'A loving partner ready to start this new journey together.'),
+            'imageUrl': get_field_value(couple, 'couple_groom_photo'),
+            'name': get_field_value(couple, 'couple_groom_name'),
+            'role': get_field_value(couple, 'couple_groom_role'),
+            'description': get_field_value(couple, 'couple_groom_description'),
             'socialLinks': {
-                'facebook': get_field_value(social, 'social_facebook', '#'),
-                'twitter': get_field_value(social, 'social_twitter', '#'),
-                'instagram': get_field_value(social, 'social_instagram', '#')
+                'facebook': get_field_value(social, 'social_facebook'),
+                'twitter': get_field_value(social, 'social_twitter'),
+                'instagram': get_field_value(social, 'social_instagram')
             }
         }
     }
 
 def extract_countdown_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Countdown section"""
+    """Extract data for Countdown section - raw data only, frontend handles defaults"""
     countdown = data_dict.get('countdown', {})
     event = data_dict.get('event', {})
 
@@ -149,70 +132,44 @@ def extract_countdown_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         'weddingDate': wedding_date,
-        'backgroundImageUrl': get_field_value(countdown, 'countdown_background_image',
-            'https://i.imgur.com/7p4m1iH.png'),
-        'preTitle': get_field_value(countdown, 'countdown_pretitle', 'WE WILL BECOME A FAMILY IN'),
-        'title': get_field_value(countdown, 'countdown_title', "We're getting married in")
+        'backgroundImageUrl': get_field_value(countdown, 'countdown_background_image'),
+        'preTitle': get_field_value(countdown, 'countdown_pretitle'),
+        'title': get_field_value(countdown, 'countdown_title')
     }
 
 def extract_story_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Story section"""
+    """Extract data for Story section - raw data only, frontend handles defaults"""
     story = data_dict.get('story', {})
     couple = data_dict.get('couple', {})
 
-    # Build section subtitle from couple names
-    bride_name = get_field_value(couple, 'couple_bride_name', 'MARY')
-    groom_name = get_field_value(couple, 'couple_groom_name', 'BRIAN')
-    section_subtitle = f"{bride_name.upper()} & {groom_name.upper()}"
+    # Build section subtitle from couple names if available
+    bride_name = get_field_value(couple, 'couple_bride_name')
+    groom_name = get_field_value(couple, 'couple_groom_name')
+    section_subtitle = f"{bride_name.upper()} & {groom_name.upper()}" if bride_name and groom_name else None
 
-    # Get story moments
-    story_moments = get_field_value(story, 'story_moments', [])
+    # Get story moments from raw data only
+    story_moments = get_field_value(story, 'story_moments')
     if isinstance(story_moments, str):
         try:
             story_moments = json.loads(story_moments)
         except:
-            story_moments = []
-
-    # Ensure we have default story moments if none exist
-    if not story_moments:
-        story_moments = [
-            {
-                "date": "JULY 20, 2015",
-                "title": "First time we meet",
-                "description": "First time we meet viverra tristique duis vitae diam the nesumen nivamus aestan ateuene artines finibus.",
-                "imageUrl": "https://i.imgur.com/83AAp8B.png"
-            },
-            {
-                "date": "AUGUST 1, 2016",
-                "title": "Our First Date",
-                "description": "A wonderful evening under the stars that marked the beginning of our journey together.",
-                "imageUrl": "https://images.pexels.com/photos/3784433/pexels-photo-3784433.jpeg?auto=compress&cs=tinysrgb&w=1260"
-            },
-            {
-                "date": "JUNE 25, 2022",
-                "title": "The Proposal",
-                "description": "The moment when everything became perfect and our future together was sealed with a beautiful 'Yes!'",
-                "imageUrl": "https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260"
-            }
-        ]
+            story_moments = None
 
     return {
         'sectionSubtitle': section_subtitle,
-        'sectionTitle': 'Our Love Story',
+        'sectionTitle': get_field_value(story, 'story_section_title'),
         'storyMoments': story_moments
     }
 
 def extract_video_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Video section"""
+    """Extract data for Video section - raw data only, frontend handles defaults"""
     video = data_dict.get('video', {})
 
     return {
-        'backgroundImageUrl': get_field_value(video, 'video_background_image',
-            'https://i.imgur.com/KxT5vJM.png'),
-        'videoEmbedUrl': get_field_value(video, 'video_embed_url',
-            'https://www.youtube.com/embed/dQw4w9WgXcQ'),
-        'preTitle': get_field_value(video, 'video_pretitle', 'A LOVE STORY BEGINNING'),
-        'title': get_field_value(video, 'video_title', 'Watch our love story')
+        'backgroundImageUrl': get_field_value(video, 'video_background_image'),
+        'videoEmbedUrl': get_field_value(video, 'video_embed_url'),
+        'preTitle': get_field_value(video, 'video_pretitle'),
+        'title': get_field_value(video, 'video_title')
     }
 
 def extract_gallery_data(data_dict: Dict[str, Any], media_files: List[Any]) -> Dict[str, Any]:
@@ -256,39 +213,40 @@ def extract_gallery_data(data_dict: Dict[str, Any], media_files: List[Any]) -> D
         ]
 
     return {
-        'sectionSubtitle': 'MEMORIES',
-        'sectionTitle': 'Wedding Gallery',
+        'sectionSubtitle': get_field_value(gallery, 'gallery_section_subtitle'),
+        'sectionTitle': get_field_value(gallery, 'gallery_section_title'),
         'galleryImages': gallery_photos,
         'categories': gallery_categories
     }
 
 def extract_footer_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract data for Footer section"""
+    """Extract data for Footer section - raw data only, frontend handles defaults"""
     couple = data_dict.get('couple', {})
     event = data_dict.get('event', {})
+    footer = data_dict.get('footer', {})
 
-    # Build couple names
-    bride_name = get_field_value(couple, 'couple_bride_name', 'María')
-    groom_name = get_field_value(couple, 'couple_groom_name', 'Carlos')
-    couple_names = f"{bride_name} & {groom_name}"
+    # Build couple names from raw data only
+    bride_name = get_field_value(couple, 'couple_bride_name')
+    groom_name = get_field_value(couple, 'couple_groom_name')
+    couple_names = f"{bride_name} & {groom_name}" if bride_name and groom_name else None
 
-    # Format event date
-    event_date = get_field_value(event, 'event_date', '15 December, 2024')
-    if isinstance(event_date, str) and 'T' in event_date:
+    # Format event date from raw data only
+    event_date = get_field_value(event, 'event_date')
+    if event_date and isinstance(event_date, str) and 'T' in event_date:
         from datetime import datetime
         try:
             dt = datetime.fromisoformat(event_date.replace('Z', '+00:00'))
             event_date = dt.strftime('%d %B, %Y').upper()
         except:
-            event_date = event_date.upper()
-    else:
+            event_date = event_date.upper() if event_date else None
+    elif event_date:
         event_date = str(event_date).upper()
 
     return {
         'coupleNames': couple_names,
         'eventDate': event_date,
-        'eventLocation': get_field_value(event, 'event_venue_city', 'CIUDAD').upper(),
-        'copyrightText': 'Made with love. All rights reserved.'
+        'eventLocation': get_field_value(event, 'event_venue_city'),
+        'copyrightText': get_field_value(footer, 'footer_copyright_text')
     }
 
 def extract_section_config(data_dict: Dict[str, Any]) -> Dict[str, Any]:

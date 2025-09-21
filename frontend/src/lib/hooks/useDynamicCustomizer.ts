@@ -17,6 +17,16 @@ import {
 } from '@/components/customizer/types';
 import { getAvailableFields, detectActiveSections, getFieldsByOrderedSections, SECTION_FIELDS_MAP } from '@/components/customizer/sectionFieldsMap';
 
+// Import default props from section components (single source of truth)
+import { Hero1DefaultProps } from '@/components/templates/sections/hero/Hero1';
+import { Welcome1DefaultProps } from '@/components/templates/sections/welcome/Welcome1';
+import { Couple1DefaultProps } from '@/components/templates/sections/couple/Couple1';
+import { Countdown1DefaultProps } from '@/components/templates/sections/countdown/Countdown1';
+import { Gallery1DefaultProps } from '@/components/templates/sections/gallery/Gallery1';
+import { Story1DefaultProps } from '@/components/templates/sections/story/Story1';
+import { Video1DefaultProps } from '@/components/templates/sections/video/Video1';
+import { Footer1DefaultProps } from '@/components/templates/sections/footer/Footer1';
+
 interface UseDynamicCustomizerProps {
   initialData?: any;
   sectionsConfig?: any;
@@ -67,125 +77,135 @@ export function useDynamicCustomizer({
     availableFields.forEach(field => {
       let defaultValue = '';
 
-      // Extract default values from the template transformation
+      // Extract default values from template props or use component defaults (single source of truth)
       switch (field.key) {
+        // Hero Section Defaults
         case 'coupleNames':
-          defaultValue = templateProps.hero?.coupleNames || 'Jefferson & Rosmery';
+          defaultValue = templateProps.hero?.coupleNames || Hero1DefaultProps.coupleNames;
           break;
         case 'eventDate':
-          defaultValue = templateProps.hero?.eventDate || '15 December, 2024';
+          defaultValue = templateProps.hero?.eventDate || Hero1DefaultProps.eventDate;
           break;
         case 'eventLocation':
-          defaultValue = templateProps.hero?.eventLocation || 'New York';
+          defaultValue = templateProps.hero?.eventLocation || Hero1DefaultProps.eventLocation;
           break;
         case 'heroImageUrl':
-          defaultValue = templateProps.hero?.heroImageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg';
+          defaultValue = templateProps.hero?.heroImageUrl || Hero1DefaultProps.heroImageUrl;
           break;
+
+        // Welcome Section Defaults
         case 'bannerImageUrl':
-          defaultValue = templateProps.welcome?.bannerImageUrl || 'https://i.imgur.com/svWa52m.png';
+          defaultValue = templateProps.welcome?.bannerImageUrl || Welcome1DefaultProps.bannerImageUrl;
           break;
         case 'couplePhotoUrl':
-          defaultValue = templateProps.welcome?.couplePhotoUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/couple.png';
-          break;
-        case 'bride_name':
-          defaultValue = templateProps.couple?.brideData?.name || 'Rosmery Guiterrez';
-          break;
-        case 'groom_name':
-          defaultValue = templateProps.couple?.groomData?.name || 'Jefferson Camacho';
-          break;
-        case 'bride_role':
-          defaultValue = templateProps.couple?.brideData?.role || 'La Novia';
-          break;
-        case 'bride_description':
-          defaultValue = templateProps.couple?.brideData?.description || 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.';
-          break;
-        case 'bride_imageUrl':
-          defaultValue = templateProps.couple?.brideData?.imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png';
-          break;
-        case 'groom_role':
-          defaultValue = templateProps.couple?.groomData?.role || 'El Novio';
-          break;
-        case 'groom_description':
-          defaultValue = templateProps.couple?.groomData?.description || 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.';
-          break;
-        case 'groom_imageUrl':
-          defaultValue = templateProps.couple?.groomData?.imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png';
+          defaultValue = templateProps.welcome?.couplePhotoUrl || Welcome1DefaultProps.couplePhotoUrl;
           break;
         case 'welcomeText':
-          defaultValue = templateProps.welcome?.welcomeText || 'Hola & Bienvenidos';
+          defaultValue = templateProps.welcome?.welcomeText || Welcome1DefaultProps.welcomeText;
           break;
         case 'title':
-          defaultValue = templateProps.welcome?.title || 'Nos Vamos a Casar!!!!';
+          defaultValue = templateProps.welcome?.title || Welcome1DefaultProps.title;
           break;
         case 'description':
-          defaultValue = templateProps.welcome?.description || 'Hoy y siempre, más allá del mañana, necesito que estés a mi lado como mi mejor amigo, amante y alma gemela; te prometo ternura, compañía y apoyo incondicional para construir juntos un hogar de confianza y cariño, celebrar el amor que nos une y cuidarnos mutuamente toda la vida.';
+          defaultValue = templateProps.welcome?.description || Welcome1DefaultProps.description;
           break;
+
+        // Couple Section Defaults
+        case 'bride_name':
+          defaultValue = templateProps.couple?.brideData?.name || Couple1DefaultProps.brideData.name;
+          break;
+        case 'groom_name':
+          defaultValue = templateProps.couple?.groomData?.name || Couple1DefaultProps.groomData.name;
+          break;
+        case 'bride_role':
+          defaultValue = templateProps.couple?.brideData?.role || Couple1DefaultProps.brideData.role;
+          break;
+        case 'bride_description':
+          defaultValue = templateProps.couple?.brideData?.description || Couple1DefaultProps.brideData.description;
+          break;
+        case 'bride_imageUrl':
+          defaultValue = templateProps.couple?.brideData?.imageUrl || Couple1DefaultProps.brideData.imageUrl;
+          break;
+        case 'groom_role':
+          defaultValue = templateProps.couple?.groomData?.role || Couple1DefaultProps.groomData.role;
+          break;
+        case 'groom_description':
+          defaultValue = templateProps.couple?.groomData?.description || Couple1DefaultProps.groomData.description;
+          break;
+        case 'groom_imageUrl':
+          defaultValue = templateProps.couple?.groomData?.imageUrl || Couple1DefaultProps.groomData.imageUrl;
+          break;
+        // Countdown Section Defaults
         case 'weddingDate':
-          defaultValue = templateProps.countdown?.weddingDate || '2025-12-15T17:00:00';
+          defaultValue = templateProps.countdown?.weddingDate || Countdown1DefaultProps.weddingDate;
           break;
         case 'backgroundImageUrl':
-          defaultValue = templateProps.countdown?.backgroundImageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1.jpg';
+          defaultValue = templateProps.countdown?.backgroundImageUrl || Countdown1DefaultProps.backgroundImageUrl;
           break;
         case 'preTitle':
-          defaultValue = templateProps.countdown?.preTitle || 'DENTRO DE POCO SEREMOS UNA FAMILIA';
+          defaultValue = templateProps.countdown?.preTitle || Countdown1DefaultProps.preTitle;
           break;
+
+        // Additional Couple Section Fields
         case 'sectionTitle':
-          defaultValue = templateProps.couple?.sectionTitle || 'Futuros Felices Esposos';
+          defaultValue = templateProps.couple?.sectionTitle || Couple1DefaultProps.sectionTitle;
           break;
         case 'sectionSubtitle':
-          defaultValue = templateProps.couple?.sectionSubtitle || 'MARIDO & MUJER';
+          defaultValue = templateProps.couple?.sectionSubtitle || Couple1DefaultProps.sectionSubtitle;
           break;
+
+        // Footer Section Defaults
         case 'copyrightText':
-          defaultValue = templateProps.footer?.copyrightText || 'Hecho con Amor. All right reserved Amiras Gift.';
+          defaultValue = templateProps.footer?.copyrightText || Footer1DefaultProps.copyrightText;
           break;
 
         // Story moment fields with defaults from Story1 component
         case 'story_moment_1_date':
-          defaultValue = '20 DE JULIO, 2010';
+          defaultValue = templateProps.story?.storyMoments?.[0]?.date || Story1DefaultProps.storyMoments[0].date;
           break;
         case 'story_moment_1_title':
-          defaultValue = 'Así Nos Conocimos';
+          defaultValue = templateProps.story?.storyMoments?.[0]?.title || Story1DefaultProps.storyMoments[0].title;
           break;
         case 'story_moment_1_description':
-          defaultValue = 'La primera vez que nos vimos, un instante que marcó el inicio de nuestra historia. Un encuentro lleno de emoción y destino, donde sin saberlo comenzaba el amor que cambiaría nuestras vidas.';
+          defaultValue = templateProps.story?.storyMoments?.[0]?.description || Story1DefaultProps.storyMoments[0].description;
           break;
         case 'story_moment_1_imageUrl':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4.jpg';
+          defaultValue = templateProps.story?.storyMoments?.[0]?.imageUrl || Story1DefaultProps.storyMoments[0].imageUrl;
           break;
         case 'story_moment_2_date':
-          defaultValue = '1 DE AGOSTO, 2016';
+          defaultValue = templateProps.story?.storyMoments?.[1]?.date || Story1DefaultProps.storyMoments[1].date;
           break;
         case 'story_moment_2_title':
-          defaultValue = 'Nuestra Primera Cita';
+          defaultValue = templateProps.story?.storyMoments?.[1]?.title || Story1DefaultProps.storyMoments[1].title;
           break;
         case 'story_moment_2_description':
-          defaultValue = 'Una noche maravillosa bajo las estrellas que marcó el inicio de nuestro camino juntos. La conversación fluyó tan fácil como el vino, y ambos supimos que aquello era algo especial y único.';
+          defaultValue = templateProps.story?.storyMoments?.[1]?.description || Story1DefaultProps.storyMoments[1].description;
           break;
         case 'story_moment_2_imageUrl':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/2.jpg';
+          defaultValue = templateProps.story?.storyMoments?.[1]?.imageUrl || Story1DefaultProps.storyMoments[1].imageUrl;
           break;
         case 'story_moment_3_date':
-          defaultValue = '25 DE JUNIO, 2022';
+          defaultValue = templateProps.story?.storyMoments?.[2]?.date || Story1DefaultProps.storyMoments[2].date;
           break;
         case 'story_moment_3_title':
-          defaultValue = 'Nos Comprometimos';
+          defaultValue = templateProps.story?.storyMoments?.[2]?.title || Story1DefaultProps.storyMoments[2].title;
           break;
         case 'story_moment_3_description':
-          defaultValue = 'El día que decidimos pasar el resto de nuestras vidas juntos. Una propuesta llena de amor y nervios, con la certeza de que este era el momento perfecto para comenzar nuestra nueva aventura.';
+          defaultValue = templateProps.story?.storyMoments?.[2]?.description || Story1DefaultProps.storyMoments[2].description;
           break;
         case 'story_moment_3_imageUrl':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5-1.jpg';
+          defaultValue = templateProps.story?.storyMoments?.[2]?.imageUrl || Story1DefaultProps.storyMoments[2].imageUrl;
           break;
 
         // Gallery image fields with defaults from Gallery1 component
         case 'gallery_image_1_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-1.jpg';
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.url || Gallery1DefaultProps.galleryImages[0].src;
           break;
         case 'gallery_image_1_alt':
-          defaultValue = 'Romantic couple moment';
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.alt || Gallery1DefaultProps.galleryImages[0].alt;
           break;
         case 'gallery_image_1_category':
-          defaultValue = 'ceremony';
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.category || Gallery1DefaultProps.galleryImages[0].category;
           break;
         case 'gallery_image_2_url':
           defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg';
@@ -269,6 +289,11 @@ export function useDynamicCustomizer({
           defaultValue = 'ceremony';
           break;
 
+        // Video Section Defaults
+        case 'videoEmbedUrl':
+          defaultValue = templateProps.video?.videoEmbedUrl || Video1DefaultProps.videoEmbedUrl;
+          break;
+
         default:
           // Try to extract from template data or use field placeholder
           defaultValue = templateData[field.key] || field.placeholder || '';
@@ -281,8 +306,8 @@ export function useDynamicCustomizer({
         initialMergedData[field.key] = initialData[field.key];
         initialTouchedFields[field.key] = true;
       } else {
-        // Use template default for untouched fields
-        initialMergedData[field.key] = defaultValue;
+        // Leave fields empty - values will show only as placeholders
+        initialMergedData[field.key] = '';
       }
     });
 
@@ -337,82 +362,82 @@ export function useDynamicCustomizer({
   const transformToTemplateProps = useCallback((data: any) => {
     return {
       hero: {
-        coupleNames: data.coupleNames || `${data.couple_bride_name || 'Bride'} & ${data.couple_groom_name || 'Groom'}`,
+        coupleNames: data.coupleNames || Hero1DefaultProps.coupleNames,
         eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
-        }) : '15 December, 2024'),
-        eventLocation: data.eventLocation || data.event_venue_city || 'New York',
-        heroImageUrl: data.heroImageUrl || data.gallery_hero_image || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg',
+        }) : Hero1DefaultProps.eventDate),
+        eventLocation: data.eventLocation || data.event_venue_city || Hero1DefaultProps.eventLocation,
+        heroImageUrl: data.heroImageUrl || data.gallery_hero_image || Hero1DefaultProps.heroImageUrl,
       },
       welcome: {
-        bannerImageUrl: data.bannerImageUrl || 'https://i.imgur.com/svWa52m.png',
-        couplePhotoUrl: data.couplePhotoUrl || data.gallery_couple_image || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/couple.png',
-        welcomeText: data.welcomeText || 'Hola & Bienvenidos',
-        title: data.title || 'Nos Vamos a Casar!!!!',
-        description: data.description || data.message_welcome_text || data.couple_story || 'Hoy y siempre, más allá del mañana, necesito que estés a mi lado como mi mejor amigo, amante y alma gemela; te prometo ternura, compañía y apoyo incondicional para construir juntos un hogar de confianza y cariño, celebrar el amor que nos une y cuidarnos mutuamente toda la vida.',
+        bannerImageUrl: data.welcome_bannerImageUrl || Welcome1DefaultProps.bannerImageUrl,
+        couplePhotoUrl: data.welcome_couplePhotoUrl || data.gallery_couple_image || Welcome1DefaultProps.couplePhotoUrl,
+        welcomeText: data.welcome_welcomeText || Welcome1DefaultProps.welcomeText,
+        title: data.welcome_title || Welcome1DefaultProps.title,
+        description: data.welcome_description || data.message_welcome_text || data.couple_story || Welcome1DefaultProps.description,
       },
       couple: {
-        sectionTitle: data.sectionTitle || 'Futuros Felices Esposos',
-        sectionSubtitle: data.sectionSubtitle || 'MARIDO & MUJER',
+        sectionTitle: data.couple_sectionTitle || Couple1DefaultProps.sectionTitle,
+        sectionSubtitle: data.couple_sectionSubtitle || Couple1DefaultProps.sectionSubtitle,
         brideData: {
-          imageUrl: data.bride_imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
-          name: data.bride_name || data.couple_bride_name || 'Rosmery Guiterrez',
-          role: data.bride_role || 'La Novia',
-          description: data.bride_description || 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
+          imageUrl: data.bride_imageUrl || Couple1DefaultProps.brideData.imageUrl,
+          name: data.bride_name || data.couple_bride_name || Couple1DefaultProps.brideData.name,
+          role: data.bride_role || Couple1DefaultProps.brideData.role,
+          description: data.bride_description || Couple1DefaultProps.brideData.description,
           socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
         },
         groomData: {
-          imageUrl: data.groom_imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png',
-          name: data.groom_name || data.couple_groom_name || 'Jefferson Camacho',
-          role: data.groom_role || 'El Novio',
-          description: data.groom_description || 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
+          imageUrl: data.groom_imageUrl || Couple1DefaultProps.groomData.imageUrl,
+          name: data.groom_name || data.couple_groom_name || Couple1DefaultProps.groomData.name,
+          role: data.groom_role || Couple1DefaultProps.groomData.role,
+          description: data.groom_description || Couple1DefaultProps.groomData.description,
           socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
         }
       },
       countdown: {
-        weddingDate: data.weddingDate || data.event_date || '2025-12-15T17:00:00',
-        backgroundImageUrl: data.backgroundImageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1.jpg',
-        preTitle: data.preTitle || 'DENTRO DE POCO SEREMOS UNA FAMILIA',
-        title: data.title || "Nos Casaremos en ..."
+        weddingDate: data.countdown_weddingDate || data.event_date || Countdown1DefaultProps.weddingDate,
+        backgroundImageUrl: data.countdown_backgroundImageUrl || Countdown1DefaultProps.backgroundImageUrl,
+        preTitle: data.countdown_preTitle || Countdown1DefaultProps.preTitle,
+        title: data.countdown_title || Countdown1DefaultProps.title
       },
       story: {
-        sectionSubtitle: data.sectionSubtitle || 'JEFFERSON & ROSMERY',
-        sectionTitle: data.sectionTitle || 'Nuestra Historia ♥',
+        sectionSubtitle: Story1DefaultProps.sectionSubtitle,
+        sectionTitle: Story1DefaultProps.sectionTitle,
         storyMoments: [
           // Moment 1 - only include if has data
           ...(data.story_moment_1_date || data.story_moment_1_title ? [{
-            date: data.story_moment_1_date || '20 DE JULIO, 2010',
-            title: data.story_moment_1_title || 'Así Nos Conocimos',
-            description: data.story_moment_1_description || 'La primera vez que nos vimos, un instante que marcó el inicio de nuestra historia. Un encuentro lleno de emoción y destino, donde sin saberlo comenzaba el amor que cambiaría nuestras vidas.',
-            imageUrl: data.story_moment_1_imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4.jpg'
+            date: data.story_moment_1_date || Story1DefaultProps.storyMoments[0].date,
+            title: data.story_moment_1_title || Story1DefaultProps.storyMoments[0].title,
+            description: data.story_moment_1_description || Story1DefaultProps.storyMoments[0].description,
+            imageUrl: data.story_moment_1_imageUrl || Story1DefaultProps.storyMoments[0].imageUrl
           }] : []),
           // Moment 2 - only include if has data
           ...(data.story_moment_2_date || data.story_moment_2_title ? [{
-            date: data.story_moment_2_date || '1 DE AGOSTO, 2016',
-            title: data.story_moment_2_title || 'Nuestra Primera Cita',
-            description: data.story_moment_2_description || 'Una noche maravillosa bajo las estrellas que marcó el inicio de nuestro camino juntos. La conversación fluyó tan fácil como el vino, y ambos supimos que aquello era algo especial y único.',
-            imageUrl: data.story_moment_2_imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/2.jpg'
+            date: data.story_moment_2_date || Story1DefaultProps.storyMoments[1].date,
+            title: data.story_moment_2_title || Story1DefaultProps.storyMoments[1].title,
+            description: data.story_moment_2_description || Story1DefaultProps.storyMoments[1].description,
+            imageUrl: data.story_moment_2_imageUrl || Story1DefaultProps.storyMoments[1].imageUrl
           }] : []),
           // Moment 3 - only include if has data
           ...(data.story_moment_3_date || data.story_moment_3_title ? [{
-            date: data.story_moment_3_date || '25 DE JUNIO, 2022',
-            title: data.story_moment_3_title || 'Nos Comprometimos',
-            description: data.story_moment_3_description || 'El día que decidimos pasar el resto de nuestras vidas juntos. Una propuesta llena de amor y nervios, con la certeza de que este era el momento perfecto para comenzar nuestra nueva aventura.',
-            imageUrl: data.story_moment_3_imageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5-1.jpg'
+            date: data.story_moment_3_date || Story1DefaultProps.storyMoments[2].date,
+            title: data.story_moment_3_title || Story1DefaultProps.storyMoments[2].title,
+            description: data.story_moment_3_description || Story1DefaultProps.storyMoments[2].description,
+            imageUrl: data.story_moment_3_imageUrl || Story1DefaultProps.storyMoments[2].imageUrl
           }] : [])
         ]
       },
       video: {
-        backgroundImageUrl: data.backgroundImageUrl || 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg',
-        videoEmbedUrl: data.videoEmbedUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        preTitle: data.preTitle || 'INCIO NUESTRA HISTORIA',
-        title: data.title || 'Mira nuestra Historia de Amor'
+        backgroundImageUrl: data.video_backgroundImageUrl || Video1DefaultProps.backgroundImageUrl,
+        videoEmbedUrl: data.video_videoEmbedUrl || Video1DefaultProps.videoEmbedUrl,
+        preTitle: data.video_preTitle || Video1DefaultProps.preTitle,
+        title: data.video_title || Video1DefaultProps.title
       },
       gallery: {
-        sectionSubtitle: data.sectionSubtitle || 'Memorias',
-        sectionTitle: data.sectionTitle || 'Galería de Novios',
+        sectionSubtitle: Gallery1DefaultProps.sectionSubtitle,
+        sectionTitle: Gallery1DefaultProps.sectionTitle,
         galleryImages: [
           // Image 1 - only include if has URL
           ...(data.gallery_image_1_url ? [{
@@ -487,10 +512,14 @@ export function useDynamicCustomizer({
         ]
       },
       footer: {
-        coupleNames: data.coupleNames || `${data.couple_bride_name || 'Jefferson'} & ${data.couple_groom_name || 'Rosmery'}`,
-        eventDate: data.eventDate || '24 DECEMBER 2026',
-        eventLocation: data.eventLocation || 'Lima, Peru',
-        copyrightText: data.copyrightText || 'Hecho con Amor. All right reserved Amiras Gift.'
+        coupleNames: data.footer_coupleNames || `${data.couple_bride_name || 'Jefferson'} & ${data.couple_groom_name || 'Rosmery'}`,
+        eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }) : Footer1DefaultProps.eventDate),
+        eventLocation: data.footer_eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
+        copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
   }, []);

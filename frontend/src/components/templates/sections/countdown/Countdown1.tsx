@@ -112,3 +112,11 @@ export const Countdown1: React.FC<Countdown1Props> = ({
     </section>
   );
 };
+
+// Export default props for centralized access
+export const Countdown1DefaultProps = {
+  weddingDate: '2025-12-15T17:00:00',
+  backgroundImageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1.jpg',
+  preTitle: 'DENTRO DE POCO SEREMOS UNA FAMILIA',
+  title: "Nos Casaremos en ..."
+};

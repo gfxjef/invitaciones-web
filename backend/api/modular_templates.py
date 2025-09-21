@@ -147,19 +147,33 @@ def get_template_props(invitation_id):
             # For now, map each section to its default implementation
             sections_config[section] = f"{section}_1"
 
-        # Try to get invitation data, if fails, use demo data
+        # Get invitation data - frontend will handle defaults
         try:
             invitation = Invitation.query.get(invitation_id)
             if invitation:
                 # Get organized props from real data
                 template_props = get_modular_template_props(invitation_id, sections_config)
             else:
-                # Use demo data if invitation doesn't exist
-                template_props = get_demo_template_props(sections_config)
+                # Return empty data - frontend components will provide defaults
+                template_props = {
+                    'section_props': {},
+                    'config': {
+                        'sections_enabled': {section: True for section in sections_config.keys()},
+                        'colors': {},
+                        'custom_css': ''
+                    }
+                }
         except Exception as db_error:
             print(f"Database error for invitation {invitation_id}: {str(db_error)}")
-            # Use demo data as fallback
-            template_props = get_demo_template_props(sections_config)
+            # Return empty data - frontend components will provide defaults
+            template_props = {
+                'section_props': {},
+                'config': {
+                    'sections_enabled': {section: True for section in sections_config.keys()},
+                    'colors': {},
+                    'custom_css': ''
+                }
+            }
 
         return jsonify({
             'invitation_id': invitation_id,
@@ -170,122 +184,6 @@ def get_template_props(invitation_id):
         return jsonify({'message': f'Internal server error: {str(e)}'}), 500
 
 
-def get_demo_template_props(sections_config):
-    """
-    Generate demo data for template props when real data is not available
-    """
-    demo_section_props = {
-        'hero': {
-            'coupleNames': 'María & Carlos',
-            'eventDate': '15 December, 2024',
-            'eventLocation': 'Lima, Perú',
-            'heroImageUrl': 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260',
-            'navigationItems': [
-                { 'href': '#home', 'label': 'Home' },
-                { 'href': '#couple', 'label': 'Couple' },
-                { 'href': '#story', 'label': 'Story' },
-                { 'href': '#events', 'label': 'Events' },
-                { 'href': '#gallery', 'label': 'Gallery' },
-                { 'href': '#rsvp', 'label': 'R.S.V.P' }
-            ]
-        },
-        'welcome': {
-            'bannerImageUrl': 'https://i.imgur.com/svWa52m.png',
-            'couplePhotoUrl': 'https://i.imgur.com/OFaT2vQ.png',
-            'welcomeText': 'HELLO & WELCOME',
-            'title': "We're getting married!",
-            'description': "Today and always, beyond tomorrow, I need you beside me, always as my best friend, lover and forever soul mate."
-        },
-        'couple': {
-            'sectionTitle': 'Happy Couple',
-            'sectionSubtitle': 'BRIDE & GROOM',
-            'brideData': {
-                'imageUrl': 'https://i.imgur.com/u1wA4oo.png',
-                'name': 'María',
-                'role': 'The Bride',
-                'description': 'A beautiful soul with a heart full of love and dreams.',
-                'socialLinks': { 'facebook': '#', 'twitter': '#', 'instagram': '#' }
-            },
-            'groomData': {
-                'imageUrl': 'https://i.imgur.com/qL42vPA.png',
-                'name': 'Carlos',
-                'role': 'The Groom',
-                'description': 'A loving partner ready to start this new journey together.',
-                'socialLinks': { 'facebook': '#', 'twitter': '#', 'instagram': '#' }
-            }
-        },
-        'countdown': {
-            'weddingDate': '2024-12-15T16:00:00Z',
-            'backgroundImageUrl': 'https://i.imgur.com/7p4m1iH.png',
-            'preTitle': 'WE WILL BECOME A FAMILY IN',
-            'title': "We're getting married in"
-        },
-        'story': {
-            'sectionSubtitle': 'MARÍA & CARLOS',
-            'sectionTitle': 'Our Love Story',
-            'storyMoments': [
-                {
-                    "date": "JULY 20, 2015",
-                    "title": "First time we meet",
-                    "description": "First time we meet viverra tristique duis vitae diam the nesumen nivamus aestan ateuene artines finibus.",
-                    "imageUrl": "https://i.imgur.com/83AAp8B.png"
-                },
-                {
-                    "date": "AUGUST 1, 2016",
-                    "title": "Our First Date",
-                    "description": "A wonderful evening under the stars that marked the beginning of our journey together.",
-                    "imageUrl": "https://images.pexels.com/photos/3784433/pexels-photo-3784433.jpeg?auto=compress&cs=tinysrgb&w=1260"
-                },
-                {
-                    "date": "JUNE 25, 2022",
-                    "title": "The Proposal",
-                    "description": "The moment when everything became perfect and our future together was sealed with a beautiful 'Yes!'",
-                    "imageUrl": "https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260"
-                }
-            ]
-        },
-        'video': {
-            'backgroundImageUrl': 'https://i.imgur.com/KxT5vJM.png',
-            'videoEmbedUrl': 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            'preTitle': 'A LOVE STORY BEGINNING',
-            'title': 'Watch our love story'
-        },
-        'gallery': {
-            'sectionSubtitle': 'MEMORIES',
-            'sectionTitle': 'Wedding Gallery',
-            'galleryImages': [
-                { 'id': 1, 'url': 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=800', 'alt': 'Romantic couple moment', 'category': 'ceremony' },
-                { 'id': 2, 'url': 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=800', 'alt': 'Beautiful wedding ceremony', 'category': 'ceremony' },
-                { 'id': 3, 'url': 'https://images.pexels.com/photos/3784433/pexels-photo-3784433.jpeg?auto=compress&cs=tinysrgb&w=800', 'alt': 'Celebration moments', 'category': 'party' },
-                { 'id': 4, 'url': 'https://images.pexels.com/photos/103566/pexels-photo-103566.jpeg?auto=compress&cs=tinysrgb&w=800', 'alt': 'Wedding rings', 'category': 'ceremony' }
-            ]
-        },
-        'footer': {
-            'coupleNames': 'María & Carlos',
-            'eventDate': '15 DECEMBER, 2024',
-            'eventLocation': 'LIMA, PERÚ',
-            'copyrightText': 'Made with love. All rights reserved.'
-        }
-    }
-
-    # Filter section props based on sections_config
-    section_props = {}
-    for section_type, section_key in sections_config.items():
-        if section_type in demo_section_props:
-            section_props[section_type] = demo_section_props[section_type]
-
-    return {
-        'section_props': section_props,
-        'config': {
-            'sections_enabled': {section: True for section in sections_config.keys()},
-            'colors': {
-                'primary': '#d97706',
-                'secondary': '#374151',
-                'accent': '#fbbf24'
-            },
-            'custom_css': ''
-        }
-    }
 
 
 @modular_templates_bp.route('/sections/available', methods=['GET'])

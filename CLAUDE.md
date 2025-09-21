@@ -292,3 +292,380 @@ This documentation is CRITICAL for tracking changes and maintaining project hist
 - Avoids duplicate implementations
 - Ensures continuity between development sessions
 - Preserves context across different agents and tasks
+
+---
+
+## Creating New Template Sections/Variants
+
+This guide explains how to add new section variants (e.g., Hero2, Welcome3, etc.) to the modular template system while maintaining compatibility with the existing architecture.
+
+### Architecture Overview
+
+The system uses a **superset field mapping** approach where:
+- Each section type (hero, welcome, couple, etc.) can have multiple variants
+- All possible fields from all variants are listed in `sectionFieldsMap.ts`
+- The customizer shows only relevant fields based on the active component
+- Components use their own `DefaultProps` as single source of truth
+
+### Step-by-Step Guide
+
+#### 1. Create the New Component
+
+**Location**: `frontend/src/components/templates/sections/{section_type}/{VariantName}.tsx`
+
+```typescript
+// Example: frontend/src/components/templates/sections/hero/Hero2.tsx
+
+interface Hero2Props {
+  // Common fields (shared with Hero1)
+  coupleNames?: string;
+  eventDate?: string;
+  eventLocation?: string;
+
+  // New fields specific to Hero2
+  heroBackgroundVideo?: string;
+  heroSubtitle?: string;
+  heroAnimation?: 'fade' | 'slide' | 'zoom';
+  heroOverlayOpacity?: number;
+}
+
+export const Hero2: React.FC<Hero2Props> = ({
+  coupleNames = Hero2DefaultProps.coupleNames,
+  eventDate = Hero2DefaultProps.eventDate,
+  eventLocation = Hero2DefaultProps.eventLocation,
+  heroBackgroundVideo = Hero2DefaultProps.heroBackgroundVideo,
+  heroSubtitle = Hero2DefaultProps.heroSubtitle,
+  heroAnimation = Hero2DefaultProps.heroAnimation,
+  heroOverlayOpacity = Hero2DefaultProps.heroOverlayOpacity,
+}) => {
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Video background */}
+      <video
+        autoPlay
+        muted
+        loop
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: heroOverlayOpacity }}
+      >
+        <source src={heroBackgroundVideo} type="video/mp4" />
+      </video>
+
+      {/* Content with animation */}
+      <div className={`relative z-10 text-center text-white animate-${heroAnimation}`}>
+        <h1 className="text-6xl font-great-vibes mb-4">{coupleNames}</h1>
+        <h2 className="text-2xl font-montserrat mb-2">{heroSubtitle}</h2>
+        <p className="text-xl">{eventDate}</p>
+        <p className="text-lg">{eventLocation}</p>
+      </div>
+    </section>
+  );
+};
+
+// CRITICAL: Export default props for single source of truth
+export const Hero2DefaultProps = {
+  coupleNames: 'Jefferson & Rosmery',
+  eventDate: '15 December, 2024',
+  eventLocation: 'LIMA - PERÚ',
+  heroBackgroundVideo: 'https://example.com/wedding-video.mp4',
+  heroSubtitle: 'Nuestra Historia de Amor',
+  heroAnimation: 'fade' as const,
+  heroOverlayOpacity: 0.7,
+};
+```
+
+#### 2. Register Component in Section Registry
+
+**File**: `frontend/src/components/templates/sections/{section_type}/registry.ts`
+
+```typescript
+// Example: frontend/src/components/templates/sections/hero/registry.ts
+
+import { Hero1 } from './Hero1';
+import { Hero2 } from './Hero2';
+
+export const heroComponents = {
+  hero_1: Hero1,
+  hero_2: Hero2,  // ← Add new variant
+};
+```
+
+**File**: `frontend/src/components/templates/sections/registry.ts`
+
+```typescript
+// Update main registry
+import { heroComponents } from './hero/registry';
+
+export const sectionRegistry = {
+  ...heroComponents,
+  // ... other sections
+};
+
+export function getSectionComponent(key: string) {
+  return sectionRegistry[key];
+}
+```
+
+#### 3. Update Field Mapping (Superset Approach)
+
+**File**: `frontend/src/components/customizer/sectionFieldsMap.ts`
+
+```typescript
+// Add ALL possible fields from ALL variants to the section
+export const SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
+  hero: {
+    label: 'Portada',
+    icon: '🎭',
+    fields: [
+      // Common fields (Hero1 ✅, Hero2 ✅)
+      'coupleNames',
+      'eventDate',
+      'eventLocation',
+
+      // Hero1 specific (Hero1 ✅, Hero2 ❌)
+      'heroImageUrl',
+
+      // Hero2 specific (Hero1 ❌, Hero2 ✅)
+      'heroBackgroundVideo',
+      'heroSubtitle',
+      'heroAnimation',
+      'heroOverlayOpacity',
+    ]
+  },
+  // ... other sections
+};
+
+// Add field definitions for new fields
+export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
+  // ... existing fields
+
+  // New Hero2 fields
+  heroBackgroundVideo: {
+    key: 'heroBackgroundVideo',
+    label: 'Video de Fondo',
+    type: 'url',
+    section: 'hero',
+    category: 'Multimedia'
+  },
+
+  heroSubtitle: {
+    key: 'heroSubtitle',
+    label: 'Subtítulo',
+    type: 'text',
+    section: 'hero',
+    category: 'Texto'
+  },
+
+  heroAnimation: {
+    key: 'heroAnimation',
+    label: 'Tipo de Animación',
+    type: 'select',
+    options: [
+      { value: 'fade', label: 'Desvanecimiento' },
+      { value: 'slide', label: 'Deslizamiento' },
+      { value: 'zoom', label: 'Zoom' }
+    ],
+    section: 'hero',
+    category: 'Efectos'
+  },
+
+  heroOverlayOpacity: {
+    key: 'heroOverlayOpacity',
+    label: 'Opacidad del Overlay',
+    type: 'range',
+    min: 0,
+    max: 1,
+    step: 0.1,
+    section: 'hero',
+    category: 'Efectos'
+  },
+};
+```
+
+#### 4. Update Customizer Data Transformation
+
+**File**: `frontend/src/lib/hooks/useDynamicCustomizer.ts`
+
+```typescript
+// Add new fields to the switch statement for default values
+switch (field.key) {
+  // ... existing cases
+
+  // New Hero2 fields
+  case 'heroBackgroundVideo':
+    defaultValue = templateProps.hero?.heroBackgroundVideo || Hero2DefaultProps.heroBackgroundVideo;
+    break;
+
+  case 'heroSubtitle':
+    defaultValue = templateProps.hero?.heroSubtitle || Hero2DefaultProps.heroSubtitle;
+    break;
+
+  case 'heroAnimation':
+    defaultValue = templateProps.hero?.heroAnimation || Hero2DefaultProps.heroAnimation;
+    break;
+
+  case 'heroOverlayOpacity':
+    defaultValue = templateProps.hero?.heroOverlayOpacity || Hero2DefaultProps.heroOverlayOpacity;
+    break;
+}
+
+// Update transform function to handle new fields
+const transformToTemplateProps = useCallback((data: any) => {
+  return {
+    hero: {
+      // Common fields
+      coupleNames: data.coupleNames || Hero1DefaultProps.coupleNames,
+      eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      }) : Hero1DefaultProps.eventDate),
+      eventLocation: data.eventLocation || data.event_venue_city || Hero1DefaultProps.eventLocation,
+
+      // Hero1 specific
+      heroImageUrl: data.heroImageUrl || data.gallery_hero_image || Hero1DefaultProps.heroImageUrl,
+
+      // Hero2 specific - import Hero2DefaultProps
+      heroBackgroundVideo: data.heroBackgroundVideo || Hero2DefaultProps.heroBackgroundVideo,
+      heroSubtitle: data.heroSubtitle || Hero2DefaultProps.heroSubtitle,
+      heroAnimation: data.heroAnimation || Hero2DefaultProps.heroAnimation,
+      heroOverlayOpacity: data.heroOverlayOpacity || Hero2DefaultProps.heroOverlayOpacity,
+    },
+    // ... other sections
+  };
+}, []);
+```
+
+#### 5. Update Database Template Configuration
+
+**Database**: Update the `sections_config` for templates that should use the new variant
+
+```sql
+-- Example: Update Template ID 7 to use Hero2
+UPDATE templates
+SET sections_config = JSON_SET(
+  sections_config,
+  '$.hero',
+  'hero_2'
+)
+WHERE id = 7;
+```
+
+Or via API/Admin interface:
+```json
+{
+  "hero": "hero_2",
+  "welcome": "welcome_1",
+  "story": "story_1",
+  // ... other sections
+}
+```
+
+### Field Types and Validation
+
+The system supports various field types:
+
+```typescript
+type FieldType =
+  | 'text'           // Simple text input
+  | 'textarea'       // Multi-line text
+  | 'url'            // URL input with validation
+  | 'date'           // Date picker
+  | 'datetime-local' // Date and time picker
+  | 'color'          // Color picker
+  | 'range'          // Slider input
+  | 'select'         // Dropdown selection
+  | 'checkbox'       // Boolean checkbox
+  | 'number'         // Numeric input
+  | 'email'          // Email input with validation
+  | 'tel'            // Phone number input
+```
+
+### Best Practices
+
+#### 1. **Naming Conventions**
+- Component files: `{SectionType}{Number}.tsx` (e.g., `Hero2.tsx`, `Welcome3.tsx`)
+- Component names: `{SectionType}{Number}` (e.g., `Hero2`, `Welcome3`)
+- Field keys: `{sectionType}{FieldName}` for unique fields (e.g., `heroBackgroundVideo`)
+- Use common field names for shared functionality (e.g., `coupleNames`, `eventDate`)
+
+#### 2. **Default Props Pattern**
+```typescript
+// Always export default props with same name pattern
+export const {ComponentName}DefaultProps = {
+  // All component props with realistic default values
+  field1: 'Default value 1',
+  field2: 'Default value 2',
+};
+
+// Use default props in component parameters
+export const {ComponentName}: React.FC<{ComponentName}Props> = ({
+  field1 = {ComponentName}DefaultProps.field1,
+  field2 = {ComponentName}DefaultProps.field2,
+}) => { ... };
+```
+
+#### 3. **Field Organization**
+- Group related fields in same category
+- Use descriptive labels in Spanish for user interface
+- Add validation constraints (min, max, pattern) when appropriate
+- Provide meaningful placeholder text or examples
+
+#### 4. **Backward Compatibility**
+- Always test that existing templates still work
+- Use conditional rendering for optional new features
+- Provide sensible defaults for all new fields
+- Consider gradual rollout for breaking changes
+
+### Testing New Variants
+
+#### 1. **Component Testing**
+```bash
+# Test component renders without errors
+npm run dev
+# Navigate to template with new variant
+# Open customizer panel
+# Verify all fields appear and function correctly
+```
+
+#### 2. **Field Validation**
+- Test all field types render correctly
+- Verify default values load properly
+- Check that changes persist across panel close/open
+- Ensure no conflicts with other section fields
+
+#### 3. **Data Flow Testing**
+- Verify customizer changes reflect in template preview
+- Test that saved data persists across page reloads
+- Check API endpoints handle new fields correctly
+- Validate default fallbacks work when data is missing
+
+### Common Gotchas
+
+1. **Missing Default Props**: Always export and use default props to prevent undefined values
+2. **Field Name Conflicts**: Use prefixed field names for section-specific fields
+3. **Registry Updates**: Don't forget to register new components in both local and main registries
+4. **Import Statements**: Update import statements in customizer hook for new default props
+5. **Type Safety**: Keep TypeScript interfaces in sync with actual component props
+
+### Example: Complete Hero2 Implementation
+
+See the files structure for a complete Hero2 implementation:
+```
+frontend/src/components/templates/sections/hero/
+├── Hero1.tsx                    # Original variant
+├── Hero2.tsx                    # New variant (created)
+├── registry.ts                  # Updated with Hero2
+└── index.ts                     # Re-exports
+
+frontend/src/components/customizer/
+└── sectionFieldsMap.ts          # Updated with Hero2 fields
+
+frontend/src/lib/hooks/
+└── useDynamicCustomizer.ts      # Updated data transformation
+```
+
+This approach ensures that:
+- ✅ New variants are fully integrated with the customizer system
+- ✅ Field uniqueness is maintained across sections
+- ✅ Single source of truth principle is preserved
+- ✅ Backward compatibility is maintained
+- ✅ The system scales infinitely with new variants

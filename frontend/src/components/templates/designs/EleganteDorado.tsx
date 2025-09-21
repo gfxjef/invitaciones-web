@@ -18,6 +18,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TemplateProps } from '@/types/template';
 import { CountdownTimer } from '../shared/CountdownTimer';
+
+// Import default props from section components (single source of truth)
+import { Hero1DefaultProps } from '@/components/templates/sections/hero/Hero1';
+import { Couple1DefaultProps } from '@/components/templates/sections/couple/Couple1';
 import { ShareButtons } from '../shared/ShareButtons';
 import { RSVPSection } from '../shared/RSVPSection';
 
@@ -160,10 +164,10 @@ const CountdownSection = () => {
 
         {/* Contenedor de la cuenta regresiva */}
         <div className="flex justify-center items-start space-x-4 md:space-x-12 mt-8">
-            <TimeUnit value={String(timeLeft.days || 0).padStart(2, '0')} label="Days" />
-            <TimeUnit value={String(timeLeft.hours || 0).padStart(2, '0')} label="Hours" />
-            <TimeUnit value={String(timeLeft.minutes || 0).padStart(2, '0')} label="Minutes" />
-            <TimeUnit value={String(timeLeft.seconds || 0).padStart(2, '0')} label="Seconds" />
+            <TimeUnit value={String((timeLeft as any)?.days || 0).padStart(2, '0')} label="Days" />
+            <TimeUnit value={String((timeLeft as any)?.hours || 0).padStart(2, '0')} label="Hours" />
+            <TimeUnit value={String((timeLeft as any)?.minutes || 0).padStart(2, '0')} label="Minutes" />
+            <TimeUnit value={String((timeLeft as any)?.seconds || 0).padStart(2, '0')} label="Seconds" />
         </div>
       </div>
     </section>
@@ -677,16 +681,19 @@ export const EleganteDorado: React.FC<TemplateProps> = ({
 
   // Hardcoded values for now (will use data later)
   const heroImageUrl = 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260';
-  const coupleNames = 'María & Carlos';
-  const eventDate = '15 December, 2024';
-  const eventLocation = 'New York';
+  // Use default values from section components (single source of truth)
+  const coupleNames = data.couple_groom_name && data.couple_bride_name
+    ? `${data.couple_groom_name} & ${data.couple_bride_name}`
+    : Hero1DefaultProps.coupleNames;
+  const eventDate = data.event_date || Hero1DefaultProps.eventDate;
+  const eventLocation = data.event_venue_city || Hero1DefaultProps.eventLocation;
 
-  // Datos de ejemplo para la novia y el novio
+  // Use couple data from props or defaults
   const brideData = {
-    imageUrl: 'https://i.imgur.com/u1wA4oo.png',
-    name: 'Mary Brown',
-    role: 'The Bride',
-    description: 'Mary fringilla dui at elit finibus viverra nec alan seda couple the miss druane sema the wedding intono miss sollicitudin non the fermen.',
+    imageUrl: media?.find(m => m.media_type === 'couple')?.file_path || Couple1DefaultProps.brideData.imageUrl,
+    name: data.couple_bride_name || Couple1DefaultProps.brideData.name,
+    role: Couple1DefaultProps.brideData.role,
+    description: data.couple_story || Couple1DefaultProps.brideData.description,
     socialLinks: {
       facebook: '#',
       twitter: '#',
@@ -695,10 +702,10 @@ export const EleganteDorado: React.FC<TemplateProps> = ({
   };
 
   const groomData = {
-    imageUrl: 'https://i.imgur.com/qL42vPA.png',
-    name: 'Brian Martin',
-    role: 'The Groom',
-    description: 'Mary fringilla dui at elit finibus viverra nec alan seda couple the miss druane sema the wedding intono miss sollicitudin non the fermen.',
+    imageUrl: media?.find(m => m.media_type === 'couple')?.file_path || Couple1DefaultProps.groomData.imageUrl,
+    name: data.couple_groom_name || Couple1DefaultProps.groomData.name,
+    role: Couple1DefaultProps.groomData.role,
+    description: data.couple_story || Couple1DefaultProps.groomData.description,
     socialLinks: {
       facebook: '#',
       twitter: '#',

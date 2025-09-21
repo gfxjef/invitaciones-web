@@ -344,7 +344,7 @@ export const EventTimelineItem: React.FC<EventTimelineItemProps> = ({
       hasConflict ? "border-red-400" : "border-gray-300 group-hover:border-primary",
       isEditing && "border-primary"
     )}>
-      <eventIcon className="w-6 h-6 text-gray-600" />
+      {eventIcon && React.createElement(eventIcon, { className: "w-6 h-6 text-gray-600" })}
       
       {hasConflict && (
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">

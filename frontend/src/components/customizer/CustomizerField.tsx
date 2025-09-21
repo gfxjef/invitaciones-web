@@ -88,7 +88,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               id={`field-${field.key}`}
               value={value}
               onChange={handleChange}
-              placeholder={field.placeholder || fieldState?.defaultValue || ''}
+              placeholder={fieldState?.defaultValue || field.placeholder || ''}
               rows={4}
               className={`${baseInputClasses} resize-y min-h-[100px]`}
             />
@@ -126,7 +126,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               id={`field-${field.key}`}
               value={value}
               onChange={handleChange}
-              placeholder={field.placeholder || fieldState?.defaultValue || 'https://ejemplo.com'}
+              placeholder={fieldState?.defaultValue || field.placeholder || 'https://ejemplo.com'}
               className={`${baseInputClasses} pl-8`}
             />
             <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
@@ -159,7 +159,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               type="text"
               value={value}
               onChange={handleChange}
-              placeholder={field.placeholder || fieldState?.defaultValue || '#000000'}
+              placeholder={fieldState?.defaultValue || field.placeholder || '#000000'}
               className={`${baseInputClasses} flex-1 font-mono text-xs`}
             />
             {value && (
@@ -180,7 +180,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               id={`field-${field.key}`}
               value={value}
               onChange={handleChange}
-              placeholder={field.placeholder || fieldState?.defaultValue || ''}
+              placeholder={fieldState?.defaultValue || field.placeholder || ''}
               className={baseInputClasses}
             />
             {fieldState?.isTouched && value && (

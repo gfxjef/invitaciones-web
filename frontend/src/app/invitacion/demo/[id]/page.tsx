@@ -20,7 +20,7 @@ import { useTemplate } from '@/lib/hooks/use-templates';
 import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { DynamicCustomizer } from '@/components/customizer';
-import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent } from '@/types/template';
+import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent, TemplateMetadata } from '@/types/template';
 
 interface TemplateDemoPageProps {
   params: {
@@ -257,7 +257,10 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
         <TemplateRenderer
           invitation={demoInvitationData.invitation}
           data={demoInvitationData.data}
-          template={template}
+          template={{
+            ...template,
+            template_file: template.template_file || `template_${template.id}` // TODO: Test this fallback
+          } as unknown as TemplateMetadata}
           colors={demoInvitationData.colors}
           features={template.supported_features}
           media={demoInvitationData.media}

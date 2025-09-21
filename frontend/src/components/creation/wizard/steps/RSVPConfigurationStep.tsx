@@ -53,19 +53,19 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
 
   const handleRSVPToggle = (enabled: boolean) => {
     setRsvpEnabled(enabled);
-    onUpdate('rsvp', 'rsvp_enabled', enabled);
+    onUpdate('rsvp_enabled', enabled);
     
     if (!enabled) {
       // Clear RSVP-related fields when disabled
-      onUpdate('rsvp', 'rsvp_deadline', '');
-      onUpdate('rsvp', 'rsvp_guest_limit', null);
-      onUpdate('rsvp', 'rsvp_max_companions', null);
+      onUpdate('rsvp_deadline', '');
+      onUpdate('rsvp_guest_limit', null);
+      onUpdate('rsvp_max_companions', null);
     }
   };
 
   const handleFieldToggle = (field: keyof typeof guestFields, value: boolean) => {
     setGuestFields(prev => ({ ...prev, [field]: value }));
-    onUpdate('rsvp', `rsvp_${field.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value);
+    onUpdate(`rsvp_${field.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value);
   };
 
   const handleContinue = () => {
@@ -168,7 +168,7 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
                     <input
                       type="date"
                       value={data.rsvp_deadline || ''}
-                      onChange={(e) => onUpdate('rsvp', 'rsvp_deadline', e.target.value)}
+                      onChange={(e) => onUpdate('rsvp_deadline', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       min={new Date().toISOString().split('T')[0]}
                     />
@@ -186,7 +186,7 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
                       type="number"
                       placeholder="Sin límite"
                       value={data.rsvp_guest_limit || ''}
-                      onChange={(e) => onUpdate('rsvp', 'rsvp_guest_limit', e.target.value ? parseInt(e.target.value) : null)}
+                      onChange={(e) => onUpdate('rsvp_guest_limit', e.target.value ? parseInt(e.target.value) : null)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                       min="1"
                       max="1000"
@@ -218,7 +218,7 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
                           type="number"
                           placeholder="3"
                           value={data.rsvp_max_companions || ''}
-                          onChange={(e) => onUpdate('rsvp', 'rsvp_max_companions', e.target.value ? parseInt(e.target.value) : null)}
+                          onChange={(e) => onUpdate('rsvp_max_companions', e.target.value ? parseInt(e.target.value) : null)}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                           min="0"
                           max="10"
@@ -325,7 +325,7 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
                   <textarea
                     placeholder="¡Gracias por confirmar! Esperamos verte en nuestro gran día."
                     value={data.rsvp_confirmation_message || ''}
-                    onChange={(e) => onUpdate('rsvp', 'rsvp_confirmation_message', e.target.value)}
+                    onChange={(e) => onUpdate('rsvp_confirmation_message', e.target.value)}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                     maxLength={300}
@@ -342,7 +342,7 @@ export const RSVPConfigurationStep: React.FC<WizardStepProps> = ({
                   <textarea
                     placeholder="Entendemos que no puedas acompañarnos. ¡Esperamos verte pronto!"
                     value={data.rsvp_decline_message || ''}
-                    onChange={(e) => onUpdate('rsvp', 'rsvp_decline_message', e.target.value)}
+                    onChange={(e) => onUpdate('rsvp_decline_message', e.target.value)}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                     maxLength={300}

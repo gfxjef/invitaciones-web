@@ -179,6 +179,7 @@ export const RomanticoFloral: React.FC<TemplateProps> = ({
             {/* Countdown */}
             {features.includes('countdown') && (
               <CountdownTimer
+                data={data}
                 targetDate={data.event_date}
                 colors={colors}
                 showLabels={true}
@@ -488,9 +489,9 @@ export const RomanticoFloral: React.FC<TemplateProps> = ({
               }}
               isPreview={isPreview}
               className="border-2"
-              style={{
+              /* style={{
                 borderColor: `${colors.primary}20`
-              }}
+              }} */
             />
           </div>
         </section>

@@ -54,7 +54,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
 
   const handlePreferenceToggle = (preference: keyof typeof contactPreferences, value: boolean) => {
     setContactPreferences(prev => ({ ...prev, [preference]: value }));
-    onUpdate('contact', preference, value);
+    onUpdate(preference, value);
   };
 
   const handleContinue = () => {
@@ -170,7 +170,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="email"
                       placeholder="carlos@email.com"
                       value={data.contact_groom_email || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_groom_email', e.target.value)}
+                      onChange={(e) => onUpdate('contact_groom_email', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.contact_groom_email && !isValidEmail(data.contact_groom_email)
                           ? 'border-red-300'
@@ -190,7 +190,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="tel"
                       placeholder="+51 999 999 999"
                       value={data.contact_groom_phone || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_groom_phone', e.target.value)}
+                      onChange={(e) => onUpdate('contact_groom_phone', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.contact_groom_phone && !isValidPhone(data.contact_groom_phone)
                           ? 'border-red-300'
@@ -210,7 +210,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="tel"
                       placeholder="+51 999 999 999"
                       value={data.contact_groom_whatsapp || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_groom_whatsapp', e.target.value)}
+                      onChange={(e) => onUpdate('contact_groom_whatsapp', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
@@ -234,7 +234,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="email"
                       placeholder="maria@email.com"
                       value={data.contact_bride_email || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_bride_email', e.target.value)}
+                      onChange={(e) => onUpdate('contact_bride_email', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.contact_bride_email && !isValidEmail(data.contact_bride_email)
                           ? 'border-red-300'
@@ -254,7 +254,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="tel"
                       placeholder="+51 999 999 999"
                       value={data.contact_bride_phone || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_bride_phone', e.target.value)}
+                      onChange={(e) => onUpdate('contact_bride_phone', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.contact_bride_phone && !isValidPhone(data.contact_bride_phone)
                           ? 'border-red-300'
@@ -274,7 +274,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="tel"
                       placeholder="+51 999 999 999"
                       value={data.contact_bride_whatsapp || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_bride_whatsapp', e.target.value)}
+                      onChange={(e) => onUpdate('contact_bride_whatsapp', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
@@ -298,7 +298,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="email"
                       placeholder="carlosymaria@email.com"
                       value={data.contact_joint_email || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_joint_email', e.target.value)}
+                      onChange={(e) => onUpdate('contact_joint_email', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.contact_joint_email && !isValidEmail(data.contact_joint_email)
                           ? 'border-red-300'
@@ -317,7 +317,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="tel"
                       placeholder="+51 999 999 999"
                       value={data.contact_joint_phone || ''}
-                      onChange={(e) => onUpdate('contact', 'contact_joint_phone', e.target.value)}
+                      onChange={(e) => onUpdate('contact_joint_phone', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
@@ -341,7 +341,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="text"
                       placeholder="@carlosymaria"
                       value={data.social_instagram || ''}
-                      onChange={(e) => onUpdate('contact', 'social_instagram', e.target.value)}
+                      onChange={(e) => onUpdate('social_instagram', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>
@@ -354,7 +354,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="url"
                       placeholder="https://facebook.com/carlosymaria"
                       value={data.social_facebook || ''}
-                      onChange={(e) => onUpdate('contact', 'social_facebook', e.target.value)}
+                      onChange={(e) => onUpdate('social_facebook', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.social_facebook && !isValidUrl(data.social_facebook)
                           ? 'border-red-300'
@@ -374,7 +374,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="url"
                       placeholder="https://carlosymaria.com"
                       value={data.wedding_website || ''}
-                      onChange={(e) => onUpdate('contact', 'wedding_website', e.target.value)}
+                      onChange={(e) => onUpdate('wedding_website', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.wedding_website && !isValidUrl(data.wedding_website)
                           ? 'border-red-300'
@@ -402,7 +402,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="url"
                       placeholder="https://mesaderegalos.com/carlosymaria"
                       value={data.registry_url || ''}
-                      onChange={(e) => onUpdate('contact', 'registry_url', e.target.value)}
+                      onChange={(e) => onUpdate('registry_url', e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent ${
                         data.registry_url && !isValidUrl(data.registry_url)
                           ? 'border-red-300'
@@ -419,7 +419,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                   <textarea
                     placeholder="Tu presencia es nuestro mejor regalo. Si deseas obsequiarnos algo más, puedes encontrar opciones en nuestra mesa de regalos."
                     value={data.registry_message || ''}
-                    onChange={(e) => onUpdate('contact', 'registry_message', e.target.value)}
+                    onChange={(e) => onUpdate('registry_message', e.target.value)}
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
                     maxLength={400}
@@ -439,7 +439,7 @@ export const ContactInformationStep: React.FC<WizardStepProps> = ({
                       type="text"
                       placeholder="Banco - Número de cuenta"
                       value={data.bank_account || ''}
-                      onChange={(e) => onUpdate('contact', 'bank_account', e.target.value)}
+                      onChange={(e) => onUpdate('bank_account', e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                     />
                   </div>

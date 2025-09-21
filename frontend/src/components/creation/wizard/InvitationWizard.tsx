@@ -150,12 +150,16 @@ export const InvitationWizard: React.FC<InvitationWizardProps> = ({
   const editor = useInvitationEditor(invitationId);
   
   // Auto-save functionality
-  const { lastSaved, isSaving } = useAutoSave({
+  const { status, isAutoSaveEnabled } = useAutoSave({
     data: editor.data,
+    isDirty: editor.isDirty,
     onSave: editor.saveData,
     enabled: !!invitationId && editor.isDirty,
     interval: 30000 // Auto-save every 30 seconds
   });
+
+  const isSaving = status.status === 'saving';
+  const lastSaved = status.lastSaved;
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
@@ -360,7 +364,7 @@ export const InvitationWizard: React.FC<InvitationWizardProps> = ({
             <CurrentStepComponent
               data={editor.data}
               errors={editor.errors}
-              onUpdate={editor.updateField}
+              onUpdate={(field: string, value: any) => editor.updateField('general', field, value)}
               onUpdateData={editor.updateData}
               onNext={handleNext}
               onBack={handleBack}

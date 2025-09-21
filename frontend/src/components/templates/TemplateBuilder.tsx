@@ -20,6 +20,9 @@ import { TemplateProps } from '@/types/template';
 import { getSectionComponent } from './sections/registry';
 import { apiClient } from '@/lib/api';
 
+// Import default props from section components (single source of truth)
+import { Hero1DefaultProps } from './sections/hero/Hero1';
+
 interface SectionsConfig {
   hero?: string;
   welcome?: string;
@@ -181,83 +184,6 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     fetchModularData();
   }, [invitation?.id, isDevelopmentMode, isTransformedData, data]);
 
-  // Create fallback props using legacy data (backup plan)
-  const createFallbackProps = (): ModularData => {
-    return {
-      hero: {
-        coupleNames: `${data.couple_bride_name || 'Bride'} & ${data.couple_groom_name || 'Groom'}`,
-        eventDate: data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }) : '15 December, 2024',
-        eventLocation: data.event_venue_city || 'Ciudad',
-        heroImageUrl: data.gallery_hero_image || media?.[0]?.file_path || 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260',
-      },
-      welcome: {
-        bannerImageUrl: 'https://i.imgur.com/svWa52m.png',
-        couplePhotoUrl: data.gallery_couple_image || media?.[1]?.file_path || 'https://i.imgur.com/OFaT2vQ.png',
-        welcomeText: 'HELLO & WELCOME',
-        title: "We're getting married!",
-        description: data.message_welcome_text || data.couple_story || 'Join us for our special day',
-      },
-      couple: {
-        sectionTitle: 'Happy Couple',
-        sectionSubtitle: 'BRIDE & GROOM',
-        brideData: {
-          imageUrl: 'https://i.imgur.com/u1wA4oo.png',
-          name: data.couple_bride_name || 'Bride',
-          role: 'The Bride',
-          description: 'A beautiful soul with a heart full of love and dreams.',
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        },
-        groomData: {
-          imageUrl: 'https://i.imgur.com/qL42vPA.png',
-          name: data.couple_groom_name || 'Groom',
-          role: 'The Groom',
-          description: 'A loving partner ready to start this new journey together.',
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        }
-      },
-      countdown: {
-        weddingDate: data.event_date || new Date().toISOString(),
-        backgroundImageUrl: 'https://i.imgur.com/7p4m1iH.png',
-        preTitle: 'WE WILL BECOME A FAMILY IN',
-        title: "We're getting married in"
-      },
-      story: {
-        sectionSubtitle: `${data.couple_bride_name?.toUpperCase() || 'BRIDE'} & ${data.couple_groom_name?.toUpperCase() || 'GROOM'}`,
-        sectionTitle: 'Our Love Story',
-        storyMoments: []
-      },
-      video: {
-        backgroundImageUrl: 'https://i.imgur.com/KxT5vJM.png',
-        videoEmbedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        preTitle: 'A LOVE STORY BEGINNING',
-        title: 'Watch our love story'
-      },
-      gallery: {
-        sectionSubtitle: 'MEMORIES',
-        sectionTitle: 'Wedding Gallery',
-        galleryImages: media?.map((m, index) => ({
-          id: m.id || index,
-          url: m.file_path,
-          alt: m.title || `Wedding photo ${index + 1}`,
-          category: m.media_type === 'hero' ? 'ceremony' : 'party'
-        })) || []
-      },
-      footer: {
-        coupleNames: `${data.couple_bride_name || 'Bride'} & ${data.couple_groom_name || 'Groom'}`,
-        eventDate: data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }).toUpperCase() : '15 DECEMBER, 2024',
-        eventLocation: data.event_venue_city?.toUpperCase() || 'CIUDAD',
-        copyrightText: 'Made with love. All rights reserved.'
-      }
-    };
-  };
 
   // Loading state
   if (loading) {

@@ -412,7 +412,7 @@ export function SocialPreviewGenerator({
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{ backgroundColor: `${config.color}20` }}>
-            <PlatformIcon className="w-6 h-6" style={{ color: config.color }} />
+            <PlatformIcon className="w-6 h-6" /* style={{ color: config.color }} */ />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">

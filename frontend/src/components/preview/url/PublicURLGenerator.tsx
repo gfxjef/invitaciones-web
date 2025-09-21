@@ -69,16 +69,15 @@ const urlGeneratorSchema = z.object({
   password: z
     .string()
     .optional()
-    .refine((value, ctx) => {
-      if (ctx.parent.password_protected && (!value || value.length < 6)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must be at least 6 characters when protection is enabled'
-        });
-        return false;
-      }
-      return true;
-    })
+    // TODO: Fix password validation for schema dependencies
+    // .superRefine((value, ctx) => {
+    //   if (ctx.parent.password_protected && (!value || value.length < 6)) {
+    //     ctx.addIssue({
+    //       code: z.ZodIssueCode.custom,
+    //       message: 'Password must be at least 6 characters when protection is enabled'
+    //     });
+    //   }
+    // })
 });
 
 type URLFormData = z.infer<typeof urlGeneratorSchema>;

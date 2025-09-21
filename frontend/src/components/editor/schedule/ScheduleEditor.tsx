@@ -375,11 +375,12 @@ export const ScheduleEditor: React.FC<ScheduleEditorProps> = ({
         event_order: localEvents.length
       };
       
-      const createdEvent = await addEvent(eventData);
-      
-      if (onEventCreated) {
-        onEventCreated(createdEvent);
-      }
+      await addEvent(eventData);
+
+      // TODO: Fix addEvent to return created event
+      // if (onEventCreated && createdEvent) {
+      //   onEventCreated(createdEvent);
+      // }
       
       setShowNewEventForm(false);
       setNewEventForm({

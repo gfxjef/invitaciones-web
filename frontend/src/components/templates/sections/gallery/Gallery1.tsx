@@ -147,3 +147,18 @@ export const Gallery1: React.FC<Gallery1Props> = ({
     </>
   );
 };
+
+export const Gallery1DefaultProps = {
+  sectionSubtitle: 'Memorias',
+  sectionTitle: 'Geleria de Novios',
+  galleryImages: [
+    { id: 1, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-1.jpg', alt: 'Romantic couple moment', category: 'ceremony' },
+    { id: 2, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg', alt: 'Beautiful wedding ceremony', category: 'ceremony' },
+    { id: 3, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4-2.jpg', alt: 'Celebration moments', category: 'party' },
+    { id: 4, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5.jpg', alt: 'Wedding rings', category: 'ceremony' },
+    { id: 5, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-2.jpg', alt: 'Happy celebration', category: 'party' },
+    { id: 6, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1-1.jpg', alt: 'Wedding decoration', category: 'ceremony' },
+    { id: 7, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg', alt: 'Party atmosphere', category: 'party' },
+    { id: 8, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/2.jpg', alt: 'Beautiful wedding moment', category: 'ceremony' }
+  ]
+};

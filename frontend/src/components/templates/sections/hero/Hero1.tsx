@@ -30,15 +30,15 @@ interface Hero1Props {
 
 export const Hero1: React.FC<Hero1Props> = ({
   coupleNames = 'Jefferson & Rosmery',
-  eventDate = '15 December, 2024',
-  eventLocation = 'New York',
+  eventDate = '15 Diciembre, 2024',
+  eventLocation = 'LIMA - PERÚ',
   heroImageUrl = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg',
   navigationItems = [
     { href: '#home', label: 'Home' },
     { href: '#couple', label: 'Couple' },
     { href: '#story', label: 'Story' },
     { href: '#friends', label: 'Friends' },
-    { href: '#events', label: 'Evesssssnts' },
+    { href: '#events', label: 'evrr' },
     { href: '#gallery', label: 'Gallery' },
     { href: '#when-where', label: 'When & Where' },
     { href: '#rsvp', label: 'R.S.V.P' },
@@ -134,4 +134,23 @@ export const Hero1: React.FC<Hero1Props> = ({
       </div>
     </section>
   );
+};
+
+// Export default props for centralized access
+export const Hero1DefaultProps = {
+  coupleNames: 'Jefferson & Rosmery',
+  eventDate: '15 Diciembre, 2024',
+  eventLocation: 'LIMA - PERÚ',
+  heroImageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg',
+  navigationItems: [
+    { href: '#home', label: 'Home' },
+    { href: '#couple', label: 'Couple' },
+    { href: '#story', label: 'Story' },
+    { href: '#friends', label: 'Friends' },
+    { href: '#events', label: 'evrr' },
+    { href: '#gallery', label: 'Gallery' },
+    { href: '#when-where', label: 'When & Where' },
+    { href: '#rsvp', label: 'R.S.V.P' },
+    { href: '#blog', label: 'Blog' }
+  ]
 };
