@@ -1,53 +1,53 @@
 /**
- * Section Registry
+ * Wedding Section Registry
  *
- * WHY: Central registry that maps section keys to their corresponding React components.
- * This enables dynamic loading and infinite combinations of template sections.
+ * WHY: Central registry for wedding-specific sections. This enables dynamic loading
+ * and infinite combinations of wedding template sections.
  *
  * USAGE:
- * - Each section type (hero, welcome, couple, etc.) has multiple variations
+ * - Each wedding section type (hero, welcome, couple, etc.) has multiple variations
  * - Section keys follow the pattern: sectionType_number (e.g., 'hero_1', 'welcome_1')
- * - New sections can be easily added by importing and registering them
+ * - Wedding-specific sections are isolated from other categories
  *
  * BENEFITS:
- * - Infinite template combinations (Hero1 + Welcome1 + Couple2 + etc.)
+ * - Infinite wedding template combinations
+ * - Category isolation (wedding sections don't interfere with kids/corporate)
  * - Easy to maintain and extend
  * - Type-safe section selection
- * - Scalable architecture for future sections
  */
 
 import { ComponentType } from 'react';
 
-// Import Hero Sections
+// Import Wedding Hero Sections
 import { Hero1 } from '../hero/Hero1';
 
-// Import Welcome Sections
+// Import Wedding Welcome Sections
 import { Welcome1 } from '../welcome/Welcome1';
 
-// Import Couple Sections
+// Import Wedding Couple Sections
 import { Couple1 } from '../couple/Couple1';
 
-// Import Countdown Sections
+// Import Wedding Countdown Sections
 import { Countdown1 } from '../countdown/Countdown1';
 
-// Import Story Sections
+// Import Wedding Story Sections
 import { Story1 } from '../story/Story1';
 
-// Import Video Sections
+// Import Wedding Video Sections
 import { Video1 } from '../video/Video1';
 
-// Import Gallery Sections
+// Import Wedding Gallery Sections
 import { Gallery1 } from '../gallery/Gallery1';
 
-// Import Footer Sections
+// Import Wedding Footer Sections
 import { Footer1 } from '../footer/Footer1';
 
-// Types for section registry
-export interface SectionRegistry {
+// Types for wedding section registry
+export interface WeddingSectionRegistry {
   [key: string]: ComponentType<any>;
 }
 
-export interface SectionsByType {
+export interface WeddingSectionsByType {
   hero: { [key: string]: ComponentType<any> };
   welcome: { [key: string]: ComponentType<any> };
   couple: { [key: string]: ComponentType<any> };
@@ -59,12 +59,12 @@ export interface SectionsByType {
 }
 
 /**
- * Section Registry Mapping
+ * Wedding Section Registry Mapping
  *
  * Key: section_type + '_' + number (e.g., 'hero_1', 'welcome_1')
- * Value: React component for that section
+ * Value: React component for that wedding section
  */
-export const sectionRegistry: SectionRegistry = {
+export const weddingSectionRegistry: WeddingSectionRegistry = {
   // Hero Sections
   'hero_1': Hero1,
 
@@ -98,9 +98,9 @@ export const sectionRegistry: SectionRegistry = {
 };
 
 /**
- * Organized sections by type for easier access
+ * Organized wedding sections by type for easier access
  */
-export const sectionsByType: SectionsByType = {
+export const weddingSectionsByType: WeddingSectionsByType = {
   hero: {
     'hero_1': Hero1,
     // 'hero_2': Hero2,
@@ -144,39 +144,39 @@ export const sectionsByType: SectionsByType = {
 };
 
 /**
- * Get available section keys for a specific type
+ * Get available wedding section keys for a specific type
  */
-export const getAvailableSections = (sectionType: keyof SectionsByType): string[] => {
-  return Object.keys(sectionsByType[sectionType]);
+export const getAvailableWeddingSections = (sectionType: keyof WeddingSectionsByType): string[] => {
+  return Object.keys(weddingSectionsByType[sectionType]);
 };
 
 /**
- * Get all available section types
+ * Get all available wedding section types
  */
-export const getSectionTypes = (): Array<keyof SectionsByType> => {
-  return Object.keys(sectionsByType) as Array<keyof SectionsByType>;
+export const getWeddingSectionTypes = (): Array<keyof WeddingSectionsByType> => {
+  return Object.keys(weddingSectionsByType) as Array<keyof WeddingSectionsByType>;
 };
 
 /**
- * Check if a section exists in the registry
+ * Check if a wedding section exists in the registry
  */
-export const isSectionAvailable = (sectionKey: string): boolean => {
-  return sectionKey in sectionRegistry;
+export const isWeddingSectionAvailable = (sectionKey: string): boolean => {
+  return sectionKey in weddingSectionRegistry;
 };
 
 /**
- * Get section component by key
+ * Get wedding section component by key
  */
-export const getSectionComponent = (sectionKey: string): ComponentType<any> | null => {
-  return sectionRegistry[sectionKey] || null;
+export const getWeddingSectionComponent = (sectionKey: string): ComponentType<any> | null => {
+  return weddingSectionRegistry[sectionKey] || null;
 };
 
 /**
- * Template Configuration Interface
+ * Wedding Template Configuration Interface
  *
- * Defines the structure for configuring which sections to use in a template
+ * Defines the structure for configuring which wedding sections to use in a template
  */
-export interface TemplateConfig {
+export interface WeddingTemplateConfig {
   sections: {
     hero: string;      // e.g., 'hero_1'
     welcome: string;   // e.g., 'welcome_1'
@@ -190,9 +190,9 @@ export interface TemplateConfig {
 }
 
 /**
- * Example template configurations for inspiration
+ * Example wedding template configurations
  */
-export const exampleTemplateConfigs: { [key: string]: TemplateConfig } = {
+export const exampleWeddingTemplateConfigs: { [key: string]: WeddingTemplateConfig } = {
   'elegante_romance': {
     sections: {
       hero: 'hero_1',
@@ -205,7 +205,7 @@ export const exampleTemplateConfigs: { [key: string]: TemplateConfig } = {
       footer: 'footer_1',
     }
   },
-  // Future combinations:
+  // Future wedding combinations:
   // 'modern_minimalist': {
   //   sections: {
   //     hero: 'hero_2',

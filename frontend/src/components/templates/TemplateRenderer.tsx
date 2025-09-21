@@ -1,14 +1,14 @@
 /**
  * Template Renderer Component
  *
- * WHY: Main component that renders the appropriate template based on
- * template metadata from the database. Supports both legacy templates
- * and new modular template system.
+ * WHY: Main component that renders modular templates based on
+ * template metadata from the database. Now focuses exclusively
+ * on modular templates with category-specific section rendering.
  *
  * FEATURES:
- * - Legacy template support (template_file)
  * - Modular template support (sections_config)
- * - Automatic detection based on template_type
+ * - Category-aware rendering (weddings, kids, corporate)
+ * - Dynamic section loading based on template configuration
  * - Fallback handling for missing components
  */
 
@@ -16,7 +16,6 @@
 
 import { useMemo } from 'react';
 import { TemplateProps, TemplateComponent } from '@/types/template';
-import { templateRegistry } from './registry';
 import { TemplateBuilder } from './TemplateBuilder';
 
 interface TemplateRendererProps extends TemplateProps {
@@ -43,38 +42,25 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
   // Use custom preview data if available, otherwise use regular data
   const renderData = customPreviewData || data;
 
-  // Determine template type and rendering approach
+  // Determine template category and rendering approach
   const renderingDecision = useMemo(() => {
-    // Check if template is modular type
-    if (template.template_type === 'modular' && template.sections_config) {
-      return {
-        type: 'modular',
-        config: template.sections_config
-      };
-    }
-
-    // Default to legacy template rendering
-    const templateKey = templateOverride || template.template_file;
-
-    if (!templateKey) {
-      return { type: 'error', message: 'No template key provided' };
-    }
-
-    const Component = templateRegistry[templateKey];
-
-    if (!Component) {
+    // All templates are now modular - determine category
+    if (!template.sections_config) {
       return {
         type: 'error',
-        message: `Template "${templateKey}" not found in registry`,
-        availableTemplates: Object.keys(templateRegistry)
+        message: 'Template sections_config not found. All templates must be modular.'
       };
     }
 
+    // Determine category based on template metadata or default to weddings
+    const category = template.category || 'weddings';
+
     return {
-      type: 'legacy',
-      component: Component
+      type: 'modular',
+      category: category,
+      config: template.sections_config
     };
-  }, [template.template_type, template.sections_config, template.template_file, templateOverride]);
+  }, [template.sections_config, template.category]);
 
   // Fallback component for missing templates
   const FallbackTemplate = ({ message, availableTemplates }: { message: string; availableTemplates?: string[] }) => (
@@ -120,22 +106,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
           isPreview={isPreview}
           isEditing={isEditing}
           sectionsConfig={renderingDecision.config}
-        />
-      );
-
-    case 'legacy':
-      const LegacyComponent = renderingDecision.component;
-      return (
-        <LegacyComponent
-          invitation={invitation}
-          data={renderData}
-          template={template}
-          colors={colors}
-          features={features}
-          media={media}
-          events={events}
-          isPreview={isPreview}
-          isEditing={isEditing}
+          category={renderingDecision.category}
         />
       );
 

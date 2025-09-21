@@ -17,11 +17,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { TemplateProps } from '@/types/template';
-import { getSectionComponent } from './sections/registry';
+import { getWeddingSectionComponent } from './categories/weddings/sections/registry';
 import { apiClient } from '@/lib/api';
 
-// Import default props from section components (single source of truth)
-import { Hero1DefaultProps } from './sections/hero/Hero1';
+// Import default props from wedding section components (single source of truth)
+import { Hero1DefaultProps } from './categories/weddings/sections/hero/Hero1';
 
 interface SectionsConfig {
   hero?: string;
@@ -36,6 +36,7 @@ interface SectionsConfig {
 
 interface TemplateBuilderProps extends TemplateProps {
   sectionsConfig: SectionsConfig;
+  category?: 'weddings' | 'kids' | 'corporate';
 }
 
 interface ModularData {
@@ -58,17 +59,35 @@ interface SectionWrapperProps {
   sectionKey: string;
   sectionType: string;
   props: any;
+  category: 'weddings' | 'kids' | 'corporate';
   children?: React.ReactNode;
 }
+
+// Get section component based on category
+const getSectionComponentByCategory = (sectionKey: string, category: 'weddings' | 'kids' | 'corporate') => {
+  switch (category) {
+    case 'weddings':
+      return getWeddingSectionComponent(sectionKey);
+    case 'kids':
+      // TODO: Import and use kids section registry
+      return null;
+    case 'corporate':
+      // TODO: Import and use corporate section registry
+      return null;
+    default:
+      return getWeddingSectionComponent(sectionKey); // Default to weddings
+  }
+};
 
 // Error boundary wrapper for individual sections
 const SectionWrapper: React.FC<SectionWrapperProps> = ({
   sectionKey,
   sectionType,
-  props
+  props,
+  category
 }) => {
   try {
-    const SectionComponent = getSectionComponent(sectionKey);
+    const SectionComponent = getSectionComponentByCategory(sectionKey, category);
 
     if (!SectionComponent) {
       console.warn(`Section component "${sectionKey}" not found in registry`);
@@ -118,7 +137,8 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   events,
   isPreview = false,
   isEditing = false,
-  sectionsConfig
+  sectionsConfig,
+  category = 'weddings'
 }) => {
 
   const [modularData, setModularData] = useState<ModularData | null>(null);
@@ -240,6 +260,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
             sectionKey={sectionKey}
             sectionType={sectionType}
             props={modularData?.[sectionType] || {}} // Empty object will trigger component defaults
+            category={category}
           />
         );
       })}
