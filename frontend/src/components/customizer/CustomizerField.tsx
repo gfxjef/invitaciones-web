@@ -14,8 +14,8 @@ import { CustomizerField as FieldType, FieldState } from './types';
 
 interface CustomizerFieldProps {
   field: FieldType;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | boolean;
+  onChange: (value: string | boolean) => void;
   fieldState?: FieldState;
   onReset?: (fieldKey: string) => void;
   className?: string;
@@ -86,15 +86,15 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
           <div className="relative">
             <textarea
               id={`field-${field.key}`}
-              value={value}
+              value={String(value || '')}
               onChange={handleChange}
-              placeholder={fieldState?.defaultValue || field.placeholder || ''}
+              placeholder={String(fieldState?.defaultValue || field.placeholder || '')}
               rows={4}
               className={`${baseInputClasses} resize-y min-h-[100px]`}
             />
             {fieldState?.isTouched && value && (
               <div className="absolute bottom-2 right-2 text-xs text-purple-500 bg-white px-1 rounded">
-                {value.length} caracteres
+                {String(value).length} caracteres
               </div>
             )}
           </div>
@@ -106,7 +106,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <input
               type="date"
               id={`field-${field.key}`}
-              value={value}
+              value={String(value || '')}
               onChange={handleChange}
               className={`${baseInputClasses} pr-10`}
             />
@@ -124,9 +124,9 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <input
               type="url"
               id={`field-${field.key}`}
-              value={value}
+              value={String(value || '')}
               onChange={handleChange}
-              placeholder={fieldState?.defaultValue || field.placeholder || 'https://ejemplo.com'}
+              placeholder={String(fieldState?.defaultValue || field.placeholder || 'https://ejemplo.com')}
               className={`${baseInputClasses} pl-8`}
             />
             <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
@@ -147,7 +147,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               <input
                 type="color"
                 id={`field-${field.key}`}
-                value={value || '#000000'}
+                value={String(value || '#000000')}
                 onChange={handleChange}
                 className="w-12 h-10 border border-gray-300 rounded-lg cursor-pointer hover:border-purple-400 transition-colors"
               />
@@ -157,17 +157,59 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             </div>
             <input
               type="text"
-              value={value}
+              value={String(value || '')}
               onChange={handleChange}
-              placeholder={fieldState?.defaultValue || field.placeholder || '#000000'}
+              placeholder={String(fieldState?.defaultValue || field.placeholder || '#000000')}
               className={`${baseInputClasses} flex-1 font-mono text-xs`}
             />
             {value && (
               <div
                 className="w-8 h-10 rounded-lg border border-gray-300 shadow-inner flex-shrink-0"
-                style={{ backgroundColor: value }}
+                style={{ backgroundColor: String(value) }}
                 title={`Color: ${value}`}
               />
+            )}
+          </div>
+        );
+
+      case 'checkbox':
+        return (
+          <div className="relative">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                id={`field-${field.key}`}
+                checked={Boolean(value)}
+                onChange={(e) => onChange(e.target.checked)}
+                className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
+                {field.label}
+              </span>
+              {fieldState?.isTouched && (
+                <div className="w-2 h-2 bg-purple-500 rounded-full ml-auto"></div>
+              )}
+            </label>
+          </div>
+        );
+
+      case 'time':
+        return (
+          <div className="relative">
+            <input
+              type="time"
+              id={`field-${field.key}`}
+              value={String(value || '')}
+              onChange={handleChange}
+              className={`${baseInputClasses} pl-8`}
+            />
+            <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
+              🕐
+            </div>
+            {fieldState?.isTouched && value && (
+              <div className="absolute inset-y-0 right-2 flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
             )}
           </div>
         );
@@ -178,9 +220,9 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <input
               type="text"
               id={`field-${field.key}`}
-              value={value}
+              value={String(value || '')}
               onChange={handleChange}
-              placeholder={fieldState?.defaultValue || field.placeholder || ''}
+              placeholder={String(fieldState?.defaultValue || field.placeholder || '')}
               className={baseInputClasses}
             />
             {fieldState?.isTouched && value && (

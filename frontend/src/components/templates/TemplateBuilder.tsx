@@ -162,16 +162,24 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
       // If data is already transformed (from customizer), use it directly
       if (isTransformedData) {
         console.log('🎨 Customizer Mode: Using transformed data');
+        console.log('🔍 FULL modularData from customizer:', data);
+        console.log('🔍 modularData.hero:', (data as any)?.hero);
+        console.log('🔍 modularData.couple:', (data as any)?.couple);
         setModularData(data as ModularData);
         setLoading(false);
         setError(null);
         return;
       }
 
-      // In development mode, skip API and use component defaults
+      // In development mode, prioritize customizer data over component defaults
       if (isDevelopmentMode) {
-        console.log('🔧 Development Mode: Using component defaults for hot reload');
-        setModularData(null); // Will trigger component defaults
+        if (isTransformedData) {
+          console.log('🎨 Development Mode + Customizer: Using transformed customizer data');
+          setModularData(data as ModularData);
+        } else {
+          console.log('🔧 Development Mode: Using component defaults for hot reload');
+          setModularData(null); // Will trigger component defaults
+        }
         setLoading(false);
         setError(null);
         return;
@@ -254,12 +262,23 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
         // Only render if section is configured
         if (!sectionKey) return null;
 
+        // 🔍 DEBUG: Log props for each section
+        const sectionProps = modularData?.[sectionType] || {};
+        console.log(`🔍 TemplateBuilder - Section: ${sectionType}`, {
+          sectionKey,
+          sectionProps,
+          hasGroom: 'groom_name' in sectionProps,
+          hasBride: 'bride_name' in sectionProps,
+          groomValue: sectionProps.groom_name,
+          brideValue: sectionProps.bride_name
+        });
+
         return (
           <SectionWrapper
             key={sectionType}
             sectionKey={sectionKey}
             sectionType={sectionType}
-            props={modularData?.[sectionType] || {}} // Empty object will trigger component defaults
+            props={sectionProps}
             category={category}
           />
         );

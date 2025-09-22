@@ -17,7 +17,8 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Portada',
     icon: '🎭',
     fields: [
-      'coupleNames',
+      'groom_name',
+      'bride_name',
       'eventDate',
       'eventLocation',
       'heroImageUrl'
@@ -135,11 +136,30 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     ]
   },
 
+  itinerary: {
+    label: 'Itinerario',
+    icon: '📅',
+    fields: [
+      'itinerary_title',
+      'itinerary_event_ceremonia_enabled',
+      'itinerary_event_ceremonia_time',
+      'itinerary_event_recepcion_enabled',
+      'itinerary_event_recepcion_time',
+      'itinerary_event_entrada_enabled',
+      'itinerary_event_entrada_time',
+      'itinerary_event_comida_enabled',
+      'itinerary_event_comida_time',
+      'itinerary_event_fiesta_enabled',
+      'itinerary_event_fiesta_time'
+    ]
+  },
+
   footer: {
     label: 'Pie de Página',
     icon: '📝',
     fields: [
-      'footer_coupleNames',
+      'groom_name',
+      'bride_name',
       'footer_eventDate',
       'footer_eventLocation',
       'footer_copyrightText'
@@ -149,14 +169,7 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
 
 // Complete field definitions with UI metadata (matching actual template component props)
 export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
-  // Hero section fields
-  coupleNames: {
-    key: 'coupleNames',
-    label: 'Nombres de la Pareja',
-    type: 'text',
-    section: 'hero',
-    category: 'Pareja'
-  },
+  // Hero section fields - Individual names (replacing legacy coupleNames)
 
   eventDate: {
     key: 'eventDate',
@@ -255,8 +268,8 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     label: 'Nombre de la Novia',
     type: 'text',
     // placeholder:'Ej: Rosmery Guiterrez',
-    section: 'couple',
-    category: 'Novia'
+    section: ['hero', 'couple', 'footer'],  // Campo compartido entre múltiples secciones
+    category: 'Pareja'
   },
 
   bride_role: {
@@ -291,8 +304,8 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     label: 'Nombre del Novio',
     type: 'text',
     // placeholder:'Ej: Jefferson Camacho',
-    section: 'couple',
-    category: 'Novio'
+    section: ['hero', 'couple', 'footer'],  // Campo compartido entre múltiples secciones
+    category: 'Pareja'
   },
 
   groom_role: {
@@ -394,6 +407,100 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     // placeholder:'Ej: REPRODUCIR VIDEO',
     section: 'video',
     category: 'Títulos'
+  },
+
+  // Itinerary section fields
+  itinerary_title: {
+    key: 'itinerary_title',
+    label: 'Título del Itinerario',
+    type: 'text',
+    section: 'itinerary',
+    category: 'Títulos'
+  },
+
+  // Ceremonia event
+  itinerary_event_ceremonia_enabled: {
+    key: 'itinerary_event_ceremonia_enabled',
+    label: 'Mostrar Ceremonia',
+    type: 'checkbox',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  itinerary_event_ceremonia_time: {
+    key: 'itinerary_event_ceremonia_time',
+    label: 'Hora de la Ceremonia',
+    type: 'time',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  // Recepción event
+  itinerary_event_recepcion_enabled: {
+    key: 'itinerary_event_recepcion_enabled',
+    label: 'Mostrar Recepción',
+    type: 'checkbox',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  itinerary_event_recepcion_time: {
+    key: 'itinerary_event_recepcion_time',
+    label: 'Hora de la Recepción',
+    type: 'time',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  // Entrada event
+  itinerary_event_entrada_enabled: {
+    key: 'itinerary_event_entrada_enabled',
+    label: 'Mostrar Entrada',
+    type: 'checkbox',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  itinerary_event_entrada_time: {
+    key: 'itinerary_event_entrada_time',
+    label: 'Hora de la Entrada',
+    type: 'time',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  // Comida event
+  itinerary_event_comida_enabled: {
+    key: 'itinerary_event_comida_enabled',
+    label: 'Mostrar Comida',
+    type: 'checkbox',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  itinerary_event_comida_time: {
+    key: 'itinerary_event_comida_time',
+    label: 'Hora de la Comida',
+    type: 'time',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  // Fiesta event
+  itinerary_event_fiesta_enabled: {
+    key: 'itinerary_event_fiesta_enabled',
+    label: 'Mostrar Fiesta',
+    type: 'checkbox',
+    section: 'itinerary',
+    category: 'Eventos'
+  },
+
+  itinerary_event_fiesta_time: {
+    key: 'itinerary_event_fiesta_time',
+    label: 'Hora de la Fiesta',
+    type: 'time',
+    section: 'itinerary',
+    category: 'Eventos'
   },
 
   // Story section fields - 3 moments
@@ -776,15 +883,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     category: 'Galería'
   },
 
-  // Footer section fields
-  footer_coupleNames: {
-    key: 'footer_coupleNames',
-    label: 'Nombres de la Pareja',
-    type: 'text',
-    // placeholder:'Ej: María & Carlos',
-    section: 'footer',
-    category: 'Footer'
-  },
+  // Footer section fields - Using individual names (removing legacy footer_coupleNames)
 
   footer_eventDate: {
     key: 'footer_eventDate',
@@ -882,14 +981,26 @@ export function getOrderedSections(activeSections: string[]): string[] {
  */
 export function getFieldsByOrderedSections(availableFields: CustomizerField[], activeSections: string[]): Record<string, CustomizerField[]> {
   const fieldsBySections: Record<string, CustomizerField[]> = {};
+  const processedFields = new Set<string>(); // Para evitar duplicados
 
-  // First pass: group fields by section
+  // First pass: group fields by section, handling multiple sections per field
   availableFields.forEach(field => {
     if (field.section) {
-      if (!fieldsBySections[field.section]) {
-        fieldsBySections[field.section] = [];
+      // Handle both string and array sections
+      const sections = Array.isArray(field.section) ? field.section : [field.section];
+
+      // Para campos con múltiples secciones, solo añadir en la primera sección activa
+      const firstActiveSection = activeSections.find(activeSection =>
+        sections.includes(activeSection)
+      );
+
+      if (firstActiveSection && !processedFields.has(field.key)) {
+        if (!fieldsBySections[firstActiveSection]) {
+          fieldsBySections[firstActiveSection] = [];
+        }
+        fieldsBySections[firstActiveSection].push(field);
+        processedFields.add(field.key);
       }
-      fieldsBySections[field.section].push(field);
     }
   });
 
@@ -902,4 +1013,56 @@ export function getFieldsByOrderedSections(availableFields: CustomizerField[], a
   });
 
   return result;
+}
+
+// WEDDING BASIC FIELDS CONFIGURATION - Fields shown in Basic mode for wedding templates
+export const WEDDING_BASIC_FIELDS: string[] = [
+  // Hero section - Essential information (using individual names)
+  'groom_name',
+  'bride_name',
+  'eventDate',
+  'eventLocation',
+
+  // Welcome section - Basic messages
+  'welcome_welcomeText',
+  'welcome_title',
+
+  // Couple section - Basic names and roles
+  'bride_name',      // Shared with hero - appears in both
+  'bride_role',
+  'groom_name',      // Shared with hero - appears in both
+  'groom_role',
+
+  // Countdown section - Essential date
+  'countdown_weddingDate',
+
+  // Story section - Basic moments (first 2 moments only)
+  'story_moment_1_title',
+  'story_moment_1_date',
+  'story_moment_2_title',
+  'story_moment_2_date',
+
+  // Gallery section - First 3 images only
+  'gallery_image_1_url',
+  'gallery_image_2_url',
+  'gallery_image_3_url',
+
+  // Footer section - Basic info (using individual names)
+  'groom_name',        // Shared with hero/couple
+  'bride_name',        // Shared with hero/couple
+  'footer_eventDate',
+  'footer_eventLocation'
+];
+
+/**
+ * Wedding-specific utility: Filter fields by selected mode (Basic or Full)
+ */
+export function getWeddingFieldsByMode(
+  allFields: CustomizerField[],
+  mode: 'basic' | 'full'
+): CustomizerField[] {
+  if (mode === 'basic') {
+    return allFields.filter(field => WEDDING_BASIC_FIELDS.includes(field.key));
+  }
+  return allFields; // FULL mode shows all fields
 }

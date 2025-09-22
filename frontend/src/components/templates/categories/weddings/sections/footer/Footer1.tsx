@@ -11,18 +11,22 @@ import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 
 interface Footer1Props {
-  coupleNames?: string;
+  groom_name?: string;
+  bride_name?: string;
   eventDate?: string;
   eventLocation?: string;
   copyrightText?: string;
 }
 
 export const Footer1: React.FC<Footer1Props> = ({
-  coupleNames = 'Jefferson & Rosmery',
+  groom_name = 'Jefferson',
+  bride_name = 'Rosmery',
   eventDate = '24 DECEMBER 2026',
   eventLocation = 'Lima, Peru',
   copyrightText = 'Hecho con Amor. All right reserved Amiras Gift.'
 }) => {
+  // Auto-generate couple names from individual names
+  const coupleNames = `${groom_name} & ${bride_name}`;
   const [isVisible, setIsVisible] = useState(false);
 
   const toggleVisibility = () => {
@@ -82,7 +86,8 @@ export const Footer1: React.FC<Footer1Props> = ({
 
 // Export default props for centralized access
 export const Footer1DefaultProps = {
-  coupleNames: 'Jefferson & Rosmery',
+  groom_name: 'Jefferson',
+  bride_name: 'Rosmery',
   eventDate: '24 DECEMBER 2026',
   eventLocation: 'Lima, Peru',
   copyrightText: 'Hecho con Amor. All right reserved Amiras Gift.'

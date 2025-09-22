@@ -8,14 +8,14 @@
 export interface CustomizerField {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'url' | 'textarea' | 'color';
+  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'checkbox' | 'time';
   placeholder?: string;
-  section: string;
+  section: string | string[];  // Permite campos compartidos entre múltiples secciones
   category: string;
 }
 
 export interface CustomizerData {
-  [key: string]: string | undefined;
+  [key: string]: string | boolean | undefined;
 }
 
 /**
@@ -36,13 +36,13 @@ export interface TouchedFields {
  */
 export interface FieldState {
   /** Current value displayed in the field */
-  value: string;
+  value: string | boolean;
   /** Whether user has explicitly modified this field */
   isTouched: boolean;
   /** Whether current value differs from template default */
   isModified: boolean;
   /** Original template default value */
-  defaultValue: string;
+  defaultValue: string | boolean;
   /** Whether this field can be reset to default */
   canReset: boolean;
 }

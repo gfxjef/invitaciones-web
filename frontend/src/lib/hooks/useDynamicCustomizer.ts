@@ -13,9 +13,13 @@ import {
   CustomizerState,
   TouchedFields,
   FieldState,
-  ProgressiveData
+  ProgressiveData,
+  CustomizerMode
 } from '@/components/customizer/types';
-import { getAvailableFields, detectActiveSections, getFieldsByOrderedSections, SECTION_FIELDS_MAP } from '@/components/customizer/sectionFieldsMap';
+import { detectActiveSections, getFieldsByOrderedSections } from '@/components/customizer/sectionFieldsMap';
+// TODO: This file should be refactored to use category-specific configurations
+// Currently using wedding-specific imports as fallback for legacy compatibility
+import { getAvailableFields, WEDDING_SECTION_FIELDS_MAP as SECTION_FIELDS_MAP, FIELD_DEFINITIONS, getWeddingFieldsByMode, WEDDING_BASIC_FIELDS } from '@/components/templates/categories/weddings/customizer/sectionFieldsMap';
 
 // Import default props from wedding section components (single source of truth)
 import { Hero1DefaultProps } from '@/components/templates/categories/weddings/sections/hero/Hero1';
@@ -23,8 +27,10 @@ import { Welcome1DefaultProps } from '@/components/templates/categories/weddings
 import { Couple1DefaultProps } from '@/components/templates/categories/weddings/sections/couple/Couple1';
 import { Countdown1DefaultProps } from '@/components/templates/categories/weddings/sections/countdown/Countdown1';
 import { Gallery1DefaultProps } from '@/components/templates/categories/weddings/sections/gallery/Gallery1';
+import { Gallery2DefaultProps } from '@/components/templates/categories/weddings/sections/gallery/Gallery2';
 import { Story1DefaultProps } from '@/components/templates/categories/weddings/sections/story/Story1';
 import { Video1DefaultProps } from '@/components/templates/categories/weddings/sections/video/Video1';
+import { Itinerary1DefaultProps } from '@/components/templates/categories/weddings/sections/itinerary/Itinerary1';
 import { Footer1DefaultProps } from '@/components/templates/categories/weddings/sections/footer/Footer1';
 
 interface UseDynamicCustomizerProps {
@@ -39,9 +45,55 @@ export function useDynamicCustomizer({
   templateData = {}
 }: UseDynamicCustomizerProps = {}) {
 
+  // Helper function to get the specific section variant being used
+  const getSectionVariant = useCallback((sectionType: string): string => {
+    if (!sectionsConfig) return `${sectionType}_1`; // Default to variant 1
+
+    // Check if sectionsConfig has the specific variant (e.g., "gallery_2")
+    const configKeys = Object.keys(sectionsConfig);
+    const sectionVariant = configKeys.find(key => key.startsWith(`${sectionType}_`));
+
+    return sectionVariant || `${sectionType}_1`; // Default to variant 1
+  }, [sectionsConfig]);
+
+  // Helper function to get default props for a section variant
+  const getSectionDefaultProps = useCallback((sectionType: string) => {
+    const variant = getSectionVariant(sectionType);
+
+    switch (variant) {
+      case 'hero_1': return Hero1DefaultProps;
+      case 'welcome_1': return Welcome1DefaultProps;
+      case 'couple_1': return Couple1DefaultProps;
+      case 'countdown_1': return Countdown1DefaultProps;
+      case 'gallery_1': return Gallery1DefaultProps;
+      case 'gallery_2': return Gallery2DefaultProps;
+      case 'story_1': return Story1DefaultProps;
+      case 'video_1': return Video1DefaultProps;
+      case 'itinerary_1': return Itinerary1DefaultProps;
+      case 'footer_1': return Footer1DefaultProps;
+      default:
+        // Fallback to variant 1 defaults
+        switch (sectionType) {
+          case 'hero': return Hero1DefaultProps;
+          case 'welcome': return Welcome1DefaultProps;
+          case 'couple': return Couple1DefaultProps;
+          case 'countdown': return Countdown1DefaultProps;
+          case 'gallery': return Gallery1DefaultProps; // Always fallback to Gallery1
+          case 'story': return Story1DefaultProps;
+          case 'video': return Video1DefaultProps;
+          case 'itinerary': return Itinerary1DefaultProps;
+          case 'footer': return Footer1DefaultProps;
+          default: return Gallery1DefaultProps; // Safe fallback for gallery type checking
+        }
+    }
+  }, [getSectionVariant]);
+
   // Main customizer state
   const [isOpen, setIsOpen] = useState(false);
   const [customizerData, setCustomizerData] = useState<CustomizerData>({});
+
+  // Mode selection state
+  const [selectedMode, setSelectedMode] = useState<CustomizerMode>('basic');
 
   // Progressive override state
   const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
@@ -80,8 +132,11 @@ export function useDynamicCustomizer({
       // Extract default values from template props or use component defaults (single source of truth)
       switch (field.key) {
         // Hero Section Defaults
-        case 'coupleNames':
-          defaultValue = templateProps.hero?.coupleNames || Hero1DefaultProps.coupleNames;
+        case 'groom_name':
+          defaultValue = templateProps.couple?.groom_name || Hero1DefaultProps.groom_name || 'Jefferson';
+          break;
+        case 'bride_name':
+          defaultValue = templateProps.couple?.bride_name || Hero1DefaultProps.bride_name || 'Rosmery';
           break;
         case 'eventDate':
           defaultValue = templateProps.hero?.eventDate || Hero1DefaultProps.eventDate;
@@ -110,30 +165,25 @@ export function useDynamicCustomizer({
           defaultValue = templateProps.welcome?.description || Welcome1DefaultProps.description;
           break;
 
-        // Couple Section Defaults
-        case 'bride_name':
-          defaultValue = templateProps.couple?.brideData?.name || Couple1DefaultProps.brideData.name;
-          break;
-        case 'groom_name':
-          defaultValue = templateProps.couple?.groomData?.name || Couple1DefaultProps.groomData.name;
-          break;
+        // Note: bride_name and groom_name are handled above as shared fields
+        // Couple Section Defaults - Other fields
         case 'bride_role':
-          defaultValue = templateProps.couple?.brideData?.role || Couple1DefaultProps.brideData.role;
+          defaultValue = templateProps.couple?.bride_role || Couple1DefaultProps.bride_role;
           break;
         case 'bride_description':
-          defaultValue = templateProps.couple?.brideData?.description || Couple1DefaultProps.brideData.description;
+          defaultValue = templateProps.couple?.bride_description || Couple1DefaultProps.bride_description;
           break;
         case 'bride_imageUrl':
-          defaultValue = templateProps.couple?.brideData?.imageUrl || Couple1DefaultProps.brideData.imageUrl;
+          defaultValue = templateProps.couple?.bride_imageUrl || Couple1DefaultProps.bride_imageUrl;
           break;
         case 'groom_role':
-          defaultValue = templateProps.couple?.groomData?.role || Couple1DefaultProps.groomData.role;
+          defaultValue = templateProps.couple?.groom_role || Couple1DefaultProps.groom_role;
           break;
         case 'groom_description':
-          defaultValue = templateProps.couple?.groomData?.description || Couple1DefaultProps.groomData.description;
+          defaultValue = templateProps.couple?.groom_description || Couple1DefaultProps.groom_description;
           break;
         case 'groom_imageUrl':
-          defaultValue = templateProps.couple?.groomData?.imageUrl || Couple1DefaultProps.groomData.imageUrl;
+          defaultValue = templateProps.couple?.groom_imageUrl || Couple1DefaultProps.groom_imageUrl;
           break;
         // Countdown Section Defaults
         case 'weddingDate':
@@ -197,79 +247,143 @@ export function useDynamicCustomizer({
           defaultValue = templateProps.story?.storyMoments?.[2]?.imageUrl || Story1DefaultProps.storyMoments[2].imageUrl;
           break;
 
-        // Gallery image fields with defaults from Gallery1 component
-        case 'gallery_image_1_url':
-          defaultValue = templateProps.gallery?.galleryImages?.[0]?.url || Gallery1DefaultProps.galleryImages[0].src;
+        // Gallery image fields with defaults from the active Gallery component variant
+        case 'gallery_image_1_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.url ||
+                        (galleryDefaults.galleryImages?.[0] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[0] as any)?.url;
           break;
-        case 'gallery_image_1_alt':
-          defaultValue = templateProps.gallery?.galleryImages?.[0]?.alt || Gallery1DefaultProps.galleryImages[0].alt;
+        }
+        case 'gallery_image_1_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.alt || galleryDefaults.galleryImages?.[0]?.alt;
           break;
-        case 'gallery_image_1_category':
-          defaultValue = templateProps.gallery?.galleryImages?.[0]?.category || Gallery1DefaultProps.galleryImages[0].category;
+        }
+        case 'gallery_image_1_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[0]?.category || galleryDefaults.galleryImages?.[0]?.category;
           break;
-        case 'gallery_image_2_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg';
+        }
+        case 'gallery_image_2_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[1]?.url ||
+                        (galleryDefaults.galleryImages?.[1] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[1] as any)?.url;
           break;
-        case 'gallery_image_2_alt':
-          defaultValue = 'Beautiful wedding ceremony';
+        }
+        case 'gallery_image_2_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[1]?.alt || galleryDefaults.galleryImages?.[1]?.alt;
           break;
-        case 'gallery_image_2_category':
-          defaultValue = 'ceremony';
+        }
+        case 'gallery_image_2_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[1]?.category || galleryDefaults.galleryImages?.[1]?.category;
           break;
-        case 'gallery_image_3_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4-2.jpg';
+        }
+        case 'gallery_image_3_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[2]?.url ||
+                        (galleryDefaults.galleryImages?.[2] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[2] as any)?.url;
           break;
-        case 'gallery_image_3_alt':
-          defaultValue = 'Celebration moments';
+        }
+        case 'gallery_image_3_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[2]?.alt || galleryDefaults.galleryImages?.[2]?.alt;
           break;
-        case 'gallery_image_3_category':
-          defaultValue = 'party';
+        }
+        case 'gallery_image_3_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[2]?.category || galleryDefaults.galleryImages?.[2]?.category;
           break;
-        case 'gallery_image_4_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5.jpg';
+        }
+        case 'gallery_image_4_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[3]?.url ||
+                        (galleryDefaults.galleryImages?.[3] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[3] as any)?.url;
           break;
-        case 'gallery_image_4_alt':
-          defaultValue = 'Wedding rings';
+        }
+        case 'gallery_image_4_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[3]?.alt || galleryDefaults.galleryImages?.[3]?.alt;
           break;
-        case 'gallery_image_4_category':
-          defaultValue = 'ceremony';
+        }
+        case 'gallery_image_4_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[3]?.category || galleryDefaults.galleryImages?.[3]?.category;
           break;
-        case 'gallery_image_5_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/6.jpg';
+        }
+        case 'gallery_image_5_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[4]?.url ||
+                        (galleryDefaults.galleryImages?.[4] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[4] as any)?.url;
           break;
-        case 'gallery_image_5_alt':
-          defaultValue = 'Happy couple dancing';
+        }
+        case 'gallery_image_5_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[4]?.alt || galleryDefaults.galleryImages?.[4]?.alt;
           break;
-        case 'gallery_image_5_category':
-          defaultValue = 'party';
+        }
+        case 'gallery_image_5_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[4]?.category || galleryDefaults.galleryImages?.[4]?.category;
           break;
-        case 'gallery_image_6_url':
-          defaultValue = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1.jpg';
+        }
+        case 'gallery_image_6_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[5]?.url ||
+                        (galleryDefaults.galleryImages?.[5] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[5] as any)?.url;
           break;
-        case 'gallery_image_6_alt':
-          defaultValue = 'Wedding bouquet';
+        }
+        case 'gallery_image_6_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[5]?.alt || galleryDefaults.galleryImages?.[5]?.alt;
           break;
-        case 'gallery_image_6_category':
-          defaultValue = 'ceremony';
+        }
+        case 'gallery_image_6_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[5]?.category || galleryDefaults.galleryImages?.[5]?.category;
           break;
-        case 'gallery_image_7_url':
-          defaultValue = '';
+        }
+        case 'gallery_image_7_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[6]?.url ||
+                        (galleryDefaults.galleryImages?.[6] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[6] as any)?.url || '';
           break;
-        case 'gallery_image_7_alt':
-          defaultValue = '';
+        }
+        case 'gallery_image_7_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[6]?.alt || galleryDefaults.galleryImages?.[6]?.alt || '';
           break;
-        case 'gallery_image_7_category':
-          defaultValue = 'ceremony';
+        }
+        case 'gallery_image_7_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[6]?.category || galleryDefaults.galleryImages?.[6]?.category || 'ceremony';
           break;
-        case 'gallery_image_8_url':
-          defaultValue = '';
+        }
+        case 'gallery_image_8_url': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[7]?.url ||
+                        (galleryDefaults.galleryImages?.[7] as any)?.src ||
+                        (galleryDefaults.galleryImages?.[7] as any)?.url || '';
           break;
-        case 'gallery_image_8_alt':
-          defaultValue = '';
+        }
+        case 'gallery_image_8_alt': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[7]?.alt || galleryDefaults.galleryImages?.[7]?.alt || '';
           break;
-        case 'gallery_image_8_category':
-          defaultValue = 'ceremony';
+        }
+        case 'gallery_image_8_category': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages?.[7]?.category || galleryDefaults.galleryImages?.[7]?.category || 'ceremony';
           break;
+        }
         case 'gallery_image_9_url':
           defaultValue = '';
           break;
@@ -292,6 +406,41 @@ export function useDynamicCustomizer({
         // Video Section Defaults
         case 'videoEmbedUrl':
           defaultValue = templateProps.video?.videoEmbedUrl || Video1DefaultProps.videoEmbedUrl;
+          break;
+
+        // Itinerary Section Defaults
+        case 'itinerary_title':
+          defaultValue = templateProps.itinerary?.title || Itinerary1DefaultProps.title;
+          break;
+        case 'itinerary_event_ceremonia_enabled':
+          defaultValue = templateProps.itinerary?.event_ceremonia_enabled || Itinerary1DefaultProps.event_ceremonia_enabled;
+          break;
+        case 'itinerary_event_ceremonia_time':
+          defaultValue = templateProps.itinerary?.event_ceremonia_time || Itinerary1DefaultProps.event_ceremonia_time;
+          break;
+        case 'itinerary_event_recepcion_enabled':
+          defaultValue = templateProps.itinerary?.event_recepcion_enabled || Itinerary1DefaultProps.event_recepcion_enabled;
+          break;
+        case 'itinerary_event_recepcion_time':
+          defaultValue = templateProps.itinerary?.event_recepcion_time || Itinerary1DefaultProps.event_recepcion_time;
+          break;
+        case 'itinerary_event_entrada_enabled':
+          defaultValue = templateProps.itinerary?.event_entrada_enabled || Itinerary1DefaultProps.event_entrada_enabled;
+          break;
+        case 'itinerary_event_entrada_time':
+          defaultValue = templateProps.itinerary?.event_entrada_time || Itinerary1DefaultProps.event_entrada_time;
+          break;
+        case 'itinerary_event_comida_enabled':
+          defaultValue = templateProps.itinerary?.event_comida_enabled || Itinerary1DefaultProps.event_comida_enabled;
+          break;
+        case 'itinerary_event_comida_time':
+          defaultValue = templateProps.itinerary?.event_comida_time || Itinerary1DefaultProps.event_comida_time;
+          break;
+        case 'itinerary_event_fiesta_enabled':
+          defaultValue = templateProps.itinerary?.event_fiesta_enabled || Itinerary1DefaultProps.event_fiesta_enabled;
+          break;
+        case 'itinerary_event_fiesta_time':
+          defaultValue = templateProps.itinerary?.event_fiesta_time || Itinerary1DefaultProps.event_fiesta_time;
           break;
 
         default:
@@ -317,7 +466,7 @@ export function useDynamicCustomizer({
   }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData)]);
 
   // Update a specific field with touch tracking
-  const updateField = useCallback((fieldKey: string, value: string) => {
+  const updateField = useCallback((fieldKey: string, value: string | boolean) => {
     setCustomizerData(prev => ({
       ...prev,
       [fieldKey]: value
@@ -362,7 +511,13 @@ export function useDynamicCustomizer({
   const transformToTemplateProps = useCallback((data: any) => {
     return {
       hero: {
-        coupleNames: data.coupleNames || Hero1DefaultProps.coupleNames,
+        // Generate coupleNames from individual names or use the computed one
+        coupleNames: data.coupleNames ||
+                    (data.groom_name && data.bride_name ? `${data.groom_name} & ${data.bride_name}` :
+                     `${data.groom_name || 'Jefferson'} & ${data.bride_name || 'Rosmery'}`),
+        // Individual fields needed by Hero1 component
+        groom_name: data.groom_name || Hero1DefaultProps.groom_name,
+        bride_name: data.bride_name || Hero1DefaultProps.bride_name,
         eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
@@ -381,20 +536,15 @@ export function useDynamicCustomizer({
       couple: {
         sectionTitle: data.couple_sectionTitle || Couple1DefaultProps.sectionTitle,
         sectionSubtitle: data.couple_sectionSubtitle || Couple1DefaultProps.sectionSubtitle,
-        brideData: {
-          imageUrl: data.bride_imageUrl || Couple1DefaultProps.brideData.imageUrl,
-          name: data.bride_name || data.couple_bride_name || Couple1DefaultProps.brideData.name,
-          role: data.bride_role || Couple1DefaultProps.brideData.role,
-          description: data.bride_description || Couple1DefaultProps.brideData.description,
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        },
-        groomData: {
-          imageUrl: data.groom_imageUrl || Couple1DefaultProps.groomData.imageUrl,
-          name: data.groom_name || data.couple_groom_name || Couple1DefaultProps.groomData.name,
-          role: data.groom_role || Couple1DefaultProps.groomData.role,
-          description: data.groom_description || Couple1DefaultProps.groomData.description,
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        }
+        // Use individual fields instead of legacy brideData/groomData
+        bride_name: data.bride_name || data.couple_bride_name || Couple1DefaultProps.bride_name,
+        bride_role: data.bride_role || Couple1DefaultProps.bride_role,
+        bride_description: data.bride_description || Couple1DefaultProps.bride_description,
+        bride_imageUrl: data.bride_imageUrl || Couple1DefaultProps.bride_imageUrl,
+        groom_name: data.groom_name || data.couple_groom_name || Couple1DefaultProps.groom_name,
+        groom_role: data.groom_role || Couple1DefaultProps.groom_role,
+        groom_description: data.groom_description || Couple1DefaultProps.groom_description,
+        groom_imageUrl: data.groom_imageUrl || Couple1DefaultProps.groom_imageUrl
       },
       countdown: {
         weddingDate: data.countdown_weddingDate || data.event_date || Countdown1DefaultProps.weddingDate,
@@ -436,8 +586,8 @@ export function useDynamicCustomizer({
         title: data.video_title || Video1DefaultProps.title
       },
       gallery: {
-        sectionSubtitle: Gallery1DefaultProps.sectionSubtitle,
-        sectionTitle: Gallery1DefaultProps.sectionTitle,
+        sectionSubtitle: (getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps).sectionSubtitle,
+        sectionTitle: (getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps).sectionTitle,
         galleryImages: [
           // Image 1 - only include if has URL
           ...(data.gallery_image_1_url ? [{
@@ -511,8 +661,32 @@ export function useDynamicCustomizer({
           }] : [])
         ]
       },
+      itinerary: {
+        title: data.itinerary_title || Itinerary1DefaultProps.title,
+        event_ceremonia_enabled: data.itinerary_event_ceremonia_enabled !== undefined ?
+          data.itinerary_event_ceremonia_enabled : Itinerary1DefaultProps.event_ceremonia_enabled,
+        event_ceremonia_time: data.itinerary_event_ceremonia_time || Itinerary1DefaultProps.event_ceremonia_time,
+        event_recepcion_enabled: data.itinerary_event_recepcion_enabled !== undefined ?
+          data.itinerary_event_recepcion_enabled : Itinerary1DefaultProps.event_recepcion_enabled,
+        event_recepcion_time: data.itinerary_event_recepcion_time || Itinerary1DefaultProps.event_recepcion_time,
+        event_entrada_enabled: data.itinerary_event_entrada_enabled !== undefined ?
+          data.itinerary_event_entrada_enabled : Itinerary1DefaultProps.event_entrada_enabled,
+        event_entrada_time: data.itinerary_event_entrada_time || Itinerary1DefaultProps.event_entrada_time,
+        event_comida_enabled: data.itinerary_event_comida_enabled !== undefined ?
+          data.itinerary_event_comida_enabled : Itinerary1DefaultProps.event_comida_enabled,
+        event_comida_time: data.itinerary_event_comida_time || Itinerary1DefaultProps.event_comida_time,
+        event_fiesta_enabled: data.itinerary_event_fiesta_enabled !== undefined ?
+          data.itinerary_event_fiesta_enabled : Itinerary1DefaultProps.event_fiesta_enabled,
+        event_fiesta_time: data.itinerary_event_fiesta_time || Itinerary1DefaultProps.event_fiesta_time
+      },
       footer: {
-        coupleNames: data.footer_coupleNames || `${data.couple_bride_name || 'Jefferson'} & ${data.couple_groom_name || 'Rosmery'}`,
+        // Use same logic as hero for consistency
+        coupleNames: data.coupleNames ||
+                    (data.groom_name && data.bride_name ? `${data.groom_name} & ${data.bride_name}` :
+                     `${data.groom_name || 'Jefferson'} & ${data.bride_name || 'Rosmery'}`),
+        // Individual fields needed by Footer1 component
+        groom_name: data.groom_name || Footer1DefaultProps.groom_name,
+        bride_name: data.bride_name || Footer1DefaultProps.bride_name,
         eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
@@ -522,6 +696,18 @@ export function useDynamicCustomizer({
         copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
+  }, []);
+
+  // Auto-generate computed fields from individual values
+  const getComputedFields = useCallback((data: CustomizerData): CustomizerData => {
+    const computed = { ...data };
+
+    // Auto-generate coupleNames for Hero and Footer from individual names
+    if (data.groom_name && data.bride_name) {
+      computed.coupleNames = `${data.groom_name} & ${data.bride_name}`;
+    }
+
+    return computed;
   }, []);
 
   // Get progressive merged data - only touched fields override template defaults
@@ -546,8 +732,11 @@ export function useDynamicCustomizer({
       ...progressiveData
     };
 
-    return transformToTemplateProps(mergedData);
-  }, [availableFields, touchedFields, customizerData, templateDefaults, templateData, transformToTemplateProps]);
+    // Apply computed fields (like auto-generated coupleNames)
+    const finalMergedData = getComputedFields(mergedData);
+
+    return transformToTemplateProps(finalMergedData);
+  }, [availableFields, touchedFields, customizerData, templateDefaults, templateData, transformToTemplateProps, getComputedFields]);
 
   // Legacy method for backward compatibility
   const getMergedData = getProgressiveMergedData;
@@ -577,17 +766,22 @@ export function useDynamicCustomizer({
     return Object.keys(touchedFields).length;
   }, [touchedFields]);
 
-  // Get fields grouped by ordered sections instead of categories
+  // Get fields grouped by ordered sections with mode filtering
   const fieldsBySection = useMemo(() => {
-    const result = getFieldsByOrderedSections(availableFields, activeSections);
-    return result;
-  }, [availableFields, activeSections]);
+    // Filter fields by selected mode first
+    const filteredFields = selectedMode === 'basic'
+      ? availableFields.filter(field => WEDDING_BASIC_FIELDS.includes(field.key))
+      : availableFields;
+
+    // Then group by sections
+    return getFieldsByOrderedSections(filteredFields, activeSections);
+  }, [availableFields, activeSections, selectedMode]);
 
   // Legacy support: alias for backward compatibility
   const fieldsByCategory = fieldsBySection;
 
   // Get current value for a field
-  const getFieldValue = useCallback((fieldKey: string): string => {
+  const getFieldValue = useCallback((fieldKey: string): string | boolean => {
     return customizerData[fieldKey] || '';
   }, [customizerData]);
 
@@ -642,16 +836,22 @@ export function useDynamicCustomizer({
   // Check if customizer has any fields to show
   const hasFields = availableFields.length > 0;
 
+  // Mode switching function
+  const switchMode = useCallback((mode: CustomizerMode) => {
+    setSelectedMode(mode);
+  }, []);
+
   return {
     // State
     isOpen,
     customizerData,
     availableFields,
     activeSections,
-    fieldsByCategory, // Legacy: now grouped by sections
-    fieldsBySection,  // New: explicitly grouped by sections
+    fieldsByCategory, // Legacy: now grouped by sections with mode filtering
+    fieldsBySection,  // New: explicitly grouped by sections with mode filtering
     hasChanges,
     hasFields,
+    selectedMode,
 
     // Progressive override state
     touchedFields,
@@ -668,6 +868,7 @@ export function useDynamicCustomizer({
     toggleCustomizer,
     openCustomizer,
     closeCustomizer,
+    switchMode,
 
     // Data access
     getMergedData,
@@ -678,6 +879,9 @@ export function useDynamicCustomizer({
 
     // Computed
     sectionsCount: activeSections.length,
-    fieldsCount: availableFields.length
+    fieldsCount: availableFields.length,
+
+    // Category-specific configuration
+    basicFields: WEDDING_BASIC_FIELDS // TODO: Make this dynamic per category
   };
 }

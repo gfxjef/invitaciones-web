@@ -53,7 +53,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
     }
 
     // Determine category based on template metadata or default to weddings
-    const category = template.category || 'weddings';
+    const category: 'weddings' | 'kids' | 'corporate' = (template.category as 'weddings' | 'kids' | 'corporate') || 'weddings';
 
     return {
       type: 'modular',
@@ -63,7 +63,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
   }, [template.sections_config, template.category]);
 
   // Fallback component for missing templates
-  const FallbackTemplate = ({ message, availableTemplates }: { message: string; availableTemplates?: string[] }) => (
+  const FallbackTemplate = ({ message }: { message: string; availableTemplates?: string[] }) => (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center p-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-4">
@@ -72,11 +72,6 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
         <p className="text-gray-600 mb-4">
           {message}
         </p>
-        {availableTemplates && (
-          <p className="text-sm text-gray-500">
-            Templates disponibles: {availableTemplates.join(', ')}
-          </p>
-        )}
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
           <p className="text-sm text-blue-700">
             <strong>Tipo de template:</strong> {template.template_type || 'legacy'}
@@ -115,7 +110,6 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
       return (
         <FallbackTemplate
           message={renderingDecision.message || 'Unknown template error'}
-          availableTemplates={renderingDecision.availableTemplates}
         />
       );
   }

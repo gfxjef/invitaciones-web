@@ -8,16 +8,18 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { X, RotateCcw, Palette, Edit3, Sparkles } from 'lucide-react';
 import { CustomizerField } from './CustomizerField';
-import { CustomizerField as FieldType, FieldState } from './types';
+import { CustomizerField as FieldType, FieldState, CustomizerMode } from './types';
+// BASIC_FIELDS now passed as prop - no longer imported from global config
 
 interface CustomizerPanelProps {
   isOpen: boolean;
   onClose: () => void;
   fieldsByCategory: Record<string, FieldType[]>;
-  getFieldValue: (fieldKey: string) => string;
-  updateField: (fieldKey: string, value: string) => void;
+  getFieldValue: (fieldKey: string) => string | boolean;
+  updateField: (fieldKey: string, value: string | boolean) => void;
   onReset: () => void;
   onResetField?: (fieldKey: string) => void;
   hasChanges: boolean;
@@ -26,6 +28,9 @@ interface CustomizerPanelProps {
   touchedFieldsCount?: number;
   fieldStates?: Record<string, FieldState>;
   getSectionConfig?: (sectionName: string) => any;
+  selectedMode: CustomizerMode;
+  onModeChange: (mode: CustomizerMode) => void;
+  basicFields: string[]; // Category-specific basic fields
 }
 
 export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
@@ -41,13 +46,28 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
   fieldsCount,
   touchedFieldsCount = 0,
   fieldStates = {},
-  getSectionConfig
+  getSectionConfig,
+  selectedMode,
+  onModeChange,
+  basicFields
 }) => {
 
   if (!isOpen) return null;
 
   // fieldsByCategory now contains sections ordered by priority
   const sections = Object.keys(fieldsByCategory);
+
+  // Calculate mode statistics
+  const modeStats = useMemo(() => {
+    const allFields = Object.values(fieldsByCategory).flat();
+    const basicFieldsAvailable = allFields.filter(field => basicFields.includes(field.key));
+
+    return {
+      basicCount: basicFieldsAvailable.length,
+      fullCount: fieldsCount,
+      currentCount: selectedMode === 'basic' ? basicFieldsAvailable.length : fieldsCount
+    };
+  }, [fieldsByCategory, fieldsCount, selectedMode, basicFields]);
 
   return (
     <>
@@ -82,7 +102,7 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                 Personalizar Invitación
               </h2>
               <div className="flex items-center gap-3 text-sm text-gray-600">
-                <span>{sectionsCount} secciones • {fieldsCount} campos</span>
+                <span>{sectionsCount} secciones • {modeStats.currentCount} campos {selectedMode === 'basic' ? 'básicos' : 'completos'}</span>
                 {touchedFieldsCount > 0 && (
                   <div className="flex items-center gap-1 text-purple-600 font-medium bg-purple-100 px-2 py-0.5 rounded-full">
                     <Edit3 className="w-3 h-3" />
@@ -106,6 +126,52 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
           >
             <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-colors" />
           </button>
+        </div>
+
+        {/* Mode Selector */}
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50">
+          <div className="flex items-center justify-center">
+            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+              <button
+                onClick={() => onModeChange('basic')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  selectedMode === 'basic'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Básico</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                    {modeStats.basicCount}
+                  </span>
+                </div>
+              </button>
+              <button
+                onClick={() => onModeChange('full')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                  selectedMode === 'full'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Completo</span>
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                    {modeStats.fullCount}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+          <div className="text-center mt-2">
+            <p className="text-xs text-gray-500">
+              {selectedMode === 'basic'
+                ? 'Solo campos esenciales para personalización rápida'
+                : 'Acceso completo a todas las opciones de personalización'
+              }
+            </p>
+          </div>
         </div>
 
         {/* Content */}
@@ -318,12 +384,12 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                     {touchedFieldsCount} Campo{touchedFieldsCount !== 1 ? 's' : ''} Personalizado{touchedFieldsCount !== 1 ? 's' : ''}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {Math.round((touchedFieldsCount / fieldsCount) * 100)}% de personalización completada
+                    {Math.round((touchedFieldsCount / modeStats.currentCount) * 100)}% de personalización completada ({selectedMode === 'basic' ? 'básico' : 'completo'})
                   </div>
                   <div className="mt-2 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
-                      style={{ width: `${Math.round((touchedFieldsCount / fieldsCount) * 100)}%` }}
+                      style={{ width: `${Math.round((touchedFieldsCount / modeStats.currentCount) * 100)}%` }}
                     />
                   </div>
                 </div>

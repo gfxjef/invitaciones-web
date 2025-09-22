@@ -85,7 +85,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'party-hero',
     placeholder: 'Ej: Sofia Isabella',
-    validation: { required: true }
+    category: 'Información del Niño'
   },
   childNickname: {
     key: 'childNickname',
@@ -93,14 +93,15 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'birthday-child',
     placeholder: 'Ej: Sofi',
+    category: 'Información del Niño'
   },
   age: {
     key: 'age',
     label: 'Edad',
-    type: 'number',
+    type: 'text',
     section: 'party-hero',
     placeholder: '5',
-    validation: { required: true, min: 1, max: 18 }
+    category: 'Información del Niño'
   },
   birthdayMessage: {
     key: 'birthdayMessage',
@@ -108,6 +109,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'textarea',
     section: 'birthday-child',
     placeholder: 'Un mensaje especial sobre el cumpleañero...',
+    category: 'Información del Niño'
   },
 
   // Party Details
@@ -116,7 +118,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     label: 'Fecha de Cumpleaños',
     type: 'date',
     section: 'party-hero',
-    validation: { required: true }
+    category: 'Detalles de la Fiesta'
   },
   partyLocation: {
     key: 'partyLocation',
@@ -124,7 +126,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'party-hero',
     placeholder: 'Ej: Casa de Sofia',
-    validation: { required: true }
+    category: 'Detalles de la Fiesta'
   },
   partyTheme: {
     key: 'partyTheme',
@@ -132,6 +134,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'party-hero',
     placeholder: 'Ej: Princesas, Superhéroes, Unicornios',
+    category: 'Detalles de la Fiesta'
   },
 
   // Child Preferences
@@ -141,6 +144,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'birthday-child',
     placeholder: 'Ej: Rosa, Azul, Verde',
+    category: 'Preferencias del Niño'
   },
   favoriteToy: {
     key: 'favoriteToy',
@@ -148,6 +152,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'birthday-child',
     placeholder: 'Ej: Muñecas, Carros, Legos',
+    category: 'Preferencias del Niño'
   },
   favoriteFood: {
     key: 'favoriteFood',
@@ -155,6 +160,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'birthday-child',
     placeholder: 'Ej: Pizza, Helado, Galletas',
+    category: 'Preferencias del Niño'
   },
   hobbyOrInterest: {
     key: 'hobbyOrInterest',
@@ -162,22 +168,25 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'birthday-child',
     placeholder: 'Ej: Bailar, Dibujar, Fútbol',
+    category: 'Preferencias del Niño'
   },
 
   // Visual Elements
   heroImageUrl: {
     key: 'heroImageUrl',
     label: 'Imagen de Portada',
-    type: 'image',
+    type: 'url',
     section: 'party-hero',
     placeholder: 'URL de la imagen de fondo',
+    category: 'Elementos Visuales'
   },
   childPhotoUrl: {
     key: 'childPhotoUrl',
     label: 'Foto del Cumpleañero',
-    type: 'image',
+    type: 'url',
     section: 'birthday-child',
     placeholder: 'URL de la foto del niño/a',
+    category: 'Elementos Visuales'
   },
   backgroundColor: {
     key: 'backgroundColor',
@@ -185,6 +194,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'color',
     section: 'party-hero',
     placeholder: '#FFB6C1',
+    category: 'Elementos Visuales'
   },
   accentColor: {
     key: 'accentColor',
@@ -192,6 +202,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'color',
     section: 'party-hero',
     placeholder: '#FF69B4',
+    category: 'Elementos Visuales'
   },
 
   // Party Information
@@ -200,20 +211,21 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     label: 'Fecha de la Fiesta',
     type: 'date',
     section: 'party-info',
-    validation: { required: true }
+    category: 'Información de la Fiesta'
   },
   partyTime: {
     key: 'partyTime',
     label: 'Hora de Inicio',
     type: 'time',
     section: 'party-info',
-    validation: { required: true }
+    category: 'Información de la Fiesta'
   },
   partyEndTime: {
     key: 'partyEndTime',
     label: 'Hora de Finalización',
     type: 'time',
     section: 'party-info',
+    category: 'Información de la Fiesta'
   },
   partyAddress: {
     key: 'partyAddress',
@@ -221,21 +233,23 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'textarea',
     section: 'party-info',
     placeholder: 'Dirección completa del lugar de la fiesta',
-    validation: { required: true }
+    category: 'Información de la Fiesta'
   },
   parentPhone: {
     key: 'parentPhone',
     label: 'Teléfono de Contacto',
-    type: 'tel',
+    type: 'text',
     section: 'party-info',
     placeholder: '+51 999 999 999',
+    category: 'Información de la Fiesta'
   },
   parentWhatsapp: {
     key: 'parentWhatsapp',
     label: 'WhatsApp',
-    type: 'tel',
+    type: 'text',
     section: 'party-info',
     placeholder: '51999999999',
+    category: 'Información de la Fiesta'
   },
   giftSuggestions: {
     key: 'giftSuggestions',
@@ -243,6 +257,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'textarea',
     section: 'party-info',
     placeholder: 'Libros, juguetes educativos, ropa talla X...',
+    category: 'Información de la Fiesta'
   },
   dresscode: {
     key: 'dresscode',
@@ -250,6 +265,7 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'text',
     section: 'party-info',
     placeholder: 'Ej: Casual, disfraces del tema, colores específicos',
+    category: 'Información de la Fiesta'
   },
   specialNotes: {
     key: 'specialNotes',
@@ -257,12 +273,96 @@ export const KIDS_FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'textarea',
     section: 'party-info',
     placeholder: 'Alergias, instrucciones especiales, etc.',
+    category: 'Información de la Fiesta'
   },
   rsvpDeadline: {
     key: 'rsvpDeadline',
     label: 'Confirmar Antes del',
     type: 'date',
     section: 'party-info',
+    category: 'Información de la Fiesta'
+  },
+
+  // Party Games Fields
+  gamesTitle: {
+    key: 'gamesTitle',
+    label: 'Título de Juegos',
+    type: 'text',
+    section: 'party-games',
+    placeholder: 'Ej: Juegos y Actividades Divertidas',
+    category: 'Juegos y Actividades'
+  },
+  gamesDescription: {
+    key: 'gamesDescription',
+    label: 'Descripción de Juegos',
+    type: 'textarea',
+    section: 'party-games',
+    placeholder: 'Descripción general de las actividades planeadas...',
+    category: 'Juegos y Actividades'
+  },
+  game1Name: {
+    key: 'game1Name',
+    label: 'Nombre del Juego 1',
+    type: 'text',
+    section: 'party-games',
+    placeholder: 'Ej: La Pirinola',
+    category: 'Juegos y Actividades'
+  },
+  game1Description: {
+    key: 'game1Description',
+    label: 'Descripción del Juego 1',
+    type: 'textarea',
+    section: 'party-games',
+    placeholder: 'Cómo se juega este juego...',
+    category: 'Juegos y Actividades'
+  },
+  game2Name: {
+    key: 'game2Name',
+    label: 'Nombre del Juego 2',
+    type: 'text',
+    section: 'party-games',
+    placeholder: 'Ej: Buscar el Tesoro',
+    category: 'Juegos y Actividades'
+  },
+  game2Description: {
+    key: 'game2Description',
+    label: 'Descripción del Juego 2',
+    type: 'textarea',
+    section: 'party-games',
+    placeholder: 'Cómo se juega este juego...',
+    category: 'Juegos y Actividades'
+  },
+  game3Name: {
+    key: 'game3Name',
+    label: 'Nombre del Juego 3',
+    type: 'text',
+    section: 'party-games',
+    placeholder: 'Ej: Baile Musical',
+    category: 'Juegos y Actividades'
+  },
+  game3Description: {
+    key: 'game3Description',
+    label: 'Descripción del Juego 3',
+    type: 'textarea',
+    section: 'party-games',
+    placeholder: 'Cómo se juega este juego...',
+    category: 'Juegos y Actividades'
+  },
+  activityTime: {
+    key: 'activityTime',
+    label: 'Tiempo de Actividades',
+    type: 'text',
+    section: 'party-games',
+    placeholder: 'Ej: 30 minutos cada juego',
+    category: 'Juegos y Actividades'
+  },
+  specialInstructions: {
+    key: 'specialInstructions',
+    label: 'Instrucciones Especiales',
+    type: 'textarea',
+    section: 'party-games',
+    placeholder: 'Instrucciones adicionales para los juegos...',
+    category: 'Juegos y Actividades'
   },
 };
 

@@ -26,6 +26,20 @@ Plataforma completa para crear y gestionar invitaciones digitales de bodas con d
 - Hasta 3 variaciones de invitación
 - Reuniones con horarios flexibles
 
+### ✨ Nuevas Características Implementadas
+
+#### Sistema de Categorías de Templates
+- **Categorías soportadas**: weddings, kids, corporate, quinceañeras
+- **Validación automática**: Secciones apropiadas por categoría
+- **API endpoints**: `/api/templates/categories` y `/api/templates/categories/:category/sections`
+- **Templates demo**: `/invitacion/demo/7` (weddings), `/invitacion/demo/8` (kids)
+
+#### Variables de Pareja Unificadas
+- **Unificación completa**: De 4 campos duplicados a 2 campos base
+- **Auto-generación**: `coupleNames` se genera automáticamente desde `groom_name` + `bride_name`
+- **Sincronización perfecta**: Cambios en customizer se reflejan en Hero, Footer y Couple
+- **Single source of truth**: Una sola edición afecta todas las secciones
+
 ## Stack Tecnológico
 
 ### Frontend

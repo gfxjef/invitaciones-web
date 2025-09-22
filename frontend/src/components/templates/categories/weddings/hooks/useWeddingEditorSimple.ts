@@ -3,8 +3,8 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useDebounce } from './use-debounce';
-import { EDITOR_SECTIONS } from '../../types/invitation';
+import { useDebounce } from '@/lib/hooks/use-debounce';
+import { EDITOR_SECTIONS } from '@/types/invitation';
 
 interface SimpleEditorReturn {
   data: Record<string, any>;

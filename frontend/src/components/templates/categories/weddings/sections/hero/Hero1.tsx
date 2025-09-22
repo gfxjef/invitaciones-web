@@ -18,7 +18,8 @@ import { useState, useEffect } from 'react';
 import { TemplateProps } from '@/types/template';
 
 interface Hero1Props {
-  coupleNames: string;
+  groom_name: string;
+  bride_name: string;
   eventDate: string;
   eventLocation: string;
   heroImageUrl: string;
@@ -29,7 +30,8 @@ interface Hero1Props {
 }
 
 export const Hero1: React.FC<Hero1Props> = ({
-  coupleNames = 'Jefferson & Rosmery',
+  groom_name = 'Jefferson',
+  bride_name = 'Rosmery',
   eventDate = '15 Diciembre, 2024',
   eventLocation = 'LIMA - PERÚ',
   heroImageUrl = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg',
@@ -45,6 +47,19 @@ export const Hero1: React.FC<Hero1Props> = ({
     { href: '#blog', label: 'Blog' }
   ]
 }) => {
+  // 🔍 DEBUG: Log what Hero1 receives
+  console.log('🔍 Hero1 - Received props:', {
+    groom_name,
+    bride_name,
+    eventDate,
+    eventLocation,
+    heroImageUrl
+  });
+
+  // Auto-generate couple names from individual names
+  const coupleNames = `${groom_name} & ${bride_name}`;
+  console.log('🔍 Hero1 - Generated coupleNames:', coupleNames);
+
   return (
     <section
       className="relative min-h-screen flex flex-col text-white"
@@ -138,7 +153,8 @@ export const Hero1: React.FC<Hero1Props> = ({
 
 // Export default props for centralized access
 export const Hero1DefaultProps = {
-  coupleNames: 'Jefferson & Rosmery',
+  groom_name: 'Jefferson',
+  bride_name: 'Rosmery',
   eventDate: '15 Diciembre, 2024',
   eventLocation: 'LIMA - PERÚ',
   heroImageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/1-2.jpg',

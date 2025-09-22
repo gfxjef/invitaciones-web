@@ -51,7 +51,9 @@
       "Bash(netstat:*)",
       "Read(//c/Users/USER/Pictures/Screenshots/**)",
       "Bash(npm:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(node:*)",
+      "Bash(timeout 60 npm run build)"
     ],
     "deny": []
   },

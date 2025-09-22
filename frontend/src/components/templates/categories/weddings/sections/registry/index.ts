@@ -38,6 +38,10 @@ import { Video1 } from '../video/Video1';
 
 // Import Wedding Gallery Sections
 import { Gallery1 } from '../gallery/Gallery1';
+import { Gallery2 } from '../gallery/Gallery2';
+
+// Import Wedding Itinerary Sections
+import { Itinerary1 } from '../itinerary/Itinerary1';
 
 // Import Wedding Footer Sections
 import { Footer1 } from '../footer/Footer1';
@@ -55,6 +59,7 @@ export interface WeddingSectionsByType {
   story: { [key: string]: ComponentType<any> };
   video: { [key: string]: ComponentType<any> };
   gallery: { [key: string]: ComponentType<any> };
+  itinerary: { [key: string]: ComponentType<any> };
   footer: { [key: string]: ComponentType<any> };
 }
 
@@ -85,6 +90,10 @@ export const weddingSectionRegistry: WeddingSectionRegistry = {
 
   // Gallery Sections
   'gallery_1': Gallery1,
+  'gallery_2': Gallery2,
+
+  // Itinerary Sections
+  'itinerary_1': Itinerary1,
 
   // Footer Sections
   'footer_1': Footer1,
@@ -133,8 +142,13 @@ export const weddingSectionsByType: WeddingSectionsByType = {
   },
   gallery: {
     'gallery_1': Gallery1,
-    // 'gallery_2': Gallery2,
+    'gallery_2': Gallery2,
     // 'gallery_3': Gallery3,
+  },
+  itinerary: {
+    'itinerary_1': Itinerary1,
+    // 'itinerary_2': Itinerary2,
+    // 'itinerary_3': Itinerary3,
   },
   footer: {
     'footer_1': Footer1,
@@ -185,6 +199,7 @@ export interface WeddingTemplateConfig {
     story: string;     // e.g., 'story_1'
     video: string;     // e.g., 'video_1'
     gallery: string;   // e.g., 'gallery_1'
+    itinerary: string; // e.g., 'itinerary_1'
     footer: string;    // e.g., 'footer_1'
   };
 }
@@ -202,6 +217,7 @@ export const exampleWeddingTemplateConfigs: { [key: string]: WeddingTemplateConf
       story: 'story_1',
       video: 'video_1',
       gallery: 'gallery_1',
+      itinerary: 'itinerary_1',
       footer: 'footer_1',
     }
   },

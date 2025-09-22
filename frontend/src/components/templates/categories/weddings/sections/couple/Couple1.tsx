@@ -34,6 +34,16 @@ interface PersonData {
 interface Couple1Props {
   sectionTitle?: string;
   sectionSubtitle?: string;
+  // Individual name fields for consistency with Hero and Footer
+  bride_name?: string;
+  bride_role?: string;
+  bride_description?: string;
+  bride_imageUrl?: string;
+  groom_name?: string;
+  groom_role?: string;
+  groom_description?: string;
+  groom_imageUrl?: string;
+  // Legacy support for backward compatibility
   brideData?: PersonData;
   groomData?: PersonData;
 }
@@ -91,29 +101,59 @@ const ProfileCard = ({ imageUrl, name, role, description, socialLinks }: PersonD
 export const Couple1: React.FC<Couple1Props> = ({
   sectionTitle = 'Futuros Felices Esposos',
   sectionSubtitle = 'MARIDO & MUJER',
-  brideData = {
-    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
-    name: 'Rosmery Guiterrez',
-    role: 'La Novia',
-    description: 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
-    socialLinks: {
-      facebook: '#',
-      twitter: '#',
-      instagram: '#'
-    }
-  },
-  groomData = {
-    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png',
-    name: 'Jefferson Camacho',
-    role: 'El Novio',
-    description: 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
-    socialLinks: {
-      facebook: '#',
-      twitter: '#',
-      instagram: '#'
-    }
-  }
+  // Individual fields
+  bride_name = 'Rosmery',
+  bride_role = 'La Novia',
+  bride_description = 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
+  bride_imageUrl = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
+  groom_name = 'Jefferson',
+  groom_role = 'El Novio',
+  groom_description = 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
+  groom_imageUrl = 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png',
+  // Legacy support
+  brideData,
+  groomData
 }) => {
+  // 🔍 DEBUG: Log what Couple1 receives
+  console.log('🔍 Couple1 - Received props:', {
+    sectionTitle,
+    sectionSubtitle,
+    bride_name,
+    bride_role,
+    bride_description,
+    bride_imageUrl,
+    groom_name,
+    groom_role,
+    groom_description,
+    groom_imageUrl,
+    brideData,
+    groomData
+  });
+
+  // Build person data from individual fields or use legacy data
+  const finalBrideData: PersonData = brideData || {
+    imageUrl: bride_imageUrl!,
+    name: bride_name!,
+    role: bride_role!,
+    description: bride_description!,
+    socialLinks: {
+      facebook: '#',
+      twitter: '#',
+      instagram: '#'
+    }
+  };
+
+  const finalGroomData: PersonData = groomData || {
+    imageUrl: groom_imageUrl!,
+    name: groom_name!,
+    role: groom_role!,
+    description: groom_description!,
+    socialLinks: {
+      facebook: '#',
+      twitter: '#',
+      instagram: '#'
+    }
+  };
   return (
     <section id="story" className="bg-[#fdfaf6] py-24 px-6">
       <div className="container mx-auto">
@@ -129,8 +169,8 @@ export const Couple1: React.FC<Couple1Props> = ({
 
         {/* Contenedor de la pareja (Grid) */}
         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-y-16 gap-x-8">
-          <ProfileCard {...brideData} />
-          <ProfileCard {...groomData} />
+          <ProfileCard {...finalBrideData} />
+          <ProfileCard {...finalGroomData} />
         </div>
       </div>
     </section>
@@ -141,26 +181,13 @@ export const Couple1: React.FC<Couple1Props> = ({
 export const Couple1DefaultProps = {
   sectionTitle: 'Futuros Felices Esposos',
   sectionSubtitle: 'MARIDO & MUJER',
-  brideData: {
-    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
-    name: 'Rosmery Guiterrez',
-    role: 'La Novia',
-    description: 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
-    socialLinks: {
-      facebook: '#',
-      twitter: '#',
-      instagram: '#'
-    }
-  },
-  groomData: {
-    imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png',
-    name: 'Jefferson Camacho',
-    role: 'El Novio',
-    description: 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
-    socialLinks: {
-      facebook: '#',
-      twitter: '#',
-      instagram: '#'
-    }
-  }
+  // Individual fields for consistency
+  bride_name: 'Rosmery',
+  bride_role: 'La Novia',
+  bride_description: 'Rosmery, eres mi amor eterno, mi compañera de vida y el sueño que quiero vivir cada día a tu lado.',
+  bride_imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/bride.png',
+  groom_name: 'Jefferson',
+  groom_role: 'El Novio',
+  groom_description: 'Jefferson, eres mi fuerza, mi refugio y mi amor infinito, con quien deseo caminar siempre de la mano en esta vida.',
+  groom_imageUrl: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/groom.png'
 };

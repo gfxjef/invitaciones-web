@@ -18,7 +18,7 @@ VALID_CATEGORIES = ['weddings', 'kids', 'corporate', 'quinceañeras', 'classic',
 CATEGORY_SECTION_MAP = {
     'weddings': {
         'required': ['hero', 'welcome'],
-        'optional': ['story', 'couple', 'video', 'gallery', 'countdown', 'footer'],
+        'optional': ['story', 'couple', 'video', 'gallery', 'countdown', 'itinerary', 'footer'],
         'forbidden': []
     },
     'kids': {

@@ -8,7 +8,7 @@
 export interface CustomizerField {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'url' | 'textarea' | 'color';
+  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'time';
   placeholder?: string;
   section: string;
   category: string;

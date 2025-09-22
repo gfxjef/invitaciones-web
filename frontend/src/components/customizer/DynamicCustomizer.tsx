@@ -43,7 +43,10 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
     toggleCustomizer,
     closeCustomizer,
     getProgressiveMergedData,
-    getSectionConfig
+    getSectionConfig,
+    selectedMode,
+    switchMode,
+    basicFields
   } = useDynamicCustomizer({
     templateData,
     sectionsConfig
@@ -85,6 +88,9 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
         touchedFieldsCount={touchedFieldsCount}
         fieldStates={fieldStates}
         getSectionConfig={getSectionConfig}
+        selectedMode={selectedMode}
+        onModeChange={switchMode}
+        basicFields={basicFields}
       />
     </div>
   );

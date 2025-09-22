@@ -212,6 +212,30 @@ ADMIN_PASSWORD=admin123
 - Use sandbox credentials for testing
 - Check webhook logs for payment status issues
 
+### Unified Couple Names System
+- **Implemented**: Variables de pareja unificadas (groom_name, bride_name)
+- **Hero/Footer sections**: Receive individual fields and auto-generate coupleNames internally
+- **Couple section**: Uses individual fields directly for separate display
+- **Customizer**: Only 2 fields (groom_name, bride_name) instead of 4 duplicated fields
+- **Real-time sync**: Changes in customizer reflect instantly across all sections
+- **Files affected**:
+  - `frontend/src/lib/hooks/useDynamicCustomizer.ts` - transformToTemplateProps hero/footer sections
+  - `frontend/src/components/templates/categories/weddings/sections/hero/Hero1.tsx`
+  - `frontend/src/components/templates/categories/weddings/sections/footer/Footer1.tsx`
+  - `frontend/src/components/templates/categories/weddings/sections/couple/Couple1.tsx`
+
+### Itinerary Section for Weddings
+- **New section**: Itinerary1 component for wedding timeline configuration
+- **Features**: 5 configurable events (Ceremonia, Recepción, Entrada, Comida, Fiesta)
+- **Event management**: Enable/disable events, set times for each
+- **Visual design**: Timeline with icons, consistent styling with other sections
+- **Customizer integration**: 11 fields (title + 5 events × 2 fields each)
+- **Files created/modified**:
+  - `frontend/src/components/templates/categories/weddings/sections/itinerary/Itinerary1.tsx` - New component
+  - `frontend/src/components/templates/categories/weddings/customizer/sectionFieldsMap.ts` - Added itinerary config
+  - `frontend/src/lib/hooks/useDynamicCustomizer.ts` - Added itinerary integration
+  - `backend/api/templates.py` - Added itinerary to valid wedding sections
+
 ## Agent Task Documentation
 
 ### IMPORTANT: Post-Task Documentation Requirement
@@ -669,3 +693,378 @@ This approach ensures that:
 - ✅ Single source of truth principle is preserved
 - ✅ Backward compatibility is maintained
 - ✅ The system scales infinitely with new variants
+
+## Category-Based Customizer Architecture
+
+The customizer system has been refactored to use a **category-based architecture** where each template category (weddings, kids, corporate, etc.) maintains its own independent customizer configuration. This ensures proper separation of concerns and prevents field conflicts between categories.
+
+### Architecture Overview
+
+**❌ OLD APPROACH (Global Configuration):**
+```
+frontend/src/components/customizer/
+└── sectionFieldsMap.ts    # ❌ All categories mixed together
+    ├── SECTION_FIELDS_MAP # Contains wedding + kids + corporate fields
+    ├── FIELD_DEFINITIONS  # All field definitions mixed
+    └── BASIC_FIELDS       # Generic basic fields for all categories
+```
+
+**✅ NEW APPROACH (Category-Specific Configuration):**
+```
+frontend/src/components/customizer/
+└── sectionFieldsMap.ts    # ✅ Only generic utilities
+
+frontend/src/components/templates/categories/
+├── weddings/customizer/
+│   └── sectionFieldsMap.ts       # Wedding-specific configuration
+│       ├── WEDDING_SECTION_FIELDS_MAP
+│       ├── FIELD_DEFINITIONS
+│       ├── WEDDING_BASIC_FIELDS
+│       └── getWeddingFieldsByMode()
+├── kids/customizer/
+│   └── sectionFieldsMap.ts       # Kids-specific configuration
+│       ├── KIDS_SECTION_FIELDS_MAP
+│       ├── FIELD_DEFINITIONS
+│       ├── KIDS_BASIC_FIELDS
+│       └── getKidsFieldsByMode()
+└── corporate/customizer/
+    └── sectionFieldsMap.ts       # Corporate-specific configuration
+        ├── CORPORATE_SECTION_FIELDS_MAP
+        ├── FIELD_DEFINITIONS
+        ├── CORPORATE_BASIC_FIELDS
+        └── getCorporateFieldsByMode()
+```
+
+### Global Utilities (Shared Across Categories)
+
+**File**: `frontend/src/components/customizer/sectionFieldsMap.ts`
+
+```typescript
+/**
+ * Global Customizer Utilities
+ * Contains only shared utilities and fallback functions.
+ * Category-specific configurations are in their respective folders.
+ */
+
+// Generic utility: Filter fields by mode (Basic/Full)
+export function getFieldsByMode(
+  allFields: CustomizerField[],
+  basicFields: string[],
+  mode: CustomizerMode
+): CustomizerField[] {
+  if (mode === 'basic') {
+    return allFields.filter(field => basicFields.includes(field.key));
+  }
+  return allFields;
+}
+
+// Generic utility: Get sections based on template configuration
+export function detectActiveSections(sectionsConfig: any, templateData?: any): string[] {
+  // Implementation that works for any category
+}
+
+// Generic utility: Group fields by sections
+export function getFieldsByOrderedSections(
+  availableFields: CustomizerField[],
+  activeSections: string[]
+): Record<string, CustomizerField[]> {
+  // Implementation that works for any category
+}
+
+// Generic utility: Get available fields for any category
+export function getAvailableFields(
+  activeSections: string[],
+  sectionFieldsMap: Record<string, SectionConfig>,
+  fieldDefinitions: Record<string, CustomizerField>
+): CustomizerField[] {
+  // Implementation that works for any category
+}
+```
+
+### Creating a New Category
+
+#### Step 1: Create Category Structure
+
+```bash
+mkdir -p frontend/src/components/templates/categories/{category_name}/customizer
+mkdir -p frontend/src/components/templates/categories/{category_name}/hooks
+mkdir -p frontend/src/components/templates/categories/{category_name}/sections
+```
+
+#### Step 2: Create Category-Specific Customizer Configuration
+
+**File**: `frontend/src/components/templates/categories/{category_name}/customizer/sectionFieldsMap.ts`
+
+```typescript
+import { CustomizerField, SectionConfig } from '../../../customizer/types';
+
+// Category-specific section fields mapping
+export const {CATEGORY_NAME}_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
+  hero: {
+    label: 'Portada',
+    icon: '🎭',
+    fields: [
+      'category_specific_field_1',
+      'category_specific_field_2',
+      'shared_field_name' // Can share names with other categories
+    ]
+  },
+  // ... other sections
+};
+
+// Category-specific field definitions
+export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
+  category_specific_field_1: {
+    key: 'category_specific_field_1',
+    label: 'Category Specific Field',
+    type: 'text',
+    section: 'hero',
+    category: 'Content'
+  },
+  // ... other field definitions
+};
+
+// Category-specific basic fields for simplified mode
+export const {CATEGORY_NAME}_BASIC_FIELDS: string[] = [
+  'category_specific_field_1',
+  'shared_field_name',
+  // ... essential fields for this category
+];
+
+// Category-specific utility functions
+export function get{CategoryName}FieldsByMode(
+  allFields: CustomizerField[],
+  mode: 'basic' | 'full'
+): CustomizerField[] {
+  if (mode === 'basic') {
+    return allFields.filter(field => {CATEGORY_NAME}_BASIC_FIELDS.includes(field.key));
+  }
+  return allFields;
+}
+
+// Re-export generic utilities for convenience
+export {
+  detectActiveSections,
+  getFieldsByOrderedSections,
+  getAvailableFields
+} from '../../../customizer/sectionFieldsMap';
+```
+
+#### Step 3: Create Category-Specific Hook
+
+**File**: `frontend/src/components/templates/categories/{category_name}/hooks/use{CategoryName}Customizer.ts`
+
+```typescript
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  getAvailableFields,
+  detectActiveSections,
+  getFieldsByOrderedSections,
+  {CATEGORY_NAME}_SECTION_FIELDS_MAP,
+  FIELD_DEFINITIONS,
+  {CATEGORY_NAME}_BASIC_FIELDS,
+  get{CategoryName}FieldsByMode
+} from '../customizer/sectionFieldsMap';
+
+// Import default props from category-specific components
+import { Hero1DefaultProps } from '../sections/hero/Hero1';
+// ... other component imports
+
+export function use{CategoryName}Customizer({
+  initialData = {},
+  sectionsConfig = {},
+  templateData = {}
+}: Use{CategoryName}CustomizerProps) {
+
+  // Use category-specific configurations
+  const activeSections = useMemo(() => {
+    return detectActiveSections(sectionsConfig, templateData);
+  }, [sectionsConfig, templateData]);
+
+  const availableFields = useMemo(() => {
+    return getAvailableFields(activeSections, {CATEGORY_NAME}_SECTION_FIELDS_MAP, FIELD_DEFINITIONS);
+  }, [activeSections]);
+
+  // Return hook interface with category-specific basicFields
+  return {
+    // ... other hook properties
+    basicFields: {CATEGORY_NAME}_BASIC_FIELDS,
+    getSectionConfig: (sectionName: string) => {CATEGORY_NAME}_SECTION_FIELDS_MAP[sectionName]
+  };
+}
+```
+
+#### Step 4: Update Component Interfaces (Example: Hero Section)
+
+**File**: `frontend/src/components/templates/categories/{category_name}/sections/hero/Hero1.tsx`
+
+```typescript
+interface Hero1Props {
+  // Category-specific fields
+  category_specific_field_1?: string;
+  category_specific_field_2?: string;
+  shared_field_name?: string; // Same name as other categories, different implementation
+}
+
+export const Hero1: React.FC<Hero1Props> = ({
+  category_specific_field_1 = Hero1DefaultProps.category_specific_field_1,
+  category_specific_field_2 = Hero1DefaultProps.category_specific_field_2,
+  shared_field_name = Hero1DefaultProps.shared_field_name,
+}) => {
+  return (
+    <section>
+      {/* Category-specific implementation */}
+    </section>
+  );
+};
+
+export const Hero1DefaultProps = {
+  category_specific_field_1: 'Default value for this category',
+  category_specific_field_2: 'Another default value',
+  shared_field_name: 'Category-specific default for shared field'
+};
+```
+
+### Field Naming Conventions
+
+#### ✅ Recommended Approach: Shared Field Names
+```typescript
+// Different categories can use same field names with different implementations
+
+// Wedding Category
+groom_name: "Jefferson"        // Used for wedding couple names
+event_location: "Lima, Perú"   // Wedding venue
+
+// Kids Category
+groom_name: "Papá Juan"        // Used for parent names in kids parties
+event_location: "Casa de Ana"  // Party location
+
+// Corporate Category
+groom_name: "CEO Name"         // Used for speaker/host name
+event_location: "Office Tower" // Event venue
+```
+
+#### ❌ Alternative Approach: Prefixed Field Names (if needed)
+```typescript
+// Only use prefixes if there are genuine conflicts
+
+// Wedding Category
+wedding_couple_name: "Jefferson & Rosmery"
+wedding_venue: "Lima, Perú"
+
+// Kids Category
+kids_birthday_child: "Ana María"
+kids_party_location: "Casa de Ana"
+
+// Corporate Category
+corporate_speaker: "John Smith"
+corporate_venue: "Office Tower"
+```
+
+### Benefits of Category-Based Architecture
+
+#### ✅ **Separation of Concerns**
+- Each category manages its own customizer logic
+- No field conflicts between categories
+- Independent evolution of category features
+
+#### ✅ **Scalability**
+- Easy to add new categories without affecting existing ones
+- Category-specific optimizations possible
+- Team can work on different categories independently
+
+#### ✅ **Maintainability**
+- Category-specific bugs are isolated
+- Clear ownership of category features
+- Easier to test category-specific functionality
+
+#### ✅ **Flexibility**
+- Each category can have unique field types
+- Category-specific validation rules
+- Different basic/advanced field sets per category
+
+### Integration with Existing Systems
+
+#### For Global Hook (Legacy Support)
+The global `useDynamicCustomizer` hook now imports from a specific category as fallback:
+
+```typescript
+// frontend/src/lib/hooks/useDynamicCustomizer.ts
+import {
+  WEDDING_SECTION_FIELDS_MAP as SECTION_FIELDS_MAP,
+  WEDDING_BASIC_FIELDS,
+  getWeddingFieldsByMode
+} from '@/components/templates/categories/weddings/customizer/sectionFieldsMap';
+
+export function useDynamicCustomizer() {
+  // Uses wedding configuration as fallback for legacy compatibility
+  return {
+    // ... hook properties
+    basicFields: WEDDING_BASIC_FIELDS
+  };
+}
+```
+
+#### For Template Builder
+Template builder should import from the appropriate category:
+
+```typescript
+// For wedding templates
+import { useWeddingCustomizer } from '@/components/templates/categories/weddings/hooks/useWeddingCustomizer';
+
+// For kids templates
+import { useKidsCustomizer } from '@/components/templates/categories/kids/hooks/useKidsCustomizer';
+
+// For corporate templates
+import { useCorporateCustomizer } from '@/components/templates/categories/corporate/hooks/useCorporateCustomizer';
+```
+
+### Migration Guide (Existing Categories)
+
+When migrating an existing category from global to category-specific configuration:
+
+1. **Create category structure**: Follow the folder structure above
+2. **Move configurations**: Copy relevant fields from global to category-specific files
+3. **Update imports**: Change imports to use category-specific configurations
+4. **Test thoroughly**: Ensure no regression in customizer functionality
+5. **Update documentation**: Document any category-specific features
+
+### File Structure Summary
+
+```
+frontend/src/components/
+├── customizer/                          # Global utilities only
+│   ├── sectionFieldsMap.ts             # Generic utilities
+│   ├── CustomizerPanel.tsx             # Receives basicFields as prop
+│   └── DynamicCustomizer.tsx           # Passes basicFields to panel
+│
+├── templates/categories/
+│   ├── weddings/
+│   │   ├── customizer/
+│   │   │   └── sectionFieldsMap.ts     # Wedding-specific config
+│   │   ├── hooks/
+│   │   │   └── useWeddingCustomizer.ts # Wedding-specific hook
+│   │   └── sections/
+│   │       ├── hero/Hero1.tsx          # Individual name fields
+│   │       ├── footer/Footer1.tsx      # Individual name fields
+│   │       └── couple/Couple1.tsx      # Individual name fields
+│   │
+│   ├── kids/
+│   │   ├── customizer/
+│   │   │   └── sectionFieldsMap.ts     # Kids-specific config
+│   │   ├── hooks/
+│   │   │   └── useKidsCustomizer.ts    # Kids-specific hook
+│   │   └── sections/                   # Kids-specific sections
+│   │
+│   └── corporate/
+│       ├── customizer/
+│       │   └── sectionFieldsMap.ts     # Corporate-specific config
+│       ├── hooks/
+│       │   └── useCorporateCustomizer.ts # Corporate-specific hook
+│       └── sections/                   # Corporate-specific sections
+│
+└── lib/hooks/
+    └── useDynamicCustomizer.ts          # Legacy support (uses wedding as fallback)
+```
+
+This architecture ensures that each category is completely independent while maintaining shared utilities for common functionality.

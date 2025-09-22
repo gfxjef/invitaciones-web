@@ -79,9 +79,12 @@ export function useWeddingCustomizer({
 
       // Extract default values from template props or use component defaults (single source of truth)
       switch (field.key) {
-        // Hero Section Defaults
-        case 'coupleNames':
-          defaultValue = templateProps.hero?.coupleNames || Hero1DefaultProps.coupleNames;
+        // Hero Section Defaults - Using individual names
+        case 'groom_name':
+          defaultValue = templateProps.hero?.groom_name || Hero1DefaultProps.groom_name;
+          break;
+        case 'bride_name':
+          defaultValue = templateProps.hero?.bride_name || Hero1DefaultProps.bride_name;
           break;
         case 'eventDate':
           defaultValue = templateProps.hero?.eventDate || Hero1DefaultProps.eventDate;
@@ -110,30 +113,25 @@ export function useWeddingCustomizer({
           defaultValue = templateProps.welcome?.description || Welcome1DefaultProps.description;
           break;
 
-        // Couple Section Defaults
-        case 'bride_name':
-          defaultValue = templateProps.couple?.brideData?.name || Couple1DefaultProps.brideData.name;
-          break;
-        case 'groom_name':
-          defaultValue = templateProps.couple?.groomData?.name || Couple1DefaultProps.groomData.name;
-          break;
+        // Note: bride_name and groom_name are shared fields already handled above in Hero section
+        // Couple Section Defaults - Other fields
         case 'bride_role':
-          defaultValue = templateProps.couple?.brideData?.role || Couple1DefaultProps.brideData.role;
+          defaultValue = templateProps.couple?.bride_role || Couple1DefaultProps.bride_role;
           break;
         case 'bride_description':
-          defaultValue = templateProps.couple?.brideData?.description || Couple1DefaultProps.brideData.description;
+          defaultValue = templateProps.couple?.bride_description || Couple1DefaultProps.bride_description;
           break;
         case 'bride_imageUrl':
-          defaultValue = templateProps.couple?.brideData?.imageUrl || Couple1DefaultProps.brideData.imageUrl;
+          defaultValue = templateProps.couple?.bride_imageUrl || Couple1DefaultProps.bride_imageUrl;
           break;
         case 'groom_role':
-          defaultValue = templateProps.couple?.groomData?.role || Couple1DefaultProps.groomData.role;
+          defaultValue = templateProps.couple?.groom_role || Couple1DefaultProps.groom_role;
           break;
         case 'groom_description':
-          defaultValue = templateProps.couple?.groomData?.description || Couple1DefaultProps.groomData.description;
+          defaultValue = templateProps.couple?.groom_description || Couple1DefaultProps.groom_description;
           break;
         case 'groom_imageUrl':
-          defaultValue = templateProps.couple?.groomData?.imageUrl || Couple1DefaultProps.groomData.imageUrl;
+          defaultValue = templateProps.couple?.groom_imageUrl || Couple1DefaultProps.groom_imageUrl;
           break;
         // Countdown Section Defaults
         case 'weddingDate':
@@ -155,8 +153,8 @@ export function useWeddingCustomizer({
           break;
 
         // Footer Section Defaults
-        case 'copyrightText':
-          defaultValue = templateProps.footer?.copyrightText || Footer1DefaultProps.copyrightText;
+        case 'footer_copyrightText':
+          defaultValue = templateProps.footer?.footer_copyrightText || Footer1DefaultProps.copyrightText;
           break;
 
         // Story moment fields with defaults from Story1 component
@@ -360,9 +358,15 @@ export function useWeddingCustomizer({
 
   // Transform flat customizer data to template component props structure
   const transformToTemplateProps = useCallback((data: any) => {
-    return {
+    console.log('🔍 transformToTemplateProps - Input data:', data);
+    console.log('🔍 Input groom_name:', data.groom_name);
+    console.log('🔍 Input bride_name:', data.bride_name);
+
+    const result = {
       hero: {
-        coupleNames: data.coupleNames || Hero1DefaultProps.coupleNames,
+        // Individual names instead of coupleNames - Hero will auto-generate internally
+        groom_name: data.groom_name || data.couple_groom_name || Hero1DefaultProps.groom_name,
+        bride_name: data.bride_name || data.couple_bride_name || Hero1DefaultProps.bride_name,
         eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
@@ -381,20 +385,15 @@ export function useWeddingCustomizer({
       couple: {
         sectionTitle: data.couple_sectionTitle || Couple1DefaultProps.sectionTitle,
         sectionSubtitle: data.couple_sectionSubtitle || Couple1DefaultProps.sectionSubtitle,
-        brideData: {
-          imageUrl: data.bride_imageUrl || Couple1DefaultProps.brideData.imageUrl,
-          name: data.bride_name || data.couple_bride_name || Couple1DefaultProps.brideData.name,
-          role: data.bride_role || Couple1DefaultProps.brideData.role,
-          description: data.bride_description || Couple1DefaultProps.brideData.description,
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        },
-        groomData: {
-          imageUrl: data.groom_imageUrl || Couple1DefaultProps.groomData.imageUrl,
-          name: data.groom_name || data.couple_groom_name || Couple1DefaultProps.groomData.name,
-          role: data.groom_role || Couple1DefaultProps.groomData.role,
-          description: data.groom_description || Couple1DefaultProps.groomData.description,
-          socialLinks: { facebook: '#', twitter: '#', instagram: '#' }
-        }
+        // Individual fields instead of legacy brideData/groomData
+        bride_name: data.bride_name || data.couple_bride_name || Couple1DefaultProps.bride_name,
+        bride_role: data.bride_role || Couple1DefaultProps.bride_role,
+        bride_description: data.bride_description || Couple1DefaultProps.bride_description,
+        bride_imageUrl: data.bride_imageUrl || Couple1DefaultProps.bride_imageUrl,
+        groom_name: data.groom_name || data.couple_groom_name || Couple1DefaultProps.groom_name,
+        groom_role: data.groom_role || Couple1DefaultProps.groom_role,
+        groom_description: data.groom_description || Couple1DefaultProps.groom_description,
+        groom_imageUrl: data.groom_imageUrl || Couple1DefaultProps.groom_imageUrl
       },
       countdown: {
         weddingDate: data.countdown_weddingDate || data.event_date || Countdown1DefaultProps.weddingDate,
@@ -512,16 +511,28 @@ export function useWeddingCustomizer({
         ]
       },
       footer: {
-        coupleNames: data.footer_coupleNames || `${data.couple_bride_name || 'Jefferson'} & ${data.couple_groom_name || 'Rosmery'}`,
-        eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
+        // Individual names instead of coupleNames - Footer will auto-generate internally
+        groom_name: data.groom_name || data.couple_groom_name || Footer1DefaultProps.groom_name,
+        bride_name: data.bride_name || data.couple_bride_name || Footer1DefaultProps.bride_name,
+        footer_eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
         }) : Footer1DefaultProps.eventDate),
-        eventLocation: data.footer_eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
-        copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
+        footer_eventLocation: data.footer_eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
+        footer_copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
+
+    console.log('🔍 transformToTemplateProps - Output result:', result);
+    console.log('🔍 Output result.hero:', result.hero);
+    console.log('🔍 Output result.couple:', result.couple);
+    console.log('🔍 Hero groom_name:', result.hero.groom_name);
+    console.log('🔍 Hero bride_name:', result.hero.bride_name);
+    console.log('🔍 Couple groom_name:', result.couple.groom_name);
+    console.log('🔍 Couple bride_name:', result.couple.bride_name);
+
+    return result;
   }, []);
 
   // Get progressive merged data - only touched fields override template defaults
@@ -546,7 +557,15 @@ export function useWeddingCustomizer({
       ...progressiveData
     };
 
-    return transformToTemplateProps(mergedData);
+    console.log('🔍 getProgressiveMergedData - progressiveData:', progressiveData);
+    console.log('🔍 getProgressiveMergedData - mergedData before transform:', mergedData);
+    console.log('🔍 mergedData groom_name:', mergedData.groom_name);
+    console.log('🔍 mergedData bride_name:', mergedData.bride_name);
+
+    const transformedResult = transformToTemplateProps(mergedData);
+    console.log('🔍 getProgressiveMergedData - Final result:', transformedResult);
+
+    return transformedResult;
   }, [availableFields, touchedFields, customizerData, templateDefaults, templateData, transformToTemplateProps]);
 
   // Legacy method for backward compatibility
@@ -587,13 +606,13 @@ export function useWeddingCustomizer({
   const fieldsByCategory = fieldsBySection;
 
   // Get current value for a field
-  const getFieldValue = useCallback((fieldKey: string): string => {
+  const getFieldValue = useCallback((fieldKey: string): string | boolean => {
     return customizerData[fieldKey] || '';
   }, [customizerData]);
 
   // Get section configuration for a section name
   const getSectionConfig = useCallback((sectionName: string) => {
-    return SECTION_FIELDS_MAP[sectionName];
+    return WEDDING_SECTION_FIELDS_MAP[sectionName];
   }, []);
 
   // Get field state for progressive override UI
