@@ -64,7 +64,7 @@ def get_file_extension(filename: str) -> str:
 class InvitationDataFieldSchema(Schema):
     """Schema for individual invitation data field updates."""
     value = fields.Raw(allow_none=True)
-    metadata = fields.Dict(missing=dict)
+    metadata = fields.Dict(load_default=dict)
 
 class BulkDataUpdateSchema(Schema):
     """Schema for bulk invitation data updates."""
@@ -94,10 +94,10 @@ class EventCreateSchema(Schema):
     event_address = fields.Str()
     event_end_datetime = fields.DateTime()
     event_icon = fields.Str()
-    event_order = fields.Int(missing=0)
-    is_visible = fields.Bool(missing=True)
-    requires_rsvp = fields.Bool(missing=False)
-    event_metadata = fields.Dict(missing=dict)
+    event_order = fields.Int(load_default=0)
+    is_visible = fields.Bool(load_default=True)
+    requires_rsvp = fields.Bool(load_default=False)
+    event_metadata = fields.Dict(load_default=dict)
 
 class EventUpdateSchema(Schema):
     """Schema for updating invitation events."""
@@ -120,7 +120,7 @@ class RSVPConfigSchema(Schema):
     max_guests_per_response = fields.Int(validate=lambda x: x > 0)
     custom_questions = fields.List(fields.Dict())
     confirmation_message = fields.Str()
-    metadata = fields.Dict(missing=dict)
+    metadata = fields.Dict(load_default=dict)
 
 class RSVPResponseSchema(Schema):
     """Schema for public RSVP responses."""
@@ -128,11 +128,11 @@ class RSVPResponseSchema(Schema):
     guest_email = fields.Email()
     guest_phone = fields.Str()
     will_attend = fields.Bool(required=True)
-    guest_count = fields.Int(validate=lambda x: x > 0, missing=1)
+    guest_count = fields.Int(validate=lambda x: x > 0, load_default=1)
     dietary_restrictions = fields.Str()
     special_requests = fields.Str()
     additional_notes = fields.Str()
-    custom_responses = fields.Dict(missing=dict)
+    custom_responses = fields.Dict(load_default=dict)
 
 # ============================================================================
 # AUTHORIZATION HELPER
