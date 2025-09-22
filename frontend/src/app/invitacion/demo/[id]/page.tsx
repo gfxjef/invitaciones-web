@@ -20,6 +20,7 @@ import { useTemplate } from '@/lib/hooks/use-templates';
 import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { DynamicCustomizer } from '@/components/customizer';
+import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
 import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent, TemplateMetadata } from '@/types/template';
 
 interface TemplateDemoPageProps {
@@ -189,12 +190,10 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando demo...</p>
-        </div>
-      </div>
+      <LoaderDynamic
+        category="weddings"
+        message="Cargando demo..."
+      />
     );
   }
 
@@ -205,12 +204,10 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
   // If template data exists but demo data is not ready yet, show loading
   if (!demoInvitationData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Preparando demo...</p>
-        </div>
-      </div>
+      <LoaderDynamic
+        category="weddings"
+        message="Preparando demo..."
+      />
     );
   }
 

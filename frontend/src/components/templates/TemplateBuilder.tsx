@@ -19,6 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { TemplateProps } from '@/types/template';
 import { getWeddingSectionComponent } from './categories/weddings/sections/registry';
 import { apiClient } from '@/lib/api';
+import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
 
 // Import default props from wedding section components (single source of truth)
 import { Hero1DefaultProps } from './categories/weddings/sections/hero/Hero1';
@@ -216,12 +217,10 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading modular template...</p>
-        </div>
-      </div>
+      <LoaderDynamic
+        category={category}
+        message="Cargando template..."
+      />
     );
   }
 

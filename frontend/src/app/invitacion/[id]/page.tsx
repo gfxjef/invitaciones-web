@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
+import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
 import { Invitation, InvitationData, TemplateMetadata, TemplateColors } from '@/types/template';
 
 interface InvitationPageProps {
@@ -234,12 +235,10 @@ export default function InvitationPage({ params }: InvitationPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-purple-600 font-medium">Cargando invitación...</p>
-        </div>
-      </div>
+      <LoaderDynamic
+        category="weddings"
+        message="Cargando invitación..."
+      />
     );
   }
 
