@@ -2,20 +2,23 @@
  * Customizer Field Component
  *
  * WHY: Individual field component that renders different input types
- * with progressive override support. Shows visual indicators for
- * touched/modified fields and provides individual reset functionality.
+ * with progressive override support. Features stagger animation for
+ * smooth field reveal with fade + slide effects.
  */
 
 'use client';
 
 import { useCallback } from 'react';
+import { motion, Variants } from 'framer-motion';
 import { RotateCcw, Edit3, Sparkles } from 'lucide-react';
-import { CustomizerField as FieldType, FieldState } from './types';
+import { CustomizerField as FieldType, FieldState, GalleryImage } from './types';
+import { FileImagePicker } from '@/components/ui/FileImagePicker';
+import { MultiImageGalleryPicker } from '@/components/ui/MultiImageGalleryPicker';
 
 interface CustomizerFieldProps {
   field: FieldType;
-  value: string | boolean;
-  onChange: (value: string | boolean) => void;
+  value: string | boolean | GalleryImage[];
+  onChange: (value: string | boolean | GalleryImage[]) => void;
   fieldState?: FieldState;
   onReset?: (fieldKey: string) => void;
   className?: string;
@@ -29,6 +32,19 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
   onReset,
   className = ''
 }) => {
+  // Helper function to check if field is part of itinerary section
+  const isItineraryField = field.key.startsWith('itinerary_event_');
+
+  // Helper function to detect image URL fields
+  const isImageField = useCallback((fieldKey: string): boolean => {
+    const imageKeywords = [
+      'imageUrl', 'ImageUrl', 'image_url', '_image_',
+      'heroImageUrl', 'couplePhotoUrl', 'bannerImageUrl',
+      'backgroundImageUrl', 'gallery_image_', '_imageUrl'
+    ];
+    return imageKeywords.some(keyword => fieldKey.includes(keyword));
+  }, []);
+
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e.target.value);
   }, [onChange]);
@@ -65,11 +81,38 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
 
     // Only show badge when field has been customized
     if (fieldState.isTouched) {
+      // For itinerary fields, show only the icon without background or text
+      if (isItineraryField) {
+        return (
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              rotate: [0, 15, -15, 0]
+            }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Edit3 className="w-3 h-3 text-purple-600" />
+          </motion.div>
+        );
+      }
+
+      // For other fields, show full badge with background and text
       return (
-        <div className="flex items-center gap-1 text-purple-600 bg-purple-100 px-2 py-1 rounded-full animate-in fade-in duration-200">
-          <Edit3 className="w-3 h-3" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-1 text-purple-600 bg-purple-100 px-2 py-1 rounded-full"
+        >
+          <motion.div
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Edit3 className="w-3 h-3" />
+          </motion.div>
           <span className="text-xs font-semibold">Personalizado</span>
-        </div>
+        </motion.div>
       );
     }
 
@@ -119,6 +162,24 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
         );
 
       case 'url':
+        // Check if this is an image URL field
+        if (isImageField(field.key)) {
+          return (
+            <FileImagePicker
+              value={String(value || '')}
+              onChange={(newValue: string, file?: File) => {
+                onChange(newValue);
+                // File is automatically stored in file manager via fieldKey
+              }}
+              fieldKey={field.key} // Pass field key for file storage
+              label={undefined} // Field label is handled by parent
+              placeholder={String(fieldState?.defaultValue || field.placeholder || 'Selecciona una imagen...')}
+              className="w-full"
+            />
+          );
+        }
+
+        // Regular URL input for non-image fields
         return (
           <div className="relative">
             <input
@@ -132,7 +193,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
               🔗
             </div>
-            {fieldState?.isTouched && value && (
+            {fieldState?.isTouched && value && !isItineraryField && (
               <div className="absolute inset-y-0 right-2 flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
@@ -186,8 +247,61 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
                 {field.label}
               </span>
-              {fieldState?.isTouched && (
+              {fieldState?.isTouched && !isItineraryField && (
                 <div className="w-2 h-2 bg-purple-500 rounded-full ml-auto"></div>
+              )}
+            </label>
+          </div>
+        );
+
+      case 'toggle':
+        return (
+          <div className="relative">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <motion.div
+                className={`
+                  relative w-12 h-6 rounded-full transition-colors duration-300 ease-in-out
+                  ${Boolean(value) ? 'bg-purple-600' : 'bg-gray-300'}
+                  ${fieldState?.isTouched ? 'ring-2 ring-purple-300 ring-opacity-50' : ''}
+                `}
+                whileTap={{ scale: 0.95 }}
+              >
+                <motion.div
+                  className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md"
+                  initial={false}
+                  animate={{
+                    x: Boolean(value) ? 24 : 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30
+                  }}
+                />
+                <input
+                  type="checkbox"
+                  id={`field-${field.key}`}
+                  checked={Boolean(value)}
+                  onChange={(e) => onChange(e.target.checked)}
+                  className="sr-only"
+                />
+              </motion.div>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600 transition-colors">
+                {field.label}
+              </span>
+              {fieldState?.isTouched && !isItineraryField && (
+                <motion.div
+                  className="w-2 h-2 bg-purple-500 rounded-full ml-auto"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [1, 0.7, 1]
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
               )}
             </label>
           </div>
@@ -206,7 +320,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
               🕐
             </div>
-            {fieldState?.isTouched && value && (
+            {fieldState?.isTouched && value && !isItineraryField && (
               <div className="absolute inset-y-0 right-2 flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
@@ -227,12 +341,26 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
             <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
               📅
             </div>
-            {fieldState?.isTouched && value && (
+            {fieldState?.isTouched && value && !isItineraryField && (
               <div className="absolute inset-y-0 right-2 flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
             )}
           </div>
+        );
+
+      case 'multi-image':
+        return (
+          <MultiImageGalleryPicker
+            value={Array.isArray(value) ? value : []}
+            onChange={(images: GalleryImage[]) => {
+              onChange(images);
+            }}
+            fieldKey={field.key}
+            label={undefined} // Field label is handled by parent
+            maxImages={(field as any).maxImages || 9}
+            className="w-full"
+          />
         );
 
       default: // 'text'
@@ -246,7 +374,7 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               placeholder={String(fieldState?.defaultValue || field.placeholder || '')}
               className={baseInputClasses}
             />
-            {fieldState?.isTouched && value && (
+            {fieldState?.isTouched && value && !isItineraryField && (
               <div className="absolute inset-y-0 right-2 flex items-center">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
               </div>
@@ -256,19 +384,56 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
     }
   };
 
+  // Animation variants for staggered field entrance
+  const fieldVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      y: 10,
+      scale: 0.98
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.3,
+        ease: "easeOut"
+      }
+    }
+  };
+
+  const statusVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        delay: 0.1,
+        duration: 0.2
+      }
+    }
+  };
+
   return (
-    <div className="space-y-3 group">
+    <motion.div
+      variants={fieldVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-3 group"
+    >
       {/* Enhanced Field Header */}
       <div className="flex items-center justify-between">
-        <label
-          htmlFor={`field-${field.key}`}
-          className="block text-sm font-semibold text-gray-800 group-hover:text-gray-900 transition-colors"
-        >
-          {field.label}
-          {fieldState?.isTouched && (
-            <span className="ml-1 text-purple-600">*</span>
-          )}
-        </label>
+        {field.key !== 'gallery_images' && (
+          <label
+            htmlFor={`field-${field.key}`}
+            className="block text-sm font-semibold text-gray-800 group-hover:text-gray-900 transition-colors"
+          >
+            {field.label}
+            {fieldState?.isTouched && (
+              <span className="ml-1 text-purple-600">*</span>
+            )}
+          </label>
+        )}
 
         <div className="flex items-center gap-2">
           {/* Enhanced Status Indicator */}
@@ -276,9 +441,11 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
 
           {/* Enhanced Reset Button */}
           {fieldState?.canReset && onReset && (
-            <button
+            <motion.button
               type="button"
               onClick={handleReset}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               className="
                 p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-600
                 transition-all duration-200
@@ -287,29 +454,26 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
               "
               title={`Restablecer a valor original: "${fieldState.defaultValue}"`}
             >
-              <RotateCcw className="w-3.5 h-3.5 group-hover/reset:rotate-180 transition-transform duration-300" />
-            </button>
+              <motion.div
+                whileHover={{ rotate: 180 }}
+                transition={{ duration: 0.3 }}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </motion.div>
+            </motion.button>
           )}
         </div>
       </div>
 
       {/* Input Field with enhanced container */}
-      <div className="relative">
+      <motion.div
+        className="relative"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      >
         {renderInput()}
+      </motion.div>
 
-        {/* Field state overlay for touched fields */}
-        {fieldState?.isTouched && (
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-        )}
-      </div>
-
-      {/* Simplified Helper Text - only when customized */}
-      {fieldState?.isTouched && (
-        <p className="text-xs text-purple-600 flex items-center gap-1 mt-1">
-          <Edit3 className="w-3 h-3" />
-          Personalizado
-        </p>
-      )}
-    </div>
+    </motion.div>
   );
 };

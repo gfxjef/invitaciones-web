@@ -2,24 +2,25 @@
  * Customizer Panel Component
  *
  * WHY: Main sliding panel that contains all customization fields
- * organized by categories. Provides progressive override interface
- * with visual indicators for touched vs template default fields.
+ * organized by categories. Uses Framer Motion for circular clip-path
+ * animation that expands from the button position for a modern reveal effect.
  */
 
 'use client';
 
 import { useMemo } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { X, RotateCcw, Palette, Edit3, Sparkles } from 'lucide-react';
 import { CustomizerField } from './CustomizerField';
-import { CustomizerField as FieldType, FieldState, CustomizerMode } from './types';
+import { CustomizerField as FieldType, FieldState, CustomizerMode, GalleryImage } from './types';
 // BASIC_FIELDS now passed as prop - no longer imported from global config
 
 interface CustomizerPanelProps {
   isOpen: boolean;
   onClose: () => void;
   fieldsByCategory: Record<string, FieldType[]>;
-  getFieldValue: (fieldKey: string) => string | boolean;
-  updateField: (fieldKey: string, value: string | boolean) => void;
+  getFieldValue: (fieldKey: string) => string | boolean | GalleryImage[];
+  updateField: (fieldKey: string, value: string | boolean | GalleryImage[]) => void;
   onReset: () => void;
   onResetField?: (fieldKey: string) => void;
   hasChanges: boolean;
@@ -51,9 +52,6 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
   onModeChange,
   basicFields
 }) => {
-
-  if (!isOpen) return null;
-
   // fieldsByCategory now contains sections ordered by priority
   const sections = Object.keys(fieldsByCategory);
 
@@ -69,25 +67,77 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
     };
   }, [fieldsByCategory, fieldsCount, selectedMode, basicFields]);
 
+  // Animation variants for circular clip-path expansion
+  const panelVariants: Variants = {
+    closed: {
+      clipPath: "circle(0% at calc(100% - 48px) 48px)",
+      opacity: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+        duration: 0.4
+      }
+    },
+    open: {
+      clipPath: "circle(150% at calc(100% - 48px) 48px)",
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+        duration: 0.5,
+        delayChildren: 0.2,
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const backdropVariants: Variants = {
+    closed: {
+      opacity: 0,
+      transition: {
+        duration: 0.3
+      }
+    },
+    open: {
+      opacity: 1,
+      transition: {
+        duration: 0.3
+      }
+    }
+  };
+
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            variants={backdropVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={onClose}
+          />
 
-      {/* Panel */}
-      <div className={`
-        fixed top-0 right-0 h-full w-full max-w-md z-50
-        bg-white shadow-2xl
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        flex flex-col
-      `}>
+          {/* Panel */}
+          <motion.div
+            variants={panelVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            className="fixed top-0 right-0 h-full w-full max-w-md z-50 bg-white shadow-2xl flex flex-col"
+          >
 
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+              className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50"
+            >
           <div className="flex items-center gap-3">
             <div className="relative">
               <Palette className="w-6 h-6 text-purple-600" />
@@ -101,35 +151,25 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
               <h2 className="text-lg font-semibold text-gray-800">
                 Personalizar Invitación
               </h2>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <span>{sectionsCount} secciones • {modeStats.currentCount} campos {selectedMode === 'basic' ? 'básicos' : 'completos'}</span>
-                {touchedFieldsCount > 0 && (
-                  <div className="flex items-center gap-1 text-purple-600 font-medium bg-purple-100 px-2 py-0.5 rounded-full">
-                    <Edit3 className="w-3 h-3" />
-                    <span>{touchedFieldsCount} personalizado{touchedFieldsCount !== 1 ? 's' : ''}</span>
-                  </div>
-                )}
-                {touchedFieldsCount === 0 && (
-                  <div className="flex items-center gap-1 text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Plantilla original</span>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
-            aria-label="Cerrar panel"
-          >
-            <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-colors" />
-          </button>
-        </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
+                aria-label="Cerrar panel"
+              >
+                <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700 transition-colors" />
+              </button>
+            </motion.div>
 
-        {/* Mode Selector */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50">
+            {/* Mode Selector */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.3 }}
+              className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50"
+            >
           <div className="flex items-center justify-center">
             <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
               <button
@@ -170,12 +210,17 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                 ? 'Solo campos esenciales para personalización rápida'
                 : 'Acceso completo a todas las opciones de personalización'
               }
-            </p>
-          </div>
-        </div>
+              </p>
+            </div>
+            </motion.div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+            {/* Content */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+              className="flex-1 overflow-y-auto p-6"
+            >
           {sections.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <div className="relative mb-6">
@@ -221,18 +266,16 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
 
                       {/* Enhanced Section Status Indicators */}
                       <div className="flex items-center gap-2">
-                        {/* Status badges */}
+                        {/* Status badges - Simplified to numbers only */}
                         <div className="flex items-center gap-1">
                           {touchedCount > 0 && (
-                            <div className="flex items-center gap-1 text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                              <Edit3 className="w-3 h-3" />
-                              <span className="text-xs font-medium">{touchedCount} personalizado{touchedCount !== 1 ? 's' : ''}</span>
+                            <div className="text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                              <span className="text-xs font-bold">{touchedCount}</span>
                             </div>
                           )}
                           {defaultCount > 0 && (
-                            <div className="flex items-center gap-1 text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                              <Sparkles className="w-3 h-3" />
-                              <span className="text-xs font-medium">{defaultCount} plantilla</span>
+                            <div className="text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              <span className="text-xs font-bold">{defaultCount}</span>
                             </div>
                           )}
                         </div>
@@ -305,6 +348,19 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                       ) : sectionName === 'gallery' ? (
                         // Gallery section with image grouping
                         <div className="space-y-6">
+                          {/* 🚨 DEBUG: Log gallery fields processing */}
+                          {(() => {
+                            console.log('🚨 CustomizerPanel Gallery Section:', {
+                              sectionName,
+                              sectionFields: sectionFields.map(f => ({ key: f.key, type: f.type })),
+                              totalFields: sectionFields.length,
+                              galleryImagesField: sectionFields.find(f => f.key === 'gallery_images'),
+                              titleFields: sectionFields.filter(field => field.key === 'sectionTitle' || field.key === 'sectionSubtitle'),
+                              nonTitleFields: sectionFields.filter(field => field.key !== 'sectionTitle' && field.key !== 'sectionSubtitle')
+                            });
+                            return null;
+                          })()}
+
                           {/* Section title fields first */}
                           <div className="space-y-4">
                             {sectionFields.filter(field =>
@@ -321,7 +377,26 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                             ))}
                           </div>
 
-                          {/* Image groups */}
+                          {/* Gallery multi-image field (gallery_images) */}
+                          <div className="space-y-4">
+                            {sectionFields.filter(field =>
+                              field.type === 'multi-image' && field.key === 'gallery_images'
+                            ).map(field => {
+                              console.log('🚨 Rendering gallery_images field:', field);
+                              return (
+                                <CustomizerField
+                                  key={field.key}
+                                  field={field}
+                                  value={getFieldValue(field.key)}
+                                  onChange={(value) => updateField(field.key, value)}
+                                  fieldState={fieldStates[field.key]}
+                                  onReset={onResetField}
+                                />
+                              );
+                            })}
+                          </div>
+
+                          {/* Individual Image fields (legacy pattern) */}
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(imageNum => {
                             const imageFields = sectionFields.filter(field =>
                               field.key.includes(`gallery_image_${imageNum}_`)
@@ -350,6 +425,62 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                             );
                           })}
                         </div>
+                      ) : sectionName === 'itinerary' ? (
+                        // Itinerary section with event horizontal grouping
+                        <div className="space-y-6">
+                          {/* Title field first */}
+                          <div className="space-y-4">
+                            {sectionFields.filter(field =>
+                              field.key === 'itinerary_title'
+                            ).map(field => (
+                              <CustomizerField
+                                key={field.key}
+                                field={field}
+                                value={getFieldValue(field.key)}
+                                onChange={(value) => updateField(field.key, value)}
+                                fieldState={fieldStates[field.key]}
+                                onReset={onResetField}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Event pairs - horizontal layout */}
+                          {['ceremonia', 'recepcion', 'entrada', 'comida', 'fiesta'].map(eventName => {
+                            const enabledField = sectionFields.find(field =>
+                              field.key === `itinerary_event_${eventName}_enabled`
+                            );
+                            const timeField = sectionFields.find(field =>
+                              field.key === `itinerary_event_${eventName}_time`
+                            );
+
+                            if (!enabledField || !timeField) return null;
+
+                            return (
+                              <div key={`event-${eventName}`} className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 bg-gray-50">
+                                {/* Toggle on the left */}
+                                <div className="flex-shrink-0">
+                                  <CustomizerField
+                                    field={enabledField}
+                                    value={getFieldValue(enabledField.key)}
+                                    onChange={(value) => updateField(enabledField.key, value)}
+                                    fieldState={fieldStates[enabledField.key]}
+                                    onReset={onResetField}
+                                  />
+                                </div>
+                                {/* Time on the right */}
+                                <div className="flex-1">
+                                  <CustomizerField
+                                    field={timeField}
+                                    value={getFieldValue(timeField.key)}
+                                    onChange={(value) => updateField(timeField.key, value)}
+                                    fieldState={fieldStates[timeField.key]}
+                                    onReset={onResetField}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       ) : (
                         // Regular sections - all fields without sub-grouping
                         <div className="space-y-4">
@@ -369,12 +500,17 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+            </motion.div>
 
-        {/* Enhanced Footer */}
-        <div className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50">
+            {/* Enhanced Footer */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45, duration: 0.3 }}
+              className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50"
+            >
           {hasChanges ? (
             <div className="p-6">
               <div className="space-y-4">
@@ -423,10 +559,12 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
               <p className="text-xs text-gray-400 mt-1">
                 Modifica cualquier campo para personalizar tu invitación
               </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
+              </div>
+            )}
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };

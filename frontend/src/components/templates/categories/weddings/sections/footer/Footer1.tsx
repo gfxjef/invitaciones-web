@@ -13,7 +13,7 @@ import { ArrowUp } from 'lucide-react';
 interface Footer1Props {
   groom_name?: string;
   bride_name?: string;
-  eventDate?: string;
+  weddingDate?: string;
   eventLocation?: string;
   copyrightText?: string;
 }
@@ -21,12 +21,30 @@ interface Footer1Props {
 export const Footer1: React.FC<Footer1Props> = ({
   groom_name = 'Jefferson',
   bride_name = 'Rosmery',
-  eventDate = '24 DECEMBER 2026',
+  weddingDate = '2026-12-24T17:00:00',
   eventLocation = 'Lima, Peru',
   copyrightText = 'Hecho con Amor. All right reserved Amiras Gift.'
 }) => {
   // Auto-generate couple names from individual names
   const coupleNames = `${groom_name} & ${bride_name}`;
+
+  // Auto-generate footer_eventDate from weddingDate
+  const formatWeddingDate = (weddingDateTime: string): string => {
+    if (!weddingDateTime) return 'Tu Fecha Especial';
+
+    try {
+      const date = new Date(weddingDateTime);
+      return date.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }).toUpperCase();
+    } catch (error) {
+      return 'Tu Fecha Especial';
+    }
+  };
+
+  const footer_eventDate = formatWeddingDate(weddingDate);
   const [isVisible, setIsVisible] = useState(false);
 
   const toggleVisibility = () => {
@@ -59,7 +77,7 @@ export const Footer1: React.FC<Footer1Props> = ({
         </h2>
 
         <p className="mt-4 text-sm tracking-[0.2em] uppercase font-montserrat">
-          {eventDate}, {eventLocation}
+          {footer_eventDate}, {eventLocation}
         </p>
 
         <hr className="border-t border-gray-700 w-1/2 mx-auto my-12" />
@@ -88,7 +106,7 @@ export const Footer1: React.FC<Footer1Props> = ({
 export const Footer1DefaultProps = {
   groom_name: 'Jefferson',
   bride_name: 'Rosmery',
-  eventDate: '24 DECEMBER 2026',
+  weddingDate: '2026-12-24T17:00:00',
   eventLocation: 'Lima, Peru',
   copyrightText: 'Hecho con Amor. All right reserved Amiras Gift.'
 };

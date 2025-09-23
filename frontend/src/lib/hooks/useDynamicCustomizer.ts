@@ -14,7 +14,8 @@ import {
   TouchedFields,
   FieldState,
   ProgressiveData,
-  CustomizerMode
+  CustomizerMode,
+  GalleryImage
 } from '@/components/customizer/types';
 import { detectActiveSections, getFieldsByOrderedSections } from '@/components/customizer/sectionFieldsMap';
 // TODO: This file should be refactored to use category-specific configurations
@@ -138,11 +139,11 @@ export function useDynamicCustomizer({
         case 'bride_name':
           defaultValue = templateProps.couple?.bride_name || Hero1DefaultProps.bride_name || 'Rosmery';
           break;
-        case 'eventDate':
-          defaultValue = templateProps.hero?.eventDate || Hero1DefaultProps.eventDate;
+        case 'weddingDate':
+          defaultValue = templateProps.hero?.weddingDate || templateProps.footer?.weddingDate || templateProps.countdown?.weddingDate || Hero1DefaultProps.weddingDate;
           break;
         case 'eventLocation':
-          defaultValue = templateProps.hero?.eventLocation || Hero1DefaultProps.eventLocation;
+          defaultValue = templateProps.hero?.eventLocation || templateProps.footer?.eventLocation || Hero1DefaultProps.eventLocation;
           break;
         case 'heroImageUrl':
           defaultValue = templateProps.hero?.heroImageUrl || Hero1DefaultProps.heroImageUrl;
@@ -247,7 +248,14 @@ export function useDynamicCustomizer({
           defaultValue = templateProps.story?.storyMoments?.[2]?.imageUrl || Story1DefaultProps.storyMoments[2].imageUrl;
           break;
 
-        // Gallery image fields with defaults from the active Gallery component variant
+        // Gallery unified field - array of images
+        case 'gallery_images': {
+          const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+          defaultValue = templateProps.gallery?.galleryImages || galleryDefaults.galleryImages || [];
+          break;
+        }
+
+        // Gallery image fields with defaults from the active Gallery component variant (legacy support)
         case 'gallery_image_1_url': {
           const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
           defaultValue = templateProps.gallery?.galleryImages?.[0]?.url ||
@@ -466,7 +474,7 @@ export function useDynamicCustomizer({
   }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData)]);
 
   // Update a specific field with touch tracking
-  const updateField = useCallback((fieldKey: string, value: string | boolean) => {
+  const updateField = useCallback((fieldKey: string, value: string | boolean | GalleryImage[]) => {
     setCustomizerData(prev => ({
       ...prev,
       [fieldKey]: value
@@ -518,11 +526,7 @@ export function useDynamicCustomizer({
         // Individual fields needed by Hero1 component
         groom_name: data.groom_name || Hero1DefaultProps.groom_name,
         bride_name: data.bride_name || Hero1DefaultProps.bride_name,
-        eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }) : Hero1DefaultProps.eventDate),
+        weddingDate: data.weddingDate || data.event_date || Hero1DefaultProps.weddingDate,
         eventLocation: data.eventLocation || data.event_venue_city || Hero1DefaultProps.eventLocation,
         heroImageUrl: data.heroImageUrl || data.gallery_hero_image || Hero1DefaultProps.heroImageUrl,
       },
@@ -547,7 +551,7 @@ export function useDynamicCustomizer({
         groom_imageUrl: data.groom_imageUrl || Couple1DefaultProps.groom_imageUrl
       },
       countdown: {
-        weddingDate: data.countdown_weddingDate || data.event_date || Countdown1DefaultProps.weddingDate,
+        weddingDate: data.weddingDate || data.event_date || Countdown1DefaultProps.weddingDate,
         backgroundImageUrl: data.countdown_backgroundImageUrl || Countdown1DefaultProps.backgroundImageUrl,
         preTitle: data.countdown_preTitle || Countdown1DefaultProps.preTitle,
         title: data.countdown_title || Countdown1DefaultProps.title
@@ -588,78 +592,42 @@ export function useDynamicCustomizer({
       gallery: {
         sectionSubtitle: (getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps).sectionSubtitle,
         sectionTitle: (getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps).sectionTitle,
-        galleryImages: [
-          // Image 1 - only include if has URL
-          ...(data.gallery_image_1_url ? [{
-            id: 1,
-            url: data.gallery_image_1_url,
-            alt: data.gallery_image_1_alt || 'Romantic couple moment',
-            category: data.gallery_image_1_category || 'ceremony'
-          }] : []),
-          // Image 2 - only include if has URL
-          ...(data.gallery_image_2_url ? [{
-            id: 2,
-            url: data.gallery_image_2_url,
-            alt: data.gallery_image_2_alt || 'Beautiful wedding ceremony',
-            category: data.gallery_image_2_category || 'ceremony'
-          }] : []),
-          // Image 3 - only include if has URL
-          ...(data.gallery_image_3_url ? [{
-            id: 3,
-            url: data.gallery_image_3_url,
-            alt: data.gallery_image_3_alt || 'Celebration moments',
-            category: data.gallery_image_3_category || 'party'
-          }] : []),
-          // Image 4 - only include if has URL
-          ...(data.gallery_image_4_url ? [{
-            id: 4,
-            url: data.gallery_image_4_url,
-            alt: data.gallery_image_4_alt || 'Wedding rings',
-            category: data.gallery_image_4_category || 'ceremony'
-          }] : []),
-          // Image 5 - only include if has URL
-          ...(data.gallery_image_5_url ? [{
-            id: 5,
-            url: data.gallery_image_5_url,
-            alt: data.gallery_image_5_alt || 'Happy couple dancing',
-            category: data.gallery_image_5_category || 'party'
-          }] : []),
-          // Image 6 - only include if has URL
-          ...(data.gallery_image_6_url ? [{
-            id: 6,
-            url: data.gallery_image_6_url,
-            alt: data.gallery_image_6_alt || 'Wedding bouquet',
-            category: data.gallery_image_6_category || 'ceremony'
-          }] : []),
-          // Image 7 - only include if has URL
-          ...(data.gallery_image_7_url ? [{
-            id: 7,
-            url: data.gallery_image_7_url,
-            alt: data.gallery_image_7_alt || 'Wedding moment',
-            category: data.gallery_image_7_category || 'ceremony'
-          }] : []),
-          // Image 8 - only include if has URL
-          ...(data.gallery_image_8_url ? [{
-            id: 8,
-            url: data.gallery_image_8_url,
-            alt: data.gallery_image_8_alt || 'Wedding moment',
-            category: data.gallery_image_8_category || 'ceremony'
-          }] : []),
-          // Image 9 - only include if has URL
-          ...(data.gallery_image_9_url ? [{
-            id: 9,
-            url: data.gallery_image_9_url,
-            alt: data.gallery_image_9_alt || 'Wedding moment',
-            category: data.gallery_image_9_category || 'ceremony'
-          }] : []),
-          // Image 10 - only include if has URL
-          ...(data.gallery_image_10_url ? [{
-            id: 10,
-            url: data.gallery_image_10_url,
-            alt: data.gallery_image_10_alt || 'Wedding moment',
-            category: data.gallery_image_10_category || 'ceremony'
-          }] : [])
-        ]
+        galleryImages: (() => {
+          // Use unified gallery_images field if available
+          if (data.gallery_images && Array.isArray(data.gallery_images)) {
+            return data.gallery_images.map((image: any, index: number) => ({
+              id: index + 1,
+              url: image.url || '',
+              alt: image.alt || `Imagen ${index + 1}`,
+              category: image.category || 'ceremony'
+            }));
+          }
+
+          // Fallback to legacy individual fields for backward compatibility
+          const legacyImages = [];
+          for (let i = 1; i <= 10; i++) {
+            const urlKey = `gallery_image_${i}_url`;
+            const altKey = `gallery_image_${i}_alt`;
+            const categoryKey = `gallery_image_${i}_category`;
+
+            if (data[urlKey]) {
+              legacyImages.push({
+                id: i,
+                url: data[urlKey],
+                alt: data[altKey] || `Imagen ${i}`,
+                category: data[categoryKey] || 'ceremony'
+              });
+            }
+          }
+
+          // If no images from either method, use defaults
+          if (legacyImages.length === 0) {
+            const galleryDefaults = getSectionVariant('gallery') === 'gallery_2' ? Gallery2DefaultProps : Gallery1DefaultProps;
+            return galleryDefaults.galleryImages || [];
+          }
+
+          return legacyImages;
+        })()
       },
       itinerary: {
         title: data.itinerary_title || Itinerary1DefaultProps.title,
@@ -687,12 +655,8 @@ export function useDynamicCustomizer({
         // Individual fields needed by Footer1 component
         groom_name: data.groom_name || Footer1DefaultProps.groom_name,
         bride_name: data.bride_name || Footer1DefaultProps.bride_name,
-        eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }) : Footer1DefaultProps.eventDate),
-        eventLocation: data.footer_eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
+        weddingDate: data.weddingDate || data.event_date || Footer1DefaultProps.weddingDate,
+        eventLocation: data.eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
         copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
@@ -705,6 +669,30 @@ export function useDynamicCustomizer({
     // Auto-generate coupleNames for Hero and Footer from individual names
     if (data.groom_name && data.bride_name) {
       computed.coupleNames = `${data.groom_name} & ${data.bride_name}`;
+    }
+
+    // Auto-generate eventDate and footer_eventDate from weddingDate
+    if (data.weddingDate && typeof data.weddingDate === 'string') {
+      const formatWeddingDate = (weddingDateTime: string): string => {
+        if (!weddingDateTime) return 'Tu Fecha Especial';
+
+        try {
+          const date = new Date(weddingDateTime);
+          return date.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          });
+        } catch (error) {
+          return 'Tu Fecha Especial';
+        }
+      };
+
+      // Generate eventDate for Hero section
+      computed.eventDate = formatWeddingDate(data.weddingDate);
+
+      // Generate footer_eventDate for Footer section (uppercase)
+      computed.footer_eventDate = formatWeddingDate(data.weddingDate).toUpperCase();
     }
 
     return computed;
@@ -768,22 +756,53 @@ export function useDynamicCustomizer({
 
   // Get fields grouped by ordered sections with mode filtering
   const fieldsBySection = useMemo(() => {
+    // 🚨 DEBUG: Log mode filtering process
+    console.log('🔍 useDynamicCustomizer fieldsBySection calculation:', {
+      selectedMode,
+      totalAvailableFields: availableFields.length,
+      activeSections,
+      basicFieldsCount: WEDDING_BASIC_FIELDS.length,
+      galleryInBasicFields: WEDDING_BASIC_FIELDS.includes('gallery_images')
+    });
+
     // Filter fields by selected mode first
     const filteredFields = selectedMode === 'basic'
       ? availableFields.filter(field => WEDDING_BASIC_FIELDS.includes(field.key))
       : availableFields;
 
+    // 🚨 DEBUG: Log filtering result
+    console.log('🔍 After mode filtering:', {
+      filteredFieldsCount: filteredFields.length,
+      galleryImagesIncluded: filteredFields.some(f => f.key === 'gallery_images'),
+      filteredFieldKeys: filteredFields.map(f => f.key)
+    });
+
     // Then group by sections
-    return getFieldsByOrderedSections(filteredFields, activeSections);
+    const result = getFieldsByOrderedSections(filteredFields, activeSections);
+
+    // 🚨 DEBUG: Log final result from useDynamicCustomizer
+    console.log('🎯 useDynamicCustomizer final fieldsBySection:', {
+      sections: Object.keys(result),
+      gallerySection: result.gallery || 'NO GALLERY SECTION',
+      galleryFieldsCount: result.gallery?.length || 0
+    });
+
+    return result;
   }, [availableFields, activeSections, selectedMode]);
 
   // Legacy support: alias for backward compatibility
   const fieldsByCategory = fieldsBySection;
 
   // Get current value for a field
-  const getFieldValue = useCallback((fieldKey: string): string | boolean => {
-    return customizerData[fieldKey] || '';
-  }, [customizerData]);
+  const getFieldValue = useCallback((fieldKey: string): string | boolean | GalleryImage[] => {
+    // If field has been touched, use the customizer value
+    if (touchedFields[fieldKey]) {
+      return customizerData[fieldKey] || (fieldKey === 'gallery_images' ? [] : '');
+    }
+
+    // If field hasn't been touched, use the template default
+    return templateDefaults[fieldKey] !== undefined ? templateDefaults[fieldKey] : (fieldKey === 'gallery_images' ? [] : '');
+  }, [customizerData, touchedFields, templateDefaults]);
 
   // Get section configuration for a section name
   const getSectionConfig = useCallback((sectionName: string) => {
@@ -792,8 +811,8 @@ export function useDynamicCustomizer({
 
   // Get field state for progressive override UI
   const getFieldState = useCallback((fieldKey: string): FieldState => {
-    const currentValue = customizerData[fieldKey] || '';
-    const defaultValue = templateDefaults[fieldKey] || '';
+    const currentValue = customizerData[fieldKey] || (fieldKey === 'gallery_images' ? [] : '');
+    const defaultValue = templateDefaults[fieldKey] || (fieldKey === 'gallery_images' ? [] : '');
     const isTouched = touchedFields[fieldKey] || false;
     const isModified = currentValue !== defaultValue;
 

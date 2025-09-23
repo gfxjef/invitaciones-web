@@ -13,7 +13,8 @@ import {
   CustomizerState,
   TouchedFields,
   FieldState,
-  ProgressiveData
+  ProgressiveData,
+  GalleryImage
 } from '../customizer/types';
 import { getAvailableFields, detectActiveSections, getFieldsByOrderedSections, WEDDING_SECTION_FIELDS_MAP } from '../customizer/sectionFieldsMap';
 
@@ -86,8 +87,8 @@ export function useWeddingCustomizer({
         case 'bride_name':
           defaultValue = templateProps.hero?.bride_name || Hero1DefaultProps.bride_name;
           break;
-        case 'eventDate':
-          defaultValue = templateProps.hero?.eventDate || Hero1DefaultProps.eventDate;
+        case 'weddingDate':
+          defaultValue = templateProps.hero?.weddingDate || Hero1DefaultProps.weddingDate;
           break;
         case 'eventLocation':
           defaultValue = templateProps.hero?.eventLocation || Hero1DefaultProps.eventLocation;
@@ -315,7 +316,7 @@ export function useWeddingCustomizer({
   }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData)]);
 
   // Update a specific field with touch tracking
-  const updateField = useCallback((fieldKey: string, value: string) => {
+  const updateField = useCallback((fieldKey: string, value: string | boolean | GalleryImage[]) => {
     setCustomizerData(prev => ({
       ...prev,
       [fieldKey]: value
@@ -367,11 +368,7 @@ export function useWeddingCustomizer({
         // Individual names instead of coupleNames - Hero will auto-generate internally
         groom_name: data.groom_name || data.couple_groom_name || Hero1DefaultProps.groom_name,
         bride_name: data.bride_name || data.couple_bride_name || Hero1DefaultProps.bride_name,
-        eventDate: data.eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }) : Hero1DefaultProps.eventDate),
+        weddingDate: data.weddingDate || data.event_date || Hero1DefaultProps.weddingDate,
         eventLocation: data.eventLocation || data.event_venue_city || Hero1DefaultProps.eventLocation,
         heroImageUrl: data.heroImageUrl || data.gallery_hero_image || Hero1DefaultProps.heroImageUrl,
       },
@@ -514,12 +511,8 @@ export function useWeddingCustomizer({
         // Individual names instead of coupleNames - Footer will auto-generate internally
         groom_name: data.groom_name || data.couple_groom_name || Footer1DefaultProps.groom_name,
         bride_name: data.bride_name || data.couple_bride_name || Footer1DefaultProps.bride_name,
-        footer_eventDate: data.footer_eventDate || (data.event_date ? new Date(data.event_date).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }) : Footer1DefaultProps.eventDate),
-        footer_eventLocation: data.footer_eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
+        weddingDate: data.weddingDate || data.event_date || Footer1DefaultProps.weddingDate,
+        eventLocation: data.eventLocation || data.event_venue_city || Footer1DefaultProps.eventLocation,
         footer_copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
@@ -606,8 +599,8 @@ export function useWeddingCustomizer({
   const fieldsByCategory = fieldsBySection;
 
   // Get current value for a field
-  const getFieldValue = useCallback((fieldKey: string): string | boolean => {
-    return customizerData[fieldKey] || '';
+  const getFieldValue = useCallback((fieldKey: string): string | boolean | GalleryImage[] => {
+    return customizerData[fieldKey] || (fieldKey === 'gallery_images' ? [] : '');
   }, [customizerData]);
 
   // Get section configuration for a section name

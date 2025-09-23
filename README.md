@@ -40,6 +40,14 @@ Plataforma completa para crear y gestionar invitaciones digitales de bodas con d
 - **Sincronización perfecta**: Cambios en customizer se reflejan en Hero, Footer y Couple
 - **Single source of truth**: Una sola edición afecta todas las secciones
 
+#### MultiImageGalleryPicker - Sistema de Galería Avanzado
+- **Grid 3x3**: Selector de hasta 9 imágenes en diseño optimizado
+- **Drag & Drop**: Subida intuitiva de múltiples archivos
+- **Vista previa inmediata**: Blob URLs para previsualización sin servidor
+- **Eliminación segura**: Gestión robusta de memoria y cleanup automático
+- **Integración completa**: Conectado con file manager y estado del customizer
+- **Validación defensiva**: Manejo robusto de errores y datos incompletos
+
 ## Stack Tecnológico
 
 ### Frontend

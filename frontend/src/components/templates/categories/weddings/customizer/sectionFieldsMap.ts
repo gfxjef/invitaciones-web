@@ -19,7 +19,7 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     fields: [
       'groom_name',
       'bride_name',
-      'eventDate',
+      'weddingDate',
       'eventLocation',
       'heroImageUrl'
     ]
@@ -58,7 +58,7 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     label: 'Cuenta Regresiva',
     icon: '⏰',
     fields: [
-      'countdown_weddingDate',
+      'weddingDate',
       'countdown_backgroundImageUrl',
       'countdown_preTitle',
       'countdown_title'
@@ -92,36 +92,7 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     fields: [
       'sectionSubtitle',
       'sectionTitle',
-      'gallery_image_1_url',
-      'gallery_image_1_alt',
-      'gallery_image_1_category',
-      'gallery_image_2_url',
-      'gallery_image_2_alt',
-      'gallery_image_2_category',
-      'gallery_image_3_url',
-      'gallery_image_3_alt',
-      'gallery_image_3_category',
-      'gallery_image_4_url',
-      'gallery_image_4_alt',
-      'gallery_image_4_category',
-      'gallery_image_5_url',
-      'gallery_image_5_alt',
-      'gallery_image_5_category',
-      'gallery_image_6_url',
-      'gallery_image_6_alt',
-      'gallery_image_6_category',
-      'gallery_image_7_url',
-      'gallery_image_7_alt',
-      'gallery_image_7_category',
-      'gallery_image_8_url',
-      'gallery_image_8_alt',
-      'gallery_image_8_category',
-      'gallery_image_9_url',
-      'gallery_image_9_alt',
-      'gallery_image_9_category',
-      'gallery_image_10_url',
-      'gallery_image_10_alt',
-      'gallery_image_10_category'
+      'gallery_images'
     ]
   },
 
@@ -160,8 +131,8 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     fields: [
       'groom_name',
       'bride_name',
-      'footer_eventDate',
-      'footer_eventLocation',
+      'weddingDate',
+      'eventLocation',
       'footer_copyrightText'
     ]
   }
@@ -171,12 +142,11 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
 export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Hero section fields - Individual names (replacing legacy coupleNames)
 
-  eventDate: {
-    key: 'eventDate',
-    label: 'Fecha del Evento',
-    type: 'text',
-    // placeholder:'Ej: 15 December, 2024',
-    section: 'hero',
+  weddingDate: {
+    key: 'weddingDate',
+    label: 'Fecha y Hora del Evento',
+    type: 'datetime-local',
+    section: ['hero', 'footer', 'countdown'],
     category: 'Evento'
   },
 
@@ -185,7 +155,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     label: 'Lugar del Evento',
     type: 'text',
     // placeholder:'Ej: LIMA - PERÚ',
-    section: 'hero',
+    section: ['hero', 'footer'],
     category: 'Evento'
   },
 
@@ -336,14 +306,6 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   },
 
   // Countdown section fields
-  countdown_weddingDate: {
-    key: 'countdown_weddingDate',
-    label: 'Fecha y Hora de la Boda',
-    type: 'datetime-local',
-    // placeholder:'2025-12-15T17:00:00',
-    section: 'countdown',
-    category: 'Evento'
-  },
 
   countdown_backgroundImageUrl: {
     key: 'countdown_backgroundImageUrl',
@@ -421,15 +383,15 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Ceremonia event
   itinerary_event_ceremonia_enabled: {
     key: 'itinerary_event_ceremonia_enabled',
-    label: 'Mostrar Ceremonia',
-    type: 'checkbox',
+    label: 'Ceremonia',
+    type: 'toggle',
     section: 'itinerary',
     category: 'Eventos'
   },
 
   itinerary_event_ceremonia_time: {
     key: 'itinerary_event_ceremonia_time',
-    label: 'Hora de la Ceremonia',
+    label: '',
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
@@ -438,15 +400,15 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Recepción event
   itinerary_event_recepcion_enabled: {
     key: 'itinerary_event_recepcion_enabled',
-    label: 'Mostrar Recepción',
-    type: 'checkbox',
+    label: 'Recepción',
+    type: 'toggle',
     section: 'itinerary',
     category: 'Eventos'
   },
 
   itinerary_event_recepcion_time: {
     key: 'itinerary_event_recepcion_time',
-    label: 'Hora de la Recepción',
+    label: '',
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
@@ -455,15 +417,15 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Entrada event
   itinerary_event_entrada_enabled: {
     key: 'itinerary_event_entrada_enabled',
-    label: 'Mostrar Entrada',
-    type: 'checkbox',
+    label: 'Entrada',
+    type: 'toggle',
     section: 'itinerary',
     category: 'Eventos'
   },
 
   itinerary_event_entrada_time: {
     key: 'itinerary_event_entrada_time',
-    label: 'Hora de la Entrada',
+    label: '',
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
@@ -472,15 +434,15 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Comida event
   itinerary_event_comida_enabled: {
     key: 'itinerary_event_comida_enabled',
-    label: 'Mostrar Comida',
-    type: 'checkbox',
+    label: 'Comida',
+    type: 'toggle',
     section: 'itinerary',
     category: 'Eventos'
   },
 
   itinerary_event_comida_time: {
     key: 'itinerary_event_comida_time',
-    label: 'Hora de la Comida',
+    label: '',
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
@@ -489,15 +451,15 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Fiesta event
   itinerary_event_fiesta_enabled: {
     key: 'itinerary_event_fiesta_enabled',
-    label: 'Mostrar Fiesta',
-    type: 'checkbox',
+    label: 'Fiesta',
+    type: 'toggle',
     section: 'itinerary',
     category: 'Eventos'
   },
 
   itinerary_event_fiesta_time: {
     key: 'itinerary_event_fiesta_time',
-    label: 'Hora de la Fiesta',
+    label: '',
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
@@ -612,296 +574,20 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     category: 'Momento 3'
   },
 
-  // Gallery section fields - 10 images
-  gallery_image_1_url: {
-    key: 'gallery_image_1_url',
-    label: 'Imagen 1 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
+  // Gallery section - Unified multi-image field
+  gallery_images: {
+    key: 'gallery_images',
+    label: 'Fotos de la Galería',
+    type: 'multi-image',
     section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_1_alt: {
-    key: 'gallery_image_1_alt',
-    label: 'Imagen 1 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_1_category: {
-    key: 'gallery_image_1_category',
-    label: 'Imagen 1 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_2_url: {
-    key: 'gallery_image_2_url',
-    label: 'Imagen 2 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_2_alt: {
-    key: 'gallery_image_2_alt',
-    label: 'Imagen 2 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_2_category: {
-    key: 'gallery_image_2_category',
-    label: 'Imagen 2 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_3_url: {
-    key: 'gallery_image_3_url',
-    label: 'Imagen 3 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_3_alt: {
-    key: 'gallery_image_3_alt',
-    label: 'Imagen 3 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_3_category: {
-    key: 'gallery_image_3_category',
-    label: 'Imagen 3 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_4_url: {
-    key: 'gallery_image_4_url',
-    label: 'Imagen 4 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_4_alt: {
-    key: 'gallery_image_4_alt',
-    label: 'Imagen 4 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_4_category: {
-    key: 'gallery_image_4_category',
-    label: 'Imagen 4 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_5_url: {
-    key: 'gallery_image_5_url',
-    label: 'Imagen 5 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_5_alt: {
-    key: 'gallery_image_5_alt',
-    label: 'Imagen 5 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_5_category: {
-    key: 'gallery_image_5_category',
-    label: 'Imagen 5 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_6_url: {
-    key: 'gallery_image_6_url',
-    label: 'Imagen 6 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_6_alt: {
-    key: 'gallery_image_6_alt',
-    label: 'Imagen 6 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_6_category: {
-    key: 'gallery_image_6_category',
-    label: 'Imagen 6 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_7_url: {
-    key: 'gallery_image_7_url',
-    label: 'Imagen 7 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_7_alt: {
-    key: 'gallery_image_7_alt',
-    label: 'Imagen 7 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_7_category: {
-    key: 'gallery_image_7_category',
-    label: 'Imagen 7 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_8_url: {
-    key: 'gallery_image_8_url',
-    label: 'Imagen 8 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_8_alt: {
-    key: 'gallery_image_8_alt',
-    label: 'Imagen 8 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_8_category: {
-    key: 'gallery_image_8_category',
-    label: 'Imagen 8 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_9_url: {
-    key: 'gallery_image_9_url',
-    label: 'Imagen 9 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_9_alt: {
-    key: 'gallery_image_9_alt',
-    label: 'Imagen 9 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_9_category: {
-    key: 'gallery_image_9_category',
-    label: 'Imagen 9 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_10_url: {
-    key: 'gallery_image_10_url',
-    label: 'Imagen 10 - URL',
-    type: 'url',
-    // placeholder:'URL de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_10_alt: {
-    key: 'gallery_image_10_alt',
-    label: 'Imagen 10 - Descripción',
-    type: 'text',
-    // placeholder:'Descripción de la imagen',
-    section: 'gallery',
-    category: 'Galería'
-  },
-
-  gallery_image_10_category: {
-    key: 'gallery_image_10_category',
-    label: 'Imagen 10 - Categoría',
-    type: 'text',
-    // placeholder:'ceremony, party, couple',
-    section: 'gallery',
-    category: 'Galería'
+    category: 'Galería',
+    maxImages: 9,
+    placeholder: 'Selecciona hasta 9 fotos para tu galería...'
   },
 
   // Footer section fields - Using individual names (removing legacy footer_coupleNames)
 
-  footer_eventDate: {
-    key: 'footer_eventDate',
-    label: 'Fecha del Evento',
-    type: 'text',
-    // placeholder:'Ej: 15 DICIEMBRE 2024',
-    section: 'footer',
-    category: 'Footer'
-  },
 
-  footer_eventLocation: {
-    key: 'footer_eventLocation',
-    label: 'Lugar del Evento',
-    type: 'text',
-    // placeholder:'Ej: Lima, Perú',
-    section: 'footer',
-    category: 'Footer'
-  },
 
   footer_copyrightText: {
     key: 'footer_copyrightText',
@@ -917,21 +603,49 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
  * Get fields available for customization based on template sections
  */
 export function getAvailableFields(activeSections: string[]): CustomizerField[] {
+  // 🚨 DEBUG: Log available fields calculation
+  console.log('🔍 getAvailableFields called with activeSections:', activeSections);
+
   const fieldsSet = new Set<string>();
 
   // Collect all fields from active sections
   activeSections.forEach(sectionName => {
     const section = WEDDING_SECTION_FIELDS_MAP[sectionName];
     if (section) {
+      console.log(`🔍 Section "${sectionName}" has fields:`, section.fields);
       section.fields.forEach(fieldKey => fieldsSet.add(fieldKey));
+
+      // Check specifically for gallery_images
+      if (sectionName === 'gallery' && section.fields.includes('gallery_images')) {
+        console.log('✅ gallery_images found in gallery section fields');
+      }
+    } else {
+      console.log(`❌ No field mapping found for section "${sectionName}"`);
     }
   });
 
+  console.log('🔍 All collected field keys:', Array.from(fieldsSet));
+  console.log('🔍 gallery_images in fieldsSet?', fieldsSet.has('gallery_images'));
+
   // Convert to field definitions
-  return Array.from(fieldsSet)
-    .map(fieldKey => FIELD_DEFINITIONS[fieldKey])
+  const result = Array.from(fieldsSet)
+    .map(fieldKey => {
+      const definition = FIELD_DEFINITIONS[fieldKey];
+      if (!definition && fieldKey === 'gallery_images') {
+        console.log('❌ gallery_images field definition NOT FOUND in FIELD_DEFINITIONS');
+      }
+      return definition;
+    })
     .filter(Boolean)
     .sort((a, b) => a.category.localeCompare(b.category));
+
+  console.log('🎯 getAvailableFields final result:', {
+    totalFields: result.length,
+    galleryImagesIncluded: result.some(f => f.key === 'gallery_images'),
+    fieldKeys: result.map(f => f.key)
+  });
+
+  return result;
 }
 
 /**
@@ -939,7 +653,15 @@ export function getAvailableFields(activeSections: string[]): CustomizerField[] 
  * Preserves the order as defined in the database sections_config
  */
 export function detectActiveSections(sectionsConfig: any, templateData?: any): string[] {
+  // 🚨 DEBUG: Log input parameters
+  console.log('🔍 detectActiveSections called with:', {
+    sectionsConfig,
+    templateData,
+    sections_config_ordered: templateData?.sections_config_ordered
+  });
+
   if (!sectionsConfig) {
+    console.log('❌ detectActiveSections: No sectionsConfig provided');
     return [];
   }
 
@@ -948,18 +670,26 @@ export function detectActiveSections(sectionsConfig: any, templateData?: any): s
   // Use sections_config_ordered if available (preserves database order)
   if (templateData?.sections_config_ordered && Array.isArray(templateData.sections_config_ordered)) {
     sectionOrder = templateData.sections_config_ordered.map((item: [string, string]) => item[0]);
+    console.log('✅ Using sections_config_ordered:', sectionOrder);
   } else {
     // Fallback to Object.keys (may be alphabetical due to JSON serialization)
     sectionOrder = Object.keys(sectionsConfig);
+    console.log('✅ Using Object.keys fallback:', sectionOrder);
   }
 
   // Filter to only enabled sections while preserving order
   const result = sectionOrder.filter(sectionName => {
     const value = sectionsConfig[sectionName];
-    return value === true ||
+    const isEnabled = value === true ||
            (typeof value === 'object' && value?.enabled !== false) ||
            (typeof value === 'string'); // For modular templates like "hero_1", "welcome_1"
+
+    console.log(`🔍 Section "${sectionName}": value=${JSON.stringify(value)}, enabled=${isEnabled}`);
+    return isEnabled;
   });
+
+  console.log('🎯 detectActiveSections final result:', result);
+  console.log('🎯 Gallery section included?', result.includes('gallery'));
 
   return result;
 }
@@ -980,6 +710,13 @@ export function getOrderedSections(activeSections: string[]): string[] {
  * Uses the order from activeSections (database order) instead of field appearance order
  */
 export function getFieldsByOrderedSections(availableFields: CustomizerField[], activeSections: string[]): Record<string, CustomizerField[]> {
+  // 🚨 DEBUG: Log input parameters
+  console.log('🔍 getFieldsByOrderedSections called with:', {
+    availableFields: availableFields.map(f => ({ key: f.key, section: f.section })),
+    activeSections,
+    totalFields: availableFields.length
+  });
+
   const fieldsBySections: Record<string, CustomizerField[]> = {};
   const processedFields = new Set<string>(); // Para evitar duplicados
 
@@ -1000,6 +737,19 @@ export function getFieldsByOrderedSections(availableFields: CustomizerField[], a
         }
         fieldsBySections[firstActiveSection].push(field);
         processedFields.add(field.key);
+
+        // 🚨 DEBUG: Log field assignment (only for gallery_images)
+        if (field.key === 'gallery_images') {
+          console.log(`✅ gallery_images assigned to section "${firstActiveSection}"`);
+        }
+      } else if (field.key === 'gallery_images') {
+        // 🚨 DEBUG: Log why gallery_images was NOT assigned
+        console.log(`❌ gallery_images NOT assigned:`, {
+          fieldSections: sections,
+          firstActiveSection,
+          alreadyProcessed: processedFields.has(field.key),
+          activeSections
+        });
       }
     }
   });
@@ -1012,6 +762,14 @@ export function getFieldsByOrderedSections(availableFields: CustomizerField[], a
     }
   });
 
+  // 🚨 DEBUG: Log final result
+  console.log('🎯 getFieldsByOrderedSections final result:', {
+    sections: Object.keys(result),
+    galleryFields: result.gallery?.length || 0,
+    galleryHasGalleryImages: result.gallery?.some(f => f.key === 'gallery_images') || false,
+    totalFieldsReturned: Object.values(result).flat().length
+  });
+
   return result;
 }
 
@@ -1020,12 +778,8 @@ export const WEDDING_BASIC_FIELDS: string[] = [
   // Hero section - Essential information (using individual names)
   'groom_name',
   'bride_name',
-  'eventDate',
+  'weddingDate',
   'eventLocation',
-
-  // Welcome section - Basic messages
-  'welcome_welcomeText',
-  'welcome_title',
 
   // Couple section - Basic names and roles
   'bride_name',      // Shared with hero - appears in both
@@ -1033,8 +787,19 @@ export const WEDDING_BASIC_FIELDS: string[] = [
   'groom_name',      // Shared with hero - appears in both
   'groom_role',
 
-  // Countdown section - Essential date
-  'countdown_weddingDate',
+  // Countdown section - Uses shared weddingDate (already listed above)
+
+  // Itinerary section - Essential timeline events (removed title from basic mode)
+  'itinerary_event_ceremonia_enabled',
+  'itinerary_event_ceremonia_time',
+  'itinerary_event_recepcion_enabled',
+  'itinerary_event_recepcion_time',
+  'itinerary_event_entrada_enabled',
+  'itinerary_event_entrada_time',
+  'itinerary_event_comida_enabled',
+  'itinerary_event_comida_time',
+  'itinerary_event_fiesta_enabled',
+  'itinerary_event_fiesta_time',
 
   // Story section - Basic moments (first 2 moments only)
   'story_moment_1_title',
@@ -1042,16 +807,14 @@ export const WEDDING_BASIC_FIELDS: string[] = [
   'story_moment_2_title',
   'story_moment_2_date',
 
-  // Gallery section - First 3 images only
-  'gallery_image_1_url',
-  'gallery_image_2_url',
-  'gallery_image_3_url',
+  // Gallery section - Unified multi-image picker
+  'gallery_images',
 
   // Footer section - Basic info (using individual names)
   'groom_name',        // Shared with hero/couple
   'bride_name',        // Shared with hero/couple
-  'footer_eventDate',
-  'footer_eventLocation'
+  // weddingDate already listed above (shared field)
+  'eventLocation'      // Shared with hero
 ];
 
 /**

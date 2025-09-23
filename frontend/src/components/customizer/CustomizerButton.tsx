@@ -2,12 +2,13 @@
  * Customizer Button Component
  *
  * WHY: Floating button that triggers the customizer panel.
- * Positioned fixed in the bottom-right corner with a modern design.
+ * Features animated hamburger-to-X icon transition using Framer Motion.
  */
 
 'use client';
 
-import { Edit3, Settings } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+import { Edit3 } from 'lucide-react';
 
 interface CustomizerButtonProps {
   onClick: () => void;
@@ -27,9 +28,44 @@ export const CustomizerButton: React.FC<CustomizerButtonProps> = ({
     return null;
   }
 
+  // SVG Path animation variants for hamburger to X transition
+  const pathVariants: Variants = {
+    closed: {
+      d: "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+    },
+    open: {
+      d: "M6 18L18 6M6 6l12 12"
+    }
+  };
+
+  const buttonVariants: Variants = {
+    closed: {
+      scale: 1,
+      rotate: 0
+    },
+    open: {
+      scale: 1.05,
+      rotate: 180
+    }
+  };
+
+  const textVariants: Variants = {
+    closed: {
+      rotate: 0
+    },
+    open: {
+      rotate: -180  // Counter-rotation to keep text readable
+    }
+  };
+
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      variants={buttonVariants}
+      initial="closed"
+      animate={isOpen ? "open" : "closed"}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
       className={`
         fixed bottom-6 right-6 z-50
         px-6 py-3
@@ -38,7 +74,6 @@ export const CustomizerButton: React.FC<CustomizerButtonProps> = ({
         text-white font-semibold
         rounded-full shadow-lg hover:shadow-xl
         transition-all duration-300 ease-in-out
-        transform hover:scale-105 active:scale-95
         flex items-center gap-3
         border border-white/20
         backdrop-blur-sm
@@ -49,24 +84,56 @@ export const CustomizerButton: React.FC<CustomizerButtonProps> = ({
       aria-label={isOpen ? 'Cerrar personalizador' : 'Personalizar invitación'}
       title={isOpen ? 'Cerrar personalizador' : 'Personalizar invitación'}
     >
-      {/* Icon */}
+      {/* Animated SVG Icon */}
       <div className="flex items-center justify-center">
-        {isOpen ? (
-          <Settings className="w-5 h-5 animate-spin" />
-        ) : (
-          <Edit3 className="w-5 h-5" />
-        )}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <motion.path
+            variants={pathVariants}
+            initial="closed"
+            animate={isOpen ? "open" : "closed"}
+            transition={{
+              duration: 0.3,
+              ease: "easeInOut"
+            }}
+          />
+        </svg>
       </div>
 
       {/* Text */}
-      <span className="hidden sm:inline text-sm font-medium">
+      <motion.span
+        variants={textVariants}
+        initial="closed"
+        animate={isOpen ? "open" : "closed"}
+        className="hidden sm:inline text-sm font-medium"
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
         {isOpen ? 'Cerrar' : 'Personalizar'}
-      </span>
+      </motion.span>
 
       {/* Pulse indicator when not open */}
       {!isOpen && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+        <motion.div
+          className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [1, 0.7, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
       )}
-    </button>
+    </motion.button>
   );
 };

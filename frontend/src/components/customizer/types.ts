@@ -8,15 +8,28 @@
 export interface CustomizerField {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'checkbox' | 'time' | 'datetime-local';
+  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'checkbox' | 'time' | 'datetime-local' | 'toggle' | 'multi-image';
   placeholder?: string;
   section: string | string[];  // Permite campos compartidos entre múltiples secciones
   category: string;
   mode?: 'basic' | 'full';
+
+  // Properties specific to multi-image fields
+  maxImages?: number;
+  minImages?: number;
+}
+
+// Gallery image interface for multi-image fields
+export interface GalleryImage {
+  url: string;
+  alt?: string;
+  category?: string;
+  file?: File;
+  id: string;
 }
 
 export interface CustomizerData {
-  [key: string]: string | boolean | undefined;
+  [key: string]: string | boolean | GalleryImage[] | undefined;
 }
 
 /**
@@ -37,13 +50,13 @@ export interface TouchedFields {
  */
 export interface FieldState {
   /** Current value displayed in the field */
-  value: string | boolean;
+  value: string | boolean | GalleryImage[];
   /** Whether user has explicitly modified this field */
   isTouched: boolean;
   /** Whether current value differs from template default */
   isModified: boolean;
   /** Original template default value */
-  defaultValue: string | boolean;
+  defaultValue: string | boolean | GalleryImage[];
   /** Whether this field can be reset to default */
   canReset: boolean;
 }
