@@ -214,6 +214,27 @@ export const CustomizerField: React.FC<CustomizerFieldProps> = ({
           </div>
         );
 
+      case 'datetime-local':
+        return (
+          <div className="relative">
+            <input
+              type="datetime-local"
+              id={`field-${field.key}`}
+              value={String(value || '')}
+              onChange={handleChange}
+              className={`${baseInputClasses} pl-8`}
+            />
+            <div className="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
+              📅
+            </div>
+            {fieldState?.isTouched && value && (
+              <div className="absolute inset-y-0 right-2 flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
+            )}
+          </div>
+        );
+
       default: // 'text'
         return (
           <div className="relative">

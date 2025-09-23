@@ -1,4 +1,5 @@
 import { FaBirthdayCake } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 interface LoaderKidsProps {
   className?: string;
@@ -21,7 +22,12 @@ export function LoaderKids({
 
   return (
     <div className={`fixed inset-0 bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center z-50 ${className}`}>
-      <div className="flex flex-col items-center">
+      <motion.div
+        className="flex flex-col items-center"
+        initial={{ scale: 0.8, rotate: -10 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ duration: 0.4, type: "spring" }}
+      >
         <FaBirthdayCake
           className={`text-pink-500 animate-bounce-soft ${getSizeClasses()}`}
         />
@@ -30,7 +36,7 @@ export function LoaderKids({
             {message}
           </p>
         )}
-      </div>
+      </motion.div>
 
       <style jsx>{`
         @keyframes bounce-soft {

@@ -97,12 +97,12 @@ export const Countdown1: React.FC<Countdown1Props> = ({
         <p className="tracking-[0.3em] text-sm font-light uppercase font-montserrat">
           {preTitle}
         </p>
-        <h2 className="text-4xl md:text-5xl my-4 font-great-vibes">
+        <h2 className="text-[3rem] md:text-[5rem] font-great-vibes">
           {title}
         </h2>
 
         {/* Contenedor de la cuenta regresiva */}
-        <div className="flex justify-center items-start space-x-4 md:space-x-12 mt-8">
+        <div className="flex justify-center items-start space-x-4 md:space-x-12">
           <TimeUnit value={String(timeLeft.days || 0).padStart(2, '0')} label="Days" />
           <TimeUnit value={String(timeLeft.hours || 0).padStart(2, '0')} label="Hours" />
           <TimeUnit value={String(timeLeft.minutes || 0).padStart(2, '0')} label="Minutes" />

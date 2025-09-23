@@ -338,8 +338,8 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
   // Countdown section fields
   countdown_weddingDate: {
     key: 'countdown_weddingDate',
-    label: 'Fecha de la Boda (ISO)',
-    type: 'text', // TODO: Support datetime-local type
+    label: 'Fecha y Hora de la Boda',
+    type: 'datetime-local',
     // placeholder:'2025-12-15T17:00:00',
     section: 'countdown',
     category: 'Evento'

@@ -32,7 +32,7 @@ const ImageWithOverlay = ({ image, onClick }: {
     <img
       src={image.src || image.url}
       alt={image.alt}
-      className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+      className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
     />
     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
       <ZoomIn className="text-white w-6 h-6" />
@@ -111,7 +111,7 @@ export const Gallery2: React.FC<Gallery2Props> = ({
 
           {/* Mobile Layout - 2 columnas, máximo 4 imágenes (2 filas) */}
           <div className="md:hidden">
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-1 auto-rows-[280px]">
               {getCurrentMobilePageImages().map((image) => (
                 <ImageWithOverlay
                   key={image.id}

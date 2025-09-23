@@ -8,7 +8,7 @@
 export interface CustomizerField {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'checkbox' | 'time';
+  type: 'text' | 'date' | 'url' | 'textarea' | 'color' | 'checkbox' | 'time' | 'datetime-local';
   placeholder?: string;
   section: string | string[];  // Permite campos compartidos entre múltiples secciones
   category: string;

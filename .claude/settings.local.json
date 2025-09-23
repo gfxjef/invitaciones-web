@@ -53,7 +53,8 @@
       "Bash(npm:*)",
       "Bash(findstr:*)",
       "Bash(node:*)",
-      "Bash(timeout 60 npm run build)"
+      "Bash(timeout 60 npm run build)",
+      "Bash(timeout 300 npm run build)"
     ],
     "deny": []
   },

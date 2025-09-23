@@ -14,7 +14,7 @@
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
-import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
+import { LoaderOverlay } from '@/components/ui/LoaderOverlay';
 import { Invitation, InvitationData, TemplateMetadata, TemplateColors } from '@/types/template';
 
 interface InvitationPageProps {
@@ -233,32 +233,38 @@ export default function InvitationPage({ params }: InvitationPageProps) {
     loadInvitation();
   }, [invitationId]);
 
-  if (isLoading) {
-    return (
-      <LoaderDynamic
-        category="weddings"
-        message="Cargando invitación..."
-      />
-    );
-  }
-
-  if (error || !invitationData) {
+  if (error || (!invitationData && !isLoading)) {
     notFound();
   }
 
-  const { invitation, data, template, colors } = invitationData;
+  // Always render content with overlay, so we avoid content jumping
+  const shouldRenderContent = invitationData || !isLoading;
+  const { invitation, data, template, colors } = invitationData || {};
 
   return (
-    <TemplateRenderer
-      invitation={invitation}
-      data={data}
-      template={template}
-      colors={colors}
-      features={template.supported_features}
-      media={invitation.media}
-      events={invitation.events}
-      isPreview={false}
-      isEditing={false}
-    />
+    <div className="relative">
+      {/* Loading overlay - covers content while loading */}
+      <LoaderOverlay
+        isLoading={isLoading}
+        category="weddings"
+        message="Cargando invitación..."
+        zIndex={60}
+      />
+
+      {/* Template content - renders underneath the overlay */}
+      {shouldRenderContent && invitation && data && template && colors && (
+        <TemplateRenderer
+          invitation={invitation}
+          data={data}
+          template={template}
+          colors={colors}
+          features={template.supported_features}
+          media={invitation.media}
+          events={invitation.events}
+          isPreview={false}
+          isEditing={false}
+        />
+      )}
+    </div>
   );
 }

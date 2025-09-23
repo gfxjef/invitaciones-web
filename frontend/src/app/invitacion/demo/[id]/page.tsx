@@ -20,7 +20,7 @@ import { useTemplate } from '@/lib/hooks/use-templates';
 import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { DynamicCustomizer } from '@/components/customizer';
-import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
+import { LoaderOverlay } from '@/components/ui/LoaderOverlay';
 import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent, TemplateMetadata } from '@/types/template';
 
 interface TemplateDemoPageProps {
@@ -188,91 +188,94 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
     router.back();
   };
 
-  if (isLoading) {
-    return (
-      <LoaderDynamic
-        category="weddings"
-        message="Cargando demo..."
-      />
-    );
-  }
-
-  if (error || !templateData) {
+  if (error || (!templateData && !isLoading)) {
     notFound();
   }
 
-  // If template data exists but demo data is not ready yet, show loading
-  if (!demoInvitationData) {
-    return (
-      <LoaderDynamic
-        category="weddings"
-        message="Preparando demo..."
-      />
-    );
-  }
-
-  const template = templateData.template;
+  const template = templateData?.template;
+  const isPreparingDemo = templateData && !demoInvitationData;
 
   return (
     <div className="relative">
-      {/* Demo Header Bar - Fixed overlay */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleGoBack}
-                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                <span className="hidden sm:inline">Volver</span>
-              </button>
-              <div className="border-l pl-4">
-                <Badge variant="outline" className="bg-purple-50 border-purple-300">
-                  Vista Demo: {template.name}
-                </Badge>
+      {/* Loading overlay for initial template loading */}
+      <LoaderOverlay
+        isLoading={isLoading}
+        category="weddings"
+        message="Cargando demo..."
+        zIndex={70}
+      />
+
+      {/* Secondary loading overlay for demo data preparation */}
+      <LoaderOverlay
+        isLoading={isPreparingDemo}
+        category="weddings"
+        message="Preparando demo..."
+        zIndex={70}
+      />
+
+      {/* Content renders underneath overlays */}
+      {templateData && demoInvitationData && template && (
+        <>
+          {/* Demo Header Bar - Fixed overlay */}
+          <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={handleGoBack}
+                    className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    <span className="hidden sm:inline">Volver</span>
+                  </button>
+                  <div className="border-l pl-4">
+                    <Badge variant="outline" className="bg-purple-50 border-purple-300">
+                      Vista Demo: {template.name}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={isPending}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Agregar al Carrito
+                </Button>
               </div>
             </div>
-
-            <Button
-              onClick={handleAddToCart}
-              disabled={isPending}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Agregar al Carrito
-            </Button>
           </div>
-        </div>
-      </div>
 
-      {/* Main Template Content with Dynamic Customizer */}
-      <DynamicCustomizer
-        templateData={template}
-        sectionsConfig={template.sections_config}
-      >
-        <TemplateRenderer
-          invitation={demoInvitationData.invitation}
-          data={demoInvitationData.data}
-          template={{
-            ...template,
-            template_file: template.template_file || `template_${template.id}` // TODO: Test this fallback
-          } as unknown as TemplateMetadata}
-          colors={demoInvitationData.colors}
-          features={template.supported_features}
-          media={demoInvitationData.media}
-          events={demoInvitationData.events}
-          isPreview={true}
-          isEditing={false}
-        />
-      </DynamicCustomizer>
+          {/* Main Template Content with Dynamic Customizer */}
+          <DynamicCustomizer
+            templateData={template}
+            sectionsConfig={template.sections_config}
+          >
+            <TemplateRenderer
+              invitation={demoInvitationData.invitation}
+              data={demoInvitationData.data}
+              template={{
+                ...template,
+                template_file: template.template_file || `template_${template.id}` // TODO: Test this fallback
+              } as unknown as TemplateMetadata}
+              colors={demoInvitationData.colors}
+              features={template.supported_features}
+              media={demoInvitationData.media}
+              events={demoInvitationData.events}
+              isPreview={true}
+              isEditing={false}
+            />
+          </DynamicCustomizer>
 
-      {/* Demo Notice - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 text-white text-center py-2 px-4">
-        <p className="text-sm">
-          Esta es una vista demo con datos de ejemplo - Tu invitación será completamente personalizada
-        </p>
-      </div>
+          {/* Demo Notice - Fixed at bottom */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 text-white text-center py-2 px-4">
+            <p className="text-sm">
+              Esta es una vista demo con datos de ejemplo - Tu invitación será completamente personalizada
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

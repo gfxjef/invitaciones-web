@@ -19,7 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { TemplateProps } from '@/types/template';
 import { getWeddingSectionComponent } from './categories/weddings/sections/registry';
 import { apiClient } from '@/lib/api';
-import { LoaderDynamic } from '@/components/ui/LoaderDynamic';
+import { LoaderOverlay } from '@/components/ui/LoaderOverlay';
 
 // Import default props from wedding section components (single source of truth)
 import { Hero1DefaultProps } from './categories/weddings/sections/hero/Hero1';
@@ -214,17 +214,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   }, [invitation?.id, isDevelopmentMode, isTransformedData, data]);
 
 
-  // Loading state
-  if (loading) {
-    return (
-      <LoaderDynamic
-        category={category}
-        message="Cargando template..."
-      />
-    );
-  }
-
-  // Error state
+  // Error state - only show if error AND no fallback data
   if (error && !modularData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -238,7 +228,17 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
   }
 
   return (
-    <div className="font-serif bg-white">
+    <div className="relative">
+      {/* Loading overlay - sits on top of content while loading */}
+      <LoaderOverlay
+        isLoading={loading}
+        category={category}
+        message="Cargando template..."
+        zIndex={60}
+      />
+
+      {/* Template content - renders underneath the overlay */}
+      <div className="font-serif bg-white">
 
       {/* Render sections in order based on database configuration - DYNAMIC ORDER */}
       {(() => {
@@ -283,20 +283,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
         );
       })}
 
-      {/* Debug info for development */}
-      {isPreview && process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-8">
-          <div className="text-sm text-blue-700">
-            <strong>🔧 Debug Info:</strong>
-            <br />
-            <strong>Invitation ID:</strong> {invitation?.id}
-            <br />
-            <strong>Sections Loaded:</strong> {modularData ? Object.keys(modularData).join(', ') : 'None'}
-            <br />
-            <strong>API Status:</strong> {error ? `Error: ${error}` : 'Success'}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

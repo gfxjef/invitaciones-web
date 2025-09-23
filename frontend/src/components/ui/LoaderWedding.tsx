@@ -1,4 +1,5 @@
 import { IoIosHeart } from "react-icons/io";
+import { motion } from "framer-motion";
 
 interface LoaderWeddingProps {
   className?: string;
@@ -20,7 +21,12 @@ export function LoaderWedding({
   };
   return (
     <div className={`fixed inset-0 bg-white flex items-center justify-center z-50 ${className}`}>
-      <div className="flex flex-col items-center">
+      <motion.div
+        className="flex flex-col items-center"
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <IoIosHeart
           className="text-red-500 animate-pulse-smooth"
           size={getSizeClasses()}
@@ -30,7 +36,7 @@ export function LoaderWedding({
             {message}
           </p>
         )}
-      </div>
+      </motion.div>
 
       <style jsx>{`
         @keyframes pulse-smooth {
