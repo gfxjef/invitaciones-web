@@ -6,10 +6,85 @@
  * to prevent field conflicts and enable category-specific customization.
  */
 
-import { CustomizerField, SectionConfig } from './types';
+import { CustomizerField, SectionConfig } from '@/components/customizer/types';
 
 // Section display order is now determined dynamically from the database sections_config
 // No longer using hardcoded SECTION_DISPLAY_ORDER - order comes from Template.sections_config
+
+// SECTION VARIANTS FIELDS CONFIGURATION
+// Maps specific section variants to their required fields for maximum scalability
+export const SECTION_VARIANTS_FIELDS: Record<string, string[]> = {
+  // Hero Variants
+  'hero_1': [
+    'groom_name',
+    'bride_name',
+    'weddingDate',
+    'eventLocation',
+    'heroImageUrl'
+  ],
+  'hero_2': [
+    'groom_name',
+    'bride_name',
+    'weddingDate',
+    'eventLocation',
+    'heroImageUrl'
+  ],
+
+  // Welcome Variants
+  'welcome_1': [
+    'welcome_welcomeText',
+    'welcome_title',
+    'welcome_description',
+    'welcome_couplePhotoUrl',
+    'welcome_bannerImageUrl'
+  ],
+  'welcome_2': [
+    'welcome_description'  // Only description for minimalist design
+  ],
+
+  // Familiares Variants
+  'familiares_1': [
+    'familiares_titulo_padres',
+    'familiares_titulo_padrinos',
+    'familiares_padre_novio',
+    'familiares_madre_novio',
+    'familiares_padre_novia',
+    'familiares_madre_novia',
+    'familiares_padrino',
+    'familiares_madrina'
+  ],
+
+  // PlaceReligioso Variants
+  'place_religioso_1': [
+    'place_religioso_titulo',
+    'weddingDate',
+    'place_religioso_lugar',
+    'place_religioso_direccion',
+    'place_religioso_mapa_url'
+  ],
+
+  // PlaceCeremonia Variants
+  'place_ceremonia_1': [
+    'place_ceremonia_titulo',
+    'weddingDate',
+    'place_ceremonia_hora',
+    'place_ceremonia_lugar',
+    'place_ceremonia_direccion',
+    'place_ceremonia_mapa_url'
+  ],
+
+  // Vestimenta Variants
+  'vestimenta_1': [
+    'vestimenta_titulo',
+    'vestimenta_etiqueta',
+    'vestimenta_no_colores_titulo',
+    'vestimenta_no_colores_info'
+  ],
+
+  // Future variants can be added here:
+  // 'welcome_3': ['welcome_title', 'welcome_subtitle', 'welcome_backgroundVideo'],
+  // 'hero_3': ['groom_name', 'bride_name', 'heroVideoUrl'],
+};
 
 // Map of wedding section names to their editable fields (wedding-specific)
 export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
@@ -125,6 +200,57 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
     ]
   },
 
+  familiares: {
+    label: 'Familiares',
+    icon: '👨‍👩‍👧‍👦',
+    fields: [
+      'familiares_titulo_padres',
+      'familiares_titulo_padrinos',
+      'familiares_padre_novio',
+      'familiares_madre_novio',
+      'familiares_padre_novia',
+      'familiares_madre_novia',
+      'familiares_padrino',
+      'familiares_madrina'
+    ]
+  },
+
+  place_religioso: {
+    label: 'Lugar Religioso',
+    icon: '⛪',
+    fields: [
+      'place_religioso_titulo',
+      'weddingDate',
+      'place_religioso_lugar',
+      'place_religioso_direccion',
+      'place_religioso_mapa_url'
+    ]
+  },
+
+  place_ceremonia: {
+    label: 'Lugar Ceremonia',
+    icon: '🥂',
+    fields: [
+      'place_ceremonia_titulo',
+      'weddingDate',
+      'place_ceremonia_hora',
+      'place_ceremonia_lugar',
+      'place_ceremonia_direccion',
+      'place_ceremonia_mapa_url'
+    ]
+  },
+
+  vestimenta: {
+    label: 'Vestimenta',
+    icon: '👗',
+    fields: [
+      'vestimenta_titulo',
+      'vestimenta_etiqueta',
+      'vestimenta_no_colores_titulo',
+      'vestimenta_no_colores_info'
+    ]
+  },
+
   footer: {
     label: 'Pie de Página',
     icon: '📝',
@@ -146,7 +272,7 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     key: 'weddingDate',
     label: 'Fecha y Hora del Evento',
     type: 'datetime-local',
-    section: ['hero', 'footer', 'countdown'],
+    section: ['hero', 'footer', 'countdown', 'place_religioso'],
     category: 'Evento'
   },
 
@@ -463,6 +589,179 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     type: 'time',
     section: 'itinerary',
     category: 'Eventos'
+  },
+
+  // Familiares section fields - Titles and Parents and Godparents
+  familiares_titulo_padres: {
+    key: 'familiares_titulo_padres',
+    label: 'Título de la Sección de Padres',
+    type: 'text',
+    section: 'familiares',
+    category: 'Títulos'
+  },
+
+  familiares_titulo_padrinos: {
+    key: 'familiares_titulo_padrinos',
+    label: 'Título de la Sección de Padrinos',
+    type: 'text',
+    section: 'familiares',
+    category: 'Títulos'
+  },
+
+  familiares_padre_novio: {
+    key: 'familiares_padre_novio',
+    label: 'Padre del Novio',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padres'
+  },
+
+  familiares_madre_novio: {
+    key: 'familiares_madre_novio',
+    label: 'Madre del Novio',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padres'
+  },
+
+  familiares_padre_novia: {
+    key: 'familiares_padre_novia',
+    label: 'Padre de la Novia',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padres'
+  },
+
+  familiares_madre_novia: {
+    key: 'familiares_madre_novia',
+    label: 'Madre de la Novia',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padres'
+  },
+
+  familiares_padrino: {
+    key: 'familiares_padrino',
+    label: 'Nombre del Padrino',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padrinos'
+  },
+
+  familiares_madrina: {
+    key: 'familiares_madrina',
+    label: 'Nombre de la Madrina',
+    type: 'text',
+    section: 'familiares',
+    category: 'Padrinos'
+  },
+
+  // PlaceReligioso section fields - Religious location details
+  place_religioso_titulo: {
+    key: 'place_religioso_titulo',
+    label: 'Título de la Sección',
+    type: 'text',
+    section: 'place_religioso',
+    category: 'Títulos'
+  },
+
+  place_religioso_lugar: {
+    key: 'place_religioso_lugar',
+    label: 'Nombre del Lugar Religioso',
+    type: 'text',
+    section: 'place_religioso',
+    category: 'Lugar'
+  },
+
+  place_religioso_direccion: {
+    key: 'place_religioso_direccion',
+    label: 'Dirección Completa',
+    type: 'textarea',
+    section: 'place_religioso',
+    category: 'Lugar'
+  },
+
+
+  place_religioso_mapa_url: {
+    key: 'place_religioso_mapa_url',
+    label: 'URL del Mapa (Google Maps)',
+    type: 'url',
+    section: 'place_religioso',
+    category: 'Lugar'
+  },
+
+  // PlaceCeremonia section fields - Post-ceremony reception location details
+  place_ceremonia_titulo: {
+    key: 'place_ceremonia_titulo',
+    label: 'Título de la Sección',
+    type: 'text',
+    section: 'place_ceremonia',
+    category: 'Títulos'
+  },
+
+  place_ceremonia_hora: {
+    key: 'place_ceremonia_hora',
+    label: 'Hora de la Ceremonia',
+    type: 'time',
+    section: 'place_ceremonia',
+    category: 'Hora'
+  },
+
+  place_ceremonia_lugar: {
+    key: 'place_ceremonia_lugar',
+    label: 'Nombre del Lugar de Ceremonia',
+    type: 'text',
+    section: 'place_ceremonia',
+    category: 'Lugar'
+  },
+
+  place_ceremonia_direccion: {
+    key: 'place_ceremonia_direccion',
+    label: 'Dirección Completa',
+    type: 'textarea',
+    section: 'place_ceremonia',
+    category: 'Lugar'
+  },
+
+  place_ceremonia_mapa_url: {
+    key: 'place_ceremonia_mapa_url',
+    label: 'URL del Mapa (Google Maps)',
+    type: 'url',
+    section: 'place_ceremonia',
+    category: 'Lugar'
+  },
+
+  // Vestimenta section fields
+  vestimenta_titulo: {
+    key: 'vestimenta_titulo',
+    label: 'Título Principal',
+    type: 'text',
+    section: 'vestimenta',
+    category: 'Títulos'
+  },
+
+  vestimenta_etiqueta: {
+    key: 'vestimenta_etiqueta',
+    label: 'Etiqueta del Evento',
+    type: 'text',
+    section: 'vestimenta',
+    category: 'Código de Vestimenta'
+  },
+
+  vestimenta_no_colores_titulo: {
+    key: 'vestimenta_no_colores_titulo',
+    label: 'Título de Colores No Permitidos',
+    type: 'text',
+    section: 'vestimenta',
+    category: 'Restricciones'
+  },
+
+  vestimenta_no_colores_info: {
+    key: 'vestimenta_no_colores_info',
+    label: 'Lista de Colores No Permitidos',
+    type: 'textarea',
+    section: 'vestimenta',
+    category: 'Restricciones'
   },
 
   // Story section fields - 3 moments
@@ -810,12 +1109,104 @@ export const WEDDING_BASIC_FIELDS: string[] = [
   // Gallery section - Unified multi-image picker
   'gallery_images',
 
+  // Familiares section - Essential family information
+  'familiares_padre_novio',
+  'familiares_madre_novio',
+  'familiares_padre_novia',
+  'familiares_madre_novia',
+  'familiares_padrino',
+  'familiares_madrina',
+
+  // PlaceReligioso section - Essential religious ceremony location
+  'place_religioso_lugar',
+  'place_religioso_direccion',
+  'place_religioso_mapa_url',
+
+  // PlaceCeremonia section - Essential reception location
+  'place_ceremonia_hora',
+  'place_ceremonia_lugar',
+  'place_ceremonia_direccion',
+  'place_ceremonia_mapa_url',
+
+  // Vestimenta section - Essential dress code information
+  'vestimenta_etiqueta',
+  'vestimenta_no_colores_info',
+
   // Footer section - Basic info (using individual names)
   'groom_name',        // Shared with hero/couple
   'bride_name',        // Shared with hero/couple
   // weddingDate already listed above (shared field)
   'eventLocation'      // Shared with hero
 ];
+
+/**
+ * Get fields specific to a section variant (e.g., hero_1, welcome_2)
+ * This enables showing only relevant fields in the customizer for each variant
+ */
+export function getVariantSpecificFields(
+  variantId: string,
+  allFields: CustomizerField[]
+): CustomizerField[] {
+  const variantFields = SECTION_VARIANTS_FIELDS[variantId];
+
+  if (!variantFields) {
+    console.warn(`No variant fields configuration found for "${variantId}"`);
+    return allFields;
+  }
+
+  // Filter fields to only include those relevant to this variant
+  return allFields.filter(field => variantFields.includes(field.key));
+}
+
+/**
+ * Get available fields for a section considering its active variant
+ * This replaces the generic section-based filtering with variant-specific filtering
+ */
+export function getAvailableFieldsForVariant(
+  activeSections: string[],
+  sectionsConfig: Record<string, string>
+): CustomizerField[] {
+  console.log('🔍 getAvailableFieldsForVariant called with:', {
+    activeSections,
+    sectionsConfig
+  });
+
+  const fieldsSet = new Set<string>();
+
+  // For each active section, get its variant and add variant-specific fields
+  activeSections.forEach(sectionName => {
+    const variantId = sectionsConfig[sectionName];
+
+    if (variantId && SECTION_VARIANTS_FIELDS[variantId]) {
+      const variantFields = SECTION_VARIANTS_FIELDS[variantId];
+      console.log(`✅ Section "${sectionName}" using variant "${variantId}" with fields:`, variantFields);
+
+      variantFields.forEach(fieldKey => fieldsSet.add(fieldKey));
+    } else {
+      // Fallback to generic section fields if no variant configuration
+      const section = WEDDING_SECTION_FIELDS_MAP[sectionName];
+      if (section) {
+        console.log(`⚠️ Section "${sectionName}" using fallback generic fields:`, section.fields);
+        section.fields.forEach(fieldKey => fieldsSet.add(fieldKey));
+      }
+    }
+  });
+
+  console.log('🔍 Collected field keys for variants:', Array.from(fieldsSet));
+
+  // Convert to field definitions
+  const result = Array.from(fieldsSet)
+    .map(fieldKey => FIELD_DEFINITIONS[fieldKey])
+    .filter(Boolean)
+    .sort((a, b) => a.category.localeCompare(b.category));
+
+  console.log('🎯 getAvailableFieldsForVariant final result:', {
+    totalFields: result.length,
+    fieldKeys: result.map(f => f.key)
+  });
+
+  return result;
+}
 
 /**
  * Wedding-specific utility: Filter fields by selected mode (Basic or Full)

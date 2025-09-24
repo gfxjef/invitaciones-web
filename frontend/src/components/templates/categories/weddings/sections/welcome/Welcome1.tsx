@@ -46,7 +46,7 @@ export const Welcome1: React.FC<Welcome1Props> = ({
           </div>
 
           {/* Contenido de Texto */}
-          <div className="text-center mt-8 pb-16">
+          <div className="text-center mt-8">
             <p className="text-sm text-amber-700 tracking-widest font-semibold font-montserrat uppercase">
               {welcomeText}
             </p>

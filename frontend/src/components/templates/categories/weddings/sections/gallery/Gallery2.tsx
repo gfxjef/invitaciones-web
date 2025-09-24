@@ -41,18 +41,9 @@ const ImageWithOverlay = ({ image, onClick }: {
 );
 
 export const Gallery2: React.FC<Gallery2Props> = ({
-  sectionSubtitle = 'Memorias',
-  sectionTitle = 'Geleria de Novios',
-  galleryImages = [
-    { id: 1, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-1.jpg', alt: 'Romantic couple moment', category: 'ceremony' },
-    { id: 2, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg', alt: 'Beautiful wedding ceremony', category: 'ceremony' },
-    { id: 3, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4-2.jpg', alt: 'Celebration moments', category: 'party' },
-    { id: 4, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5.jpg', alt: 'Wedding rings', category: 'ceremony' },
-    { id: 5, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-2.jpg', alt: 'Happy celebration', category: 'party' },
-    { id: 6, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1-1.jpg', alt: 'Wedding decoration', category: 'ceremony' },
-    { id: 7, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg', alt: 'Party atmosphere', category: 'party' },
-    { id: 8, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/2.jpg', alt: 'Beautiful wedding moment', category: 'ceremony' }
-  ]
+  sectionSubtitle = Gallery2DefaultProps.sectionSubtitle,
+  sectionTitle = Gallery2DefaultProps.sectionTitle,
+  galleryImages = Gallery2DefaultProps.galleryImages
 }) => {
   const [lightboxImage, setLightboxImage] = useState<GalleryImage | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -97,7 +88,7 @@ export const Gallery2: React.FC<Gallery2Props> = ({
 
   return (
     <>
-      <section id="gallery" className="py-16 md:py-24 px-2 bg-white">
+      <section id="gallery" className="pt-12 pb-16 md:pt-12 md:pb-24 px-2 bg-white">
         <div className="container mx-auto max-w-7xl px-2">
           {/* Header */}
           <div className="text-center mb-12 md:mb-16">
@@ -247,13 +238,13 @@ export const Gallery2DefaultProps = {
   sectionSubtitle: 'Memorias',
   sectionTitle: 'Geleria de Novios',
   galleryImages: [
-    { id: 1, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-1.jpg', alt: 'Romantic couple moment', category: 'ceremony' },
-    { id: 2, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg', alt: 'Beautiful wedding ceremony', category: 'ceremony' },
-    { id: 3, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4-2.jpg', alt: 'Celebration moments', category: 'party' },
-    { id: 4, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5.jpg', alt: 'Wedding rings', category: 'ceremony' },
-    { id: 5, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-2.jpg', alt: 'Happy celebration', category: 'party' },
-    { id: 6, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1-1.jpg', alt: 'Wedding decoration', category: 'ceremony' },
-    { id: 7, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg', alt: 'Party atmosphere', category: 'party' },
-    { id: 8, src: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/2.jpg', alt: 'Beautiful wedding moment', category: 'ceremony' }
+    { id: 1, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-1.jpg', alt: 'Romantic couple moment', category: 'ceremony' },
+    { id: 2, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3.jpg', alt: 'Beautiful wedding ceremony', category: 'ceremony' },
+    { id: 3, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/4-2.jpg', alt: 'Celebration moments', category: 'party' },
+    { id: 4, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/5.jpg', alt: 'Wedding rings', category: 'ceremony' },
+    { id: 5, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/3-2.jpg', alt: 'Happy celebration', category: 'party' },
+    { id: 6, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/05/1-1.jpg', alt: 'Wedding decoration', category: 'ceremony' },
+    { id: 7, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/3-1.jpg', alt: 'Party atmosphere', category: 'party' },
+    { id: 8, url: 'https://shtheme.com/demosd/brian/wp-content/uploads/2022/04/2.jpg', alt: 'Beautiful wedding moment', category: 'ceremony' }
   ]
 };

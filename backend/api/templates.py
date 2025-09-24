@@ -18,7 +18,7 @@ VALID_CATEGORIES = ['weddings', 'kids', 'corporate', 'quinceañeras', 'classic',
 CATEGORY_SECTION_MAP = {
     'weddings': {
         'required': ['hero', 'welcome'],
-        'optional': ['story', 'couple', 'video', 'gallery', 'countdown', 'itinerary', 'footer'],
+        'optional': ['story', 'couple', 'video', 'gallery', 'countdown', 'itinerary', 'familiares', 'place_religioso', 'place_ceremonia', 'vestimenta', 'footer'],
         'forbidden': []
     },
     'kids': {
@@ -84,7 +84,7 @@ def get_valid_sections_for_category(category):
     """
     if not category or category not in CATEGORY_SECTION_MAP:
         # Return all possible sections if category is unknown
-        return ['hero', 'welcome', 'story', 'couple', 'video', 'gallery', 'countdown', 'footer',
+        return ['hero', 'welcome', 'story', 'couple', 'video', 'gallery', 'countdown', 'itinerary', 'familiares', 'place_religioso', 'place_ceremonia', 'vestimenta', 'footer',
                 'celebration', 'activities', 'birthday_info', 'services', 'team', 'testimonials',
                 'contact', 'court_of_honor']
 

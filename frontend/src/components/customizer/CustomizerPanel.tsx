@@ -163,55 +163,85 @@ export const CustomizerPanel: React.FC<CustomizerPanelProps> = ({
               </button>
             </motion.div>
 
-            {/* Mode Selector */}
+            {/* Mode Selector - Animated Toggle */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.3 }}
               className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50"
             >
-          <div className="flex items-center justify-center">
-            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
-              <button
-                onClick={() => onModeChange('basic')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  selectedMode === 'basic'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span>Básico</span>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                    {modeStats.basicCount}
-                  </span>
+              <div className="flex items-center justify-center">
+                <div className="relative">
+                  {/* Toggle Container */}
+                  <button
+                    onClick={() => onModeChange(selectedMode === 'basic' ? 'full' : 'basic')}
+                    className={`
+                      relative flex items-center
+                      w-80 h-16 px-4
+                      bg-white rounded-full
+                      shadow-sm border border-gray-200
+                      cursor-pointer
+                      hover:shadow-md
+                      transition-shadow duration-200
+                      ${selectedMode === 'basic' ? 'justify-start' : 'justify-end'}
+                    `}
+                    aria-label={`Cambiar a modo ${selectedMode === 'basic' ? 'completo' : 'básico'}`}
+                  >
+                    {/* Animated Handle */}
+                    <motion.div
+                      layout
+                      className="
+                        flex justify-center items-center gap-3
+                        w-36 h-12
+                        bg-gradient-to-r from-purple-600 to-purple-700
+                        text-white font-medium text-sm
+                        rounded-full
+                        shadow-lg
+                      "
+                      transition={{
+                        type: 'spring',
+                        duration: 0.2,
+                        bounce: 0.2
+                      }}
+                    >
+                      <span>
+                        {selectedMode === 'basic' ? 'Básico' : 'Completo'}
+                      </span>
+                      <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
+                        {selectedMode === 'basic' ? modeStats.basicCount : modeStats.fullCount}
+                      </span>
+                    </motion.div>
+
+                    {/* Static Labels */}
+                    <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
+                      <div className={`flex items-center gap-2 transition-opacity duration-200 ${
+                        selectedMode === 'basic' ? 'opacity-0' : 'opacity-60'
+                      }`}>
+                        <span className="text-sm font-medium text-gray-700">Básico</span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {modeStats.basicCount}
+                        </span>
+                      </div>
+                      <div className={`flex items-center gap-2 transition-opacity duration-200 ${
+                        selectedMode === 'full' ? 'opacity-0' : 'opacity-60'
+                      }`}>
+                        <span className="text-sm font-medium text-gray-700">Completo</span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {modeStats.fullCount}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
                 </div>
-              </button>
-              <button
-                onClick={() => onModeChange('full')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                  selectedMode === 'full'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span>Completo</span>
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                    {modeStats.fullCount}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-          <div className="text-center mt-2">
-            <p className="text-xs text-gray-500">
-              {selectedMode === 'basic'
-                ? 'Solo campos esenciales para personalización rápida'
-                : 'Acceso completo a todas las opciones de personalización'
-              }
-              </p>
-            </div>
+              </div>
+              <div className="text-center mt-3">
+                <p className="text-xs text-gray-500">
+                  {selectedMode === 'basic'
+                    ? 'Solo campos esenciales para personalización rápida'
+                    : 'Acceso completo a todas las opciones de personalización'
+                  }
+                </p>
+              </div>
             </motion.div>
 
             {/* Content */}

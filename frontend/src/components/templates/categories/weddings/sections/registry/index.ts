@@ -20,9 +20,11 @@ import { ComponentType } from 'react';
 
 // Import Wedding Hero Sections
 import { Hero1 } from '../hero/Hero1';
+import { Hero2 } from '../hero/Hero2';
 
 // Import Wedding Welcome Sections
 import { Welcome1 } from '../welcome/Welcome1';
+import { Welcome2 } from '../welcome/Welcome2';
 
 // Import Wedding Couple Sections
 import { Couple1 } from '../couple/Couple1';
@@ -43,6 +45,18 @@ import { Gallery2 } from '../gallery/Gallery2';
 // Import Wedding Itinerary Sections
 import { Itinerary1 } from '../itinerary/Itinerary1';
 
+// Import Wedding Familiares Sections
+import { Familiares1 } from '../familiares/Familiares1';
+
+// Import Wedding PlaceReligioso Sections
+import { PlaceReligioso1 } from '../place_religioso/PlaceReligioso1';
+
+// Import Wedding PlaceCeremonia Sections
+import { PlaceCeremonia1 } from '../place_ceremonia/PlaceCeremonia1';
+
+// Import Wedding Vestimenta Sections
+import { Vestimenta1 } from '../vestimenta/Vestimenta1';
+
 // Import Wedding Footer Sections
 import { Footer1 } from '../footer/Footer1';
 
@@ -60,6 +74,10 @@ export interface WeddingSectionsByType {
   video: { [key: string]: ComponentType<any> };
   gallery: { [key: string]: ComponentType<any> };
   itinerary: { [key: string]: ComponentType<any> };
+  familiares: { [key: string]: ComponentType<any> };
+  place_religioso: { [key: string]: ComponentType<any> };
+  place_ceremonia: { [key: string]: ComponentType<any> };
+  vestimenta: { [key: string]: ComponentType<any> };
   footer: { [key: string]: ComponentType<any> };
 }
 
@@ -72,9 +90,11 @@ export interface WeddingSectionsByType {
 export const weddingSectionRegistry: WeddingSectionRegistry = {
   // Hero Sections
   'hero_1': Hero1,
+  'hero_2': Hero2,
 
   // Welcome Sections
   'welcome_1': Welcome1,
+  'welcome_2': Welcome2,
 
   // Couple Sections
   'couple_1': Couple1,
@@ -95,6 +115,18 @@ export const weddingSectionRegistry: WeddingSectionRegistry = {
   // Itinerary Sections
   'itinerary_1': Itinerary1,
 
+  // Familiares Sections
+  'familiares_1': Familiares1,
+
+  // PlaceReligioso Sections
+  'place_religioso_1': PlaceReligioso1,
+
+  // PlaceCeremonia Sections
+  'place_ceremonia_1': PlaceCeremonia1,
+
+  // Vestimenta Sections
+  'vestimenta_1': Vestimenta1,
+
   // Footer Sections
   'footer_1': Footer1,
 
@@ -112,12 +144,12 @@ export const weddingSectionRegistry: WeddingSectionRegistry = {
 export const weddingSectionsByType: WeddingSectionsByType = {
   hero: {
     'hero_1': Hero1,
-    // 'hero_2': Hero2,
+    'hero_2': Hero2,
     // 'hero_3': Hero3,
   },
   welcome: {
     'welcome_1': Welcome1,
-    // 'welcome_2': Welcome2,
+    'welcome_2': Welcome2,
     // 'welcome_3': Welcome3,
   },
   couple: {
@@ -149,6 +181,26 @@ export const weddingSectionsByType: WeddingSectionsByType = {
     'itinerary_1': Itinerary1,
     // 'itinerary_2': Itinerary2,
     // 'itinerary_3': Itinerary3,
+  },
+  familiares: {
+    'familiares_1': Familiares1,
+    // 'familiares_2': Familiares2,
+    // 'familiares_3': Familiares3,
+  },
+  place_religioso: {
+    'place_religioso_1': PlaceReligioso1,
+    // 'place_religioso_2': PlaceReligioso2,
+    // 'place_religioso_3': PlaceReligioso3,
+  },
+  place_ceremonia: {
+    'place_ceremonia_1': PlaceCeremonia1,
+    // 'place_ceremonia_2': PlaceCeremonia2,
+    // 'place_ceremonia_3': PlaceCeremonia3,
+  },
+  vestimenta: {
+    'vestimenta_1': Vestimenta1,
+    // 'vestimenta_2': Vestimenta2,
+    // 'vestimenta_3': Vestimenta3,
   },
   footer: {
     'footer_1': Footer1,
@@ -200,6 +252,10 @@ export interface WeddingTemplateConfig {
     video: string;     // e.g., 'video_1'
     gallery: string;   // e.g., 'gallery_1'
     itinerary: string; // e.g., 'itinerary_1'
+    familiares: string; // e.g., 'familiares_1'
+    place_religioso: string;  // e.g., 'place_religioso_1'
+    place_ceremonia: string;  // e.g., 'place_ceremonia_1'
+    vestimenta: string; // e.g., 'vestimenta_1'
     footer: string;    // e.g., 'footer_1'
   };
 }
@@ -218,6 +274,10 @@ export const exampleWeddingTemplateConfigs: { [key: string]: WeddingTemplateConf
       video: 'video_1',
       gallery: 'gallery_1',
       itinerary: 'itinerary_1',
+      familiares: 'familiares_1',
+      place_religioso: 'place_religioso_1',
+      place_ceremonia: 'place_ceremonia_1',
+      vestimenta: 'vestimenta_1',
       footer: 'footer_1',
     }
   },

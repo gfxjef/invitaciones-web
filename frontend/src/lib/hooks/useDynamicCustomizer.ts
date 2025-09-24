@@ -20,11 +20,13 @@ import {
 import { detectActiveSections, getFieldsByOrderedSections } from '@/components/customizer/sectionFieldsMap';
 // TODO: This file should be refactored to use category-specific configurations
 // Currently using wedding-specific imports as fallback for legacy compatibility
-import { getAvailableFields, WEDDING_SECTION_FIELDS_MAP as SECTION_FIELDS_MAP, FIELD_DEFINITIONS, getWeddingFieldsByMode, WEDDING_BASIC_FIELDS } from '@/components/templates/categories/weddings/customizer/sectionFieldsMap';
+import { getAvailableFields, getAvailableFieldsForVariant, WEDDING_SECTION_FIELDS_MAP as SECTION_FIELDS_MAP, FIELD_DEFINITIONS, getWeddingFieldsByMode, WEDDING_BASIC_FIELDS } from '@/components/templates/categories/weddings/customizer/sectionFieldsMap';
 
 // Import default props from wedding section components (single source of truth)
 import { Hero1DefaultProps } from '@/components/templates/categories/weddings/sections/hero/Hero1';
+import { Hero2DefaultProps } from '@/components/templates/categories/weddings/sections/hero/Hero2';
 import { Welcome1DefaultProps } from '@/components/templates/categories/weddings/sections/welcome/Welcome1';
+import { Welcome2DefaultProps } from '@/components/templates/categories/weddings/sections/welcome/Welcome2';
 import { Couple1DefaultProps } from '@/components/templates/categories/weddings/sections/couple/Couple1';
 import { Countdown1DefaultProps } from '@/components/templates/categories/weddings/sections/countdown/Countdown1';
 import { Gallery1DefaultProps } from '@/components/templates/categories/weddings/sections/gallery/Gallery1';
@@ -32,6 +34,10 @@ import { Gallery2DefaultProps } from '@/components/templates/categories/weddings
 import { Story1DefaultProps } from '@/components/templates/categories/weddings/sections/story/Story1';
 import { Video1DefaultProps } from '@/components/templates/categories/weddings/sections/video/Video1';
 import { Itinerary1DefaultProps } from '@/components/templates/categories/weddings/sections/itinerary/Itinerary1';
+import { Familiares1DefaultProps } from '@/components/templates/categories/weddings/sections/familiares/Familiares1';
+import { PlaceReligioso1DefaultProps } from '@/components/templates/categories/weddings/sections/place_religioso/PlaceReligioso1';
+import { PlaceCeremonia1DefaultProps } from '@/components/templates/categories/weddings/sections/place_ceremonia/PlaceCeremonia1';
+import { Vestimenta1DefaultProps } from '@/components/templates/categories/weddings/sections/vestimenta/Vestimenta1';
 import { Footer1DefaultProps } from '@/components/templates/categories/weddings/sections/footer/Footer1';
 
 interface UseDynamicCustomizerProps {
@@ -48,46 +54,135 @@ export function useDynamicCustomizer({
 
   // Helper function to get the specific section variant being used
   const getSectionVariant = useCallback((sectionType: string): string => {
-    if (!sectionsConfig) return `${sectionType}_1`; // Default to variant 1
+    console.log('🔍 getSectionVariant called:', { sectionType, sectionsConfig });
 
-    // Check if sectionsConfig has the specific variant (e.g., "gallery_2")
+    if (!sectionsConfig) {
+      console.log('❌ No sectionsConfig, defaulting to:', `${sectionType}_1`);
+      return `${sectionType}_1`; // Default to variant 1
+    }
+
+    // Get the variant from sectionsConfig (e.g., sectionsConfig.welcome = "welcome_2")
     const configKeys = Object.keys(sectionsConfig);
-    const sectionVariant = configKeys.find(key => key.startsWith(`${sectionType}_`));
+    console.log('🔍 sectionsConfig keys:', configKeys);
 
-    return sectionVariant || `${sectionType}_1`; // Default to variant 1
+    const sectionVariant = sectionsConfig[sectionType];
+    console.log('🔍 Found variant for', sectionType, ':', sectionVariant);
+
+    const result = sectionVariant || `${sectionType}_1`;
+    console.log('🎯 Final variant result:', result);
+
+    return result; // Default to variant 1
   }, [sectionsConfig]);
 
   // Helper function to get default props for a section variant
   const getSectionDefaultProps = useCallback((sectionType: string) => {
     const variant = getSectionVariant(sectionType);
+    console.log('🔍 getSectionDefaultProps called:', { sectionType, variant });
 
+    let result;
     switch (variant) {
-      case 'hero_1': return Hero1DefaultProps;
-      case 'welcome_1': return Welcome1DefaultProps;
-      case 'couple_1': return Couple1DefaultProps;
-      case 'countdown_1': return Countdown1DefaultProps;
-      case 'gallery_1': return Gallery1DefaultProps;
-      case 'gallery_2': return Gallery2DefaultProps;
-      case 'story_1': return Story1DefaultProps;
-      case 'video_1': return Video1DefaultProps;
-      case 'itinerary_1': return Itinerary1DefaultProps;
-      case 'footer_1': return Footer1DefaultProps;
+      case 'hero_1':
+        result = Hero1DefaultProps;
+        break;
+      case 'hero_2':
+        result = Hero2DefaultProps;
+        break;
+      case 'welcome_1':
+        result = Welcome1DefaultProps;
+        break;
+      case 'welcome_2':
+        result = Welcome2DefaultProps;
+        console.log('✅ Using Welcome2DefaultProps:', result.description);
+        break;
+      case 'couple_1':
+        result = Couple1DefaultProps;
+        break;
+      case 'countdown_1':
+        result = Countdown1DefaultProps;
+        break;
+      case 'gallery_1':
+        result = Gallery1DefaultProps;
+        break;
+      case 'gallery_2':
+        result = Gallery2DefaultProps;
+        break;
+      case 'story_1':
+        result = Story1DefaultProps;
+        break;
+      case 'video_1':
+        result = Video1DefaultProps;
+        break;
+      case 'itinerary_1':
+        result = Itinerary1DefaultProps;
+        break;
+      case 'familiares_1':
+        result = Familiares1DefaultProps;
+        break;
+      case 'place_religioso_1':
+        result = PlaceReligioso1DefaultProps;
+        break;
+      case 'place_ceremonia_1':
+        result = PlaceCeremonia1DefaultProps;
+        break;
+      case 'vestimenta_1':
+        result = Vestimenta1DefaultProps;
+        break;
+      case 'footer_1':
+        result = Footer1DefaultProps;
+        break;
       default:
+        console.log('⚠️ No specific variant found, using fallback for:', sectionType);
         // Fallback to variant 1 defaults
         switch (sectionType) {
-          case 'hero': return Hero1DefaultProps;
-          case 'welcome': return Welcome1DefaultProps;
-          case 'couple': return Couple1DefaultProps;
-          case 'countdown': return Countdown1DefaultProps;
-          case 'gallery': return Gallery1DefaultProps; // Always fallback to Gallery1
-          case 'story': return Story1DefaultProps;
-          case 'video': return Video1DefaultProps;
-          case 'itinerary': return Itinerary1DefaultProps;
-          case 'footer': return Footer1DefaultProps;
-          default: return Gallery1DefaultProps; // Safe fallback for gallery type checking
+          case 'hero':
+            result = Hero1DefaultProps;
+            break;
+          case 'welcome':
+            result = Welcome1DefaultProps;
+            console.log('⚠️ Fallback to Welcome1DefaultProps:', result.description);
+            break;
+          case 'couple':
+            result = Couple1DefaultProps;
+            break;
+          case 'countdown':
+            result = Countdown1DefaultProps;
+            break;
+          case 'gallery':
+            result = Gallery1DefaultProps; // Always fallback to Gallery1
+            break;
+          case 'story':
+            result = Story1DefaultProps;
+            break;
+          case 'video':
+            result = Video1DefaultProps;
+            break;
+          case 'itinerary':
+            result = Itinerary1DefaultProps;
+            break;
+          case 'familiares':
+            result = Familiares1DefaultProps;
+            break;
+          case 'place_religioso':
+            result = PlaceReligioso1DefaultProps;
+            break;
+          case 'place_ceremonia':
+            result = PlaceCeremonia1DefaultProps;
+            break;
+          case 'vestimenta':
+            result = Vestimenta1DefaultProps;
+            break;
+          case 'footer':
+            result = Footer1DefaultProps;
+            break;
+          default:
+            result = Gallery1DefaultProps; // Safe fallback for gallery type checking
+            break;
         }
     }
-  }, [getSectionVariant]);
+
+    console.log('🎯 getSectionDefaultProps final result for', sectionType, ':', result?.description || result);
+    return result;
+  }, [getSectionVariant, sectionsConfig]);
 
   // Main customizer state
   const [isOpen, setIsOpen] = useState(false);
@@ -112,10 +207,18 @@ export function useDynamicCustomizer({
     return detectedSections;
   }, [sectionsConfig, templateData]);
 
-  // Get available fields based on active sections
+  // Get available fields based on active sections and their variants
   const availableFields = useMemo(() => {
+    // Use variant-specific field detection if sectionsConfig contains variant information
+    if (sectionsConfig && Object.keys(sectionsConfig).length > 0) {
+      console.log('🔧 Using variant-specific field detection');
+      return getAvailableFieldsForVariant(activeSections, sectionsConfig);
+    }
+
+    // Fallback to generic section-based detection for legacy compatibility
+    console.log('🔧 Using legacy section-based field detection');
     return getAvailableFields(activeSections);
-  }, [activeSections]);
+  }, [activeSections, sectionsConfig]);
 
   // Initialize progressive override system
   useEffect(() => {
@@ -130,40 +233,44 @@ export function useDynamicCustomizer({
     availableFields.forEach(field => {
       let defaultValue = '';
 
+      // Get defaults based on current variants
+      const heroDefaults = getSectionDefaultProps('hero') as any;
+      const welcomeDefaults = getSectionDefaultProps('welcome') as any;
+
       // Extract default values from template props or use component defaults (single source of truth)
       switch (field.key) {
         // Hero Section Defaults
         case 'groom_name':
-          defaultValue = templateProps.couple?.groom_name || Hero1DefaultProps.groom_name || 'Jefferson';
+          defaultValue = templateProps.couple?.groom_name || heroDefaults.groom_name || 'Jefferson';
           break;
         case 'bride_name':
-          defaultValue = templateProps.couple?.bride_name || Hero1DefaultProps.bride_name || 'Rosmery';
+          defaultValue = templateProps.couple?.bride_name || heroDefaults.bride_name || 'Rosmery';
           break;
         case 'weddingDate':
-          defaultValue = templateProps.hero?.weddingDate || templateProps.footer?.weddingDate || templateProps.countdown?.weddingDate || Hero1DefaultProps.weddingDate;
+          defaultValue = templateProps.hero?.weddingDate || templateProps.footer?.weddingDate || templateProps.countdown?.weddingDate || heroDefaults.weddingDate;
           break;
         case 'eventLocation':
-          defaultValue = templateProps.hero?.eventLocation || templateProps.footer?.eventLocation || Hero1DefaultProps.eventLocation;
+          defaultValue = templateProps.hero?.eventLocation || templateProps.footer?.eventLocation || heroDefaults.eventLocation;
           break;
         case 'heroImageUrl':
-          defaultValue = templateProps.hero?.heroImageUrl || Hero1DefaultProps.heroImageUrl;
+          defaultValue = templateProps.hero?.heroImageUrl || heroDefaults.heroImageUrl;
           break;
 
         // Welcome Section Defaults
         case 'bannerImageUrl':
-          defaultValue = templateProps.welcome?.bannerImageUrl || Welcome1DefaultProps.bannerImageUrl;
+          defaultValue = templateProps.welcome?.bannerImageUrl || welcomeDefaults.bannerImageUrl;
           break;
         case 'couplePhotoUrl':
-          defaultValue = templateProps.welcome?.couplePhotoUrl || Welcome1DefaultProps.couplePhotoUrl;
+          defaultValue = templateProps.welcome?.couplePhotoUrl || welcomeDefaults.couplePhotoUrl;
           break;
         case 'welcomeText':
-          defaultValue = templateProps.welcome?.welcomeText || Welcome1DefaultProps.welcomeText;
+          defaultValue = templateProps.welcome?.welcomeText || welcomeDefaults.welcomeText;
           break;
         case 'title':
-          defaultValue = templateProps.welcome?.title || Welcome1DefaultProps.title;
+          defaultValue = templateProps.welcome?.title || welcomeDefaults.title;
           break;
         case 'description':
-          defaultValue = templateProps.welcome?.description || Welcome1DefaultProps.description;
+          defaultValue = templateProps.welcome?.description || welcomeDefaults.description;
           break;
 
         // Note: bride_name and groom_name are handled above as shared fields
@@ -451,6 +558,87 @@ export function useDynamicCustomizer({
           defaultValue = templateProps.itinerary?.event_fiesta_time || Itinerary1DefaultProps.event_fiesta_time;
           break;
 
+        // Familiares Section Defaults
+        case 'familiares_titulo_padres':
+          defaultValue = templateProps.familiares?.familiares_titulo_padres || Familiares1DefaultProps.familiares_titulo_padres;
+          break;
+        case 'familiares_titulo_padrinos':
+          defaultValue = templateProps.familiares?.familiares_titulo_padrinos || Familiares1DefaultProps.familiares_titulo_padrinos;
+          break;
+        case 'familiares_padre_novio':
+          defaultValue = templateProps.familiares?.familiares_padre_novio || Familiares1DefaultProps.familiares_padre_novio;
+          break;
+        case 'familiares_madre_novio':
+          defaultValue = templateProps.familiares?.familiares_madre_novio || Familiares1DefaultProps.familiares_madre_novio;
+          break;
+        case 'familiares_padre_novia':
+          defaultValue = templateProps.familiares?.familiares_padre_novia || Familiares1DefaultProps.familiares_padre_novia;
+          break;
+        case 'familiares_madre_novia':
+          defaultValue = templateProps.familiares?.familiares_madre_novia || Familiares1DefaultProps.familiares_madre_novia;
+          break;
+        case 'familiares_padrino':
+          defaultValue = templateProps.familiares?.familiares_padrino || Familiares1DefaultProps.familiares_padrino;
+          break;
+        case 'familiares_madrina':
+          defaultValue = templateProps.familiares?.familiares_madrina || Familiares1DefaultProps.familiares_madrina;
+          break;
+
+        // PlaceReligioso section fields
+        case 'place_religioso_titulo':
+          defaultValue = templateProps.place_religioso?.place_religioso_titulo || PlaceReligioso1DefaultProps.place_religioso_titulo;
+          break;
+
+        case 'place_religioso_lugar':
+          defaultValue = templateProps.place_religioso?.place_religioso_lugar || PlaceReligioso1DefaultProps.place_religioso_lugar;
+          break;
+
+        case 'place_religioso_direccion':
+          defaultValue = templateProps.place_religioso?.place_religioso_direccion || PlaceReligioso1DefaultProps.place_religioso_direccion;
+          break;
+
+        case 'place_religioso_mapa_url':
+          defaultValue = templateProps.place_religioso?.place_religioso_mapa_url || PlaceReligioso1DefaultProps.place_religioso_mapa_url;
+          break;
+
+        // PlaceCeremonia section fields
+        case 'place_ceremonia_titulo':
+          defaultValue = templateProps.place_ceremonia?.place_ceremonia_titulo || PlaceCeremonia1DefaultProps.place_ceremonia_titulo;
+          break;
+
+        case 'place_ceremonia_hora':
+          defaultValue = templateProps.place_ceremonia?.place_ceremonia_hora || PlaceCeremonia1DefaultProps.place_ceremonia_hora;
+          break;
+
+        case 'place_ceremonia_lugar':
+          defaultValue = templateProps.place_ceremonia?.place_ceremonia_lugar || PlaceCeremonia1DefaultProps.place_ceremonia_lugar;
+          break;
+
+        case 'place_ceremonia_direccion':
+          defaultValue = templateProps.place_ceremonia?.place_ceremonia_direccion || PlaceCeremonia1DefaultProps.place_ceremonia_direccion;
+          break;
+
+        case 'place_ceremonia_mapa_url':
+          defaultValue = templateProps.place_ceremonia?.place_ceremonia_mapa_url || PlaceCeremonia1DefaultProps.place_ceremonia_mapa_url;
+          break;
+
+        // Vestimenta Section Defaults
+        case 'vestimenta_titulo':
+          defaultValue = templateProps.vestimenta?.vestimenta_titulo || Vestimenta1DefaultProps.vestimenta_titulo;
+          break;
+
+        case 'vestimenta_etiqueta':
+          defaultValue = templateProps.vestimenta?.vestimenta_etiqueta || Vestimenta1DefaultProps.vestimenta_etiqueta;
+          break;
+
+        case 'vestimenta_no_colores_titulo':
+          defaultValue = templateProps.vestimenta?.vestimenta_no_colores_titulo || Vestimenta1DefaultProps.vestimenta_no_colores_titulo;
+          break;
+
+        case 'vestimenta_no_colores_info':
+          defaultValue = templateProps.vestimenta?.vestimenta_no_colores_info || Vestimenta1DefaultProps.vestimenta_no_colores_info;
+          break;
+
         default:
           // Try to extract from template data or use field placeholder
           defaultValue = templateData[field.key] || field.placeholder || '';
@@ -471,7 +659,7 @@ export function useDynamicCustomizer({
     setTemplateDefaults(extractedDefaults);
     setCustomizerData(initialMergedData);
     setTouchedFields(initialTouchedFields);
-  }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData)]);
+  }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData), getSectionDefaultProps]);
 
   // Update a specific field with touch tracking
   const updateField = useCallback((fieldKey: string, value: string | boolean | GalleryImage[]) => {
@@ -517,25 +705,43 @@ export function useDynamicCustomizer({
 
   // Transform flat customizer data to template component props structure
   const transformToTemplateProps = useCallback((data: any) => {
+    console.log('🔍 transformToTemplateProps called with data:', data);
+
+    // Get defaults based on current variants
+    const heroDefaults = getSectionDefaultProps('hero') as any;
+    const welcomeDefaults = getSectionDefaultProps('welcome') as any;
+
+    console.log('🔍 welcomeDefaults from variant:', welcomeDefaults);
+
     return {
       hero: {
         // Generate coupleNames from individual names or use the computed one
         coupleNames: data.coupleNames ||
                     (data.groom_name && data.bride_name ? `${data.groom_name} & ${data.bride_name}` :
                      `${data.groom_name || 'Jefferson'} & ${data.bride_name || 'Rosmery'}`),
-        // Individual fields needed by Hero1 component
-        groom_name: data.groom_name || Hero1DefaultProps.groom_name,
-        bride_name: data.bride_name || Hero1DefaultProps.bride_name,
-        weddingDate: data.weddingDate || data.event_date || Hero1DefaultProps.weddingDate,
-        eventLocation: data.eventLocation || data.event_venue_city || Hero1DefaultProps.eventLocation,
-        heroImageUrl: data.heroImageUrl || data.gallery_hero_image || Hero1DefaultProps.heroImageUrl,
+        // Individual fields needed by Hero1/Hero2 components (same interface)
+        groom_name: data.groom_name || heroDefaults.groom_name,
+        bride_name: data.bride_name || heroDefaults.bride_name,
+        weddingDate: data.weddingDate || data.event_date || heroDefaults.weddingDate,
+        eventLocation: data.eventLocation || data.event_venue_city || heroDefaults.eventLocation,
+        heroImageUrl: data.heroImageUrl || data.gallery_hero_image || heroDefaults.heroImageUrl,
       },
       welcome: {
-        bannerImageUrl: data.welcome_bannerImageUrl || Welcome1DefaultProps.bannerImageUrl,
-        couplePhotoUrl: data.welcome_couplePhotoUrl || data.gallery_couple_image || Welcome1DefaultProps.couplePhotoUrl,
-        welcomeText: data.welcome_welcomeText || Welcome1DefaultProps.welcomeText,
-        title: data.welcome_title || Welcome1DefaultProps.title,
-        description: data.welcome_description || data.message_welcome_text || data.couple_story || Welcome1DefaultProps.description,
+        bannerImageUrl: data.welcome_bannerImageUrl || welcomeDefaults.bannerImageUrl,
+        couplePhotoUrl: data.welcome_couplePhotoUrl || data.gallery_couple_image || welcomeDefaults.couplePhotoUrl,
+        welcomeText: data.welcome_welcomeText || welcomeDefaults.welcomeText,
+        title: data.welcome_title || welcomeDefaults.title,
+        description: (() => {
+          const finalDescription = data.welcome_description || data.message_welcome_text || data.couple_story || welcomeDefaults.description;
+          console.log('🔍 Welcome description logic:', {
+            'data.welcome_description': data.welcome_description,
+            'data.message_welcome_text': data.message_welcome_text,
+            'data.couple_story': data.couple_story,
+            'welcomeDefaults.description': welcomeDefaults.description,
+            'finalDescription': finalDescription
+          });
+          return finalDescription;
+        })(),
       },
       couple: {
         sectionTitle: data.couple_sectionTitle || Couple1DefaultProps.sectionTitle,
@@ -647,6 +853,36 @@ export function useDynamicCustomizer({
           data.itinerary_event_fiesta_enabled : Itinerary1DefaultProps.event_fiesta_enabled,
         event_fiesta_time: data.itinerary_event_fiesta_time || Itinerary1DefaultProps.event_fiesta_time
       },
+      familiares: {
+        familiares_titulo_padres: data.familiares_titulo_padres || Familiares1DefaultProps.familiares_titulo_padres,
+        familiares_titulo_padrinos: data.familiares_titulo_padrinos || Familiares1DefaultProps.familiares_titulo_padrinos,
+        familiares_padre_novio: data.familiares_padre_novio || Familiares1DefaultProps.familiares_padre_novio,
+        familiares_madre_novio: data.familiares_madre_novio || Familiares1DefaultProps.familiares_madre_novio,
+        familiares_padre_novia: data.familiares_padre_novia || Familiares1DefaultProps.familiares_padre_novia,
+        familiares_madre_novia: data.familiares_madre_novia || Familiares1DefaultProps.familiares_madre_novia,
+        familiares_padrino: data.familiares_padrino || Familiares1DefaultProps.familiares_padrino,
+        familiares_madrina: data.familiares_madrina || Familiares1DefaultProps.familiares_madrina
+      },
+      place_religioso: {
+        place_religioso_titulo: data.place_religioso_titulo || PlaceReligioso1DefaultProps.place_religioso_titulo,
+        weddingDate: data.weddingDate || data.event_date || PlaceReligioso1DefaultProps.weddingDate,
+        place_religioso_lugar: data.place_religioso_lugar || PlaceReligioso1DefaultProps.place_religioso_lugar,
+        place_religioso_direccion: data.place_religioso_direccion || PlaceReligioso1DefaultProps.place_religioso_direccion,
+        place_religioso_mapa_url: data.place_religioso_mapa_url || PlaceReligioso1DefaultProps.place_religioso_mapa_url
+      },
+      place_ceremonia: {
+        place_ceremonia_titulo: data.place_ceremonia_titulo || PlaceCeremonia1DefaultProps.place_ceremonia_titulo,
+        place_ceremonia_hora: data.place_ceremonia_hora || PlaceCeremonia1DefaultProps.place_ceremonia_hora,
+        place_ceremonia_lugar: data.place_ceremonia_lugar || PlaceCeremonia1DefaultProps.place_ceremonia_lugar,
+        place_ceremonia_direccion: data.place_ceremonia_direccion || PlaceCeremonia1DefaultProps.place_ceremonia_direccion,
+        place_ceremonia_mapa_url: data.place_ceremonia_mapa_url || PlaceCeremonia1DefaultProps.place_ceremonia_mapa_url
+      },
+      vestimenta: {
+        vestimenta_titulo: data.vestimenta_titulo || Vestimenta1DefaultProps.vestimenta_titulo,
+        vestimenta_etiqueta: data.vestimenta_etiqueta || Vestimenta1DefaultProps.vestimenta_etiqueta,
+        vestimenta_no_colores_titulo: data.vestimenta_no_colores_titulo || Vestimenta1DefaultProps.vestimenta_no_colores_titulo,
+        vestimenta_no_colores_info: data.vestimenta_no_colores_info || Vestimenta1DefaultProps.vestimenta_no_colores_info
+      },
       footer: {
         // Use same logic as hero for consistency
         coupleNames: data.coupleNames ||
@@ -660,7 +896,7 @@ export function useDynamicCustomizer({
         copyrightText: data.footer_copyrightText || Footer1DefaultProps.copyrightText
       }
     };
-  }, []);
+  }, [getSectionDefaultProps, getSectionVariant]);
 
   // Auto-generate computed fields from individual values
   const getComputedFields = useCallback((data: CustomizerData): CustomizerData => {
