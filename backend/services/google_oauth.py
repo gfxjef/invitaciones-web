@@ -45,10 +45,19 @@ class GoogleOAuthService:
         """
         try:
             client_id = os.getenv('GOOGLE_CLIENT_ID')
+
+            # Enhanced logging for debugging
+            logger.info("🔐 ========== INICIO VERIFICACIÓN TOKEN GOOGLE ==========")
+            logger.info(f"📌 CLIENT_ID configurado: {client_id[:20] if client_id else 'NO CONFIGURADO'}...")
+            logger.info(f"📦 Token recibido (longitud): {len(credential) if credential else 0} caracteres")
+            logger.info(f"📦 Token recibido (primeros 50 chars): {credential[:50] if credential else 'VACÍO'}...")
+
             if not client_id:
+                logger.error("❌ GOOGLE_CLIENT_ID no está configurado en las variables de entorno")
                 raise ValueError("GOOGLE_CLIENT_ID not configured")
 
             # Verify the token with Google
+            logger.info(f"🔍 Verificando token con Google usando CLIENT_ID: {client_id}")
             idinfo = id_token.verify_oauth2_token(
                 credential,
                 google_requests.Request(),
@@ -56,17 +65,30 @@ class GoogleOAuthService:
             )
 
             # Verify issuer
+            logger.info(f"🔍 Verificando issuer: {idinfo.get('iss')}")
             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                logger.error(f"❌ Issuer inválido: {idinfo.get('iss')}")
                 raise ValueError('Wrong issuer.')
 
-            logger.info(f"Google token verified for user: {idinfo.get('email')}")
+            logger.info(f"✅ Token Google VÁLIDO para usuario: {idinfo.get('email')}")
+            logger.info(f"✅ Audience (aud): {idinfo.get('aud')}")
+            logger.info(f"✅ Subject (sub): {idinfo.get('sub')}")
+            logger.info("🔐 ========== FIN VERIFICACIÓN TOKEN GOOGLE (EXITOSA) ==========")
             return idinfo
 
         except ValueError as e:
-            logger.error(f"Google token verification failed: {e}")
+            logger.error(f"❌ Error de validación Google: {str(e)}")
+            logger.error(f"❌ Posibles causas:")
+            logger.error(f"   - CLIENT_ID incorrecto o no coincide con el token")
+            logger.error(f"   - Token expirado")
+            logger.error(f"   - Audience del token no coincide con CLIENT_ID")
+            logger.error(f"   - Token malformado o inválido")
+            logger.error("🔐 ========== FIN VERIFICACIÓN TOKEN GOOGLE (FALLIDA) ==========")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error verifying Google token: {e}")
+            logger.error(f"❌ Error inesperado verificando token Google: {str(e)}")
+            logger.error(f"❌ Tipo de error: {type(e).__name__}")
+            logger.error("🔐 ========== FIN VERIFICACIÓN TOKEN GOOGLE (ERROR) ==========")
             raise ValueError(f"Token verification failed: {str(e)}")
 
     @staticmethod

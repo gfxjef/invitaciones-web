@@ -292,35 +292,60 @@ def verify_google_token():
     WHY: Secure server-side verification of Google ID tokens.
     Frontend sends Google credential, backend validates and creates session.
     """
+    logger.info("📨 ========== ENDPOINT /google/verify LLAMADO ==========")
+
+    # Log request headers for debugging
+    logger.info(f"📋 Request headers: Content-Type={request.content_type}")
+    logger.info(f"📋 Request origin: {request.headers.get('Origin', 'Unknown')}")
+
     schema = GoogleTokenSchema()
     try:
         data = schema.load(request.json)
     except ValidationError as err:
+        logger.error(f"❌ Error de validación del request: {err.messages}")
         return jsonify({'errors': err.messages}), 400
 
-    credential = data['credential']
-    logger.info("Received Google login request")
+    credential = data.get('credential')
+
+    # Validación explícita del credential
+    if not credential:
+        logger.error("❌ No se recibió credential en el request")
+        return jsonify({
+            'error': 'missing_credential',
+            'message': 'No se recibió el token de Google'
+        }), 400
+
+    logger.info(f"📦 Credential recibido con longitud: {len(credential)} caracteres")
+    logger.info(f"📦 Primeros 30 caracteres del credential: {credential[:30]}...")
 
     try:
         # Use our service to handle the complete Google login flow
+        logger.info("🚀 Iniciando proceso de login con Google...")
         login_response = GoogleOAuthService.handle_google_login(credential)
 
-        logger.info(f"Google login successful for user: {login_response['user']['email']}")
+        logger.info(f"✅ Google login EXITOSO para usuario: {login_response['user']['email']}")
+        logger.info("📨 ========== FIN ENDPOINT /google/verify (EXITOSO) ==========")
         return jsonify(login_response), 200
 
     except ValueError as e:
-        logger.error(f"Google login validation error: {e}")
+        logger.error(f"❌ Error de validación en Google login: {str(e)}")
+        logger.error(f"❌ Detalles del error: {type(e).__name__}")
+        logger.error("📨 ========== FIN ENDPOINT /google/verify (ERROR 401) ==========")
         return jsonify({
-            'message': 'Google login failed',
-            'error': 'invalid_credentials',
-            'details': str(e)
+            'error': 'invalid_token',
+            'message': 'Token de Google inválido o expirado',
+            'details': str(e),
+            'help': 'Verifica que el CLIENT_ID sea correcto y el token no haya expirado'
         }), 401
 
     except Exception as e:
-        logger.error(f"Google login system error: {e}")
+        logger.error(f"❌ Error inesperado en Google login: {str(e)}")
+        logger.error(f"❌ Tipo de error: {type(e).__name__}")
+        logger.error("📨 ========== FIN ENDPOINT /google/verify (ERROR 500) ==========")
         return jsonify({
-            'message': 'Google login failed',
-            'error': 'server_error'
+            'error': 'server_error',
+            'message': 'Error interno del servidor al procesar Google login',
+            'details': str(e)
         }), 500
 
 
