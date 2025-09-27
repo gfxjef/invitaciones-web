@@ -372,7 +372,7 @@ async function captureElementToPDF(
       (clonedElement as HTMLElement).style.height = 'auto';
       (clonedElement as HTMLElement).style.overflow = 'visible';
       (clonedElement as HTMLElement).style.transform = 'none';
-      (clonedElement as HTMLElement).style.WebkitFontSmoothing = 'antialiased';
+      (clonedElement as any).style.WebkitFontSmoothing = 'antialiased';
       (clonedElement as HTMLElement).style.textRendering = 'optimizeLegibility';
     }
     console.log('🧠 Smart cloned document optimization applied');

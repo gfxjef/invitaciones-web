@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { useLogin, useRegister } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { LoginRequest } from '@/lib/api';
 import GoogleLoginButton from './GoogleLoginButton';
 
 // Validation schemas
@@ -112,7 +113,7 @@ export function AuthModal({ isOpen, onClose, initialTab = 'login', onAuthSuccess
   // Login submission
   const handleLogin = async (data: LoginFormData) => {
     try {
-      await loginMutation.mutateAsync(data);
+      await loginMutation.mutateAsync(data as LoginRequest);
       handleAuthSuccess();
     } catch (error) {
       // Error is handled by the mutation hook

@@ -26,7 +26,7 @@ interface GoogleLoginButtonProps {
   onError?: (error: any) => void;
   disabled?: boolean;
   variant?: 'default' | 'outline' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg';
   fullWidth?: boolean;
   text?: string;
 }
@@ -44,6 +44,7 @@ interface GoogleOAuthResponse {
     role: string;
     is_active: boolean;
     email_verified: boolean;
+    created_at: string;
   };
   expires_in: number;
 }
@@ -53,7 +54,7 @@ export function GoogleLoginButton({
   onError,
   disabled = false,
   variant = 'outline',
-  size = 'md',
+  size = 'default',
   fullWidth = false,
   text = 'Continuar con Google'
 }: GoogleLoginButtonProps) {
@@ -138,13 +139,12 @@ export function GoogleLoginButton({
       <GoogleLogin
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
-        text={text}
+        text="continue_with"
         shape="rectangular"
         theme="outline"
         size="large"
         width={fullWidth ? '100%' : undefined}
         locale="es"
-        disabled={disabled}
       />
     </div>
   );
