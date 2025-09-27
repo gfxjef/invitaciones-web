@@ -145,67 +145,63 @@ class GoogleOAuthService:
                 user_created = True
                 logger.info(f"Created new Google user: {email}")
 
-        # Create or update OAuth record with race condition protection
-        from sqlalchemy.exc import IntegrityError
-
+        # Create or update OAuth record using MySQL UPSERT (idempotent operation)
         try:
-            # First, try to find existing record
-            oauth_record = OAuth.find_by_provider_user_id('google', google_user_id)
+            logger.info(f"🔄 Ejecutando UPSERT para OAuth record - Google ID: {google_user_id}")
+            GoogleOAuthService.upsert_oauth_record(user, google_user_id, email, name, picture)
 
-            if oauth_record:
-                logger.info(f"🔄 Actualizando registro OAuth existente para user_id: {google_user_id}")
-                # Update existing OAuth record
-                oauth_record.update_user_info(
-                    user_email=email,
-                    user_name=name,
-                    profile_picture=picture
-                )
-            else:
-                logger.info(f"🆕 Creando nuevo registro OAuth para user_id: {google_user_id}")
-                # Create new OAuth record
-                oauth_record = OAuth.create_oauth_user(
-                    provider='google',
-                    provider_user_id=google_user_id,
-                    user_id=user.id,
-                    user_email=email,
-                    user_name=name,
-                    profile_picture=picture
-                )
-                db.session.add(oauth_record)
-
-            # Save all changes
+            # Save user changes
             db.session.add(user)
             db.session.commit()
-            logger.info("✅ Registro OAuth guardado exitosamente")
-
-        except IntegrityError as e:
-            logger.warning(f"⚠️ IntegrityError detectado - posible race condition: {str(e)}")
-            db.session.rollback()
-
-            # Race condition detected - try to find the existing record
-            oauth_record = OAuth.find_by_provider_user_id('google', google_user_id)
-
-            if oauth_record:
-                logger.info(f"🔄 Registro OAuth encontrado después del rollback - actualizando")
-                # Update the existing record found after rollback
-                oauth_record.update_user_info(
-                    user_email=email,
-                    user_name=name,
-                    profile_picture=picture
-                )
-                db.session.add(user)
-                db.session.commit()
-                logger.info("✅ Registro OAuth actualizado después del race condition")
-            else:
-                logger.error(f"❌ Error crítico: No se pudo crear ni encontrar registro OAuth para {google_user_id}")
-                raise ValueError(f"Error crítico de base de datos: OAuth record no se pudo crear ni encontrar para Google ID {google_user_id}")
+            logger.info("✅ Usuario y registro OAuth guardados exitosamente con UPSERT")
 
         except Exception as e:
-            logger.error(f"❌ Error inesperado al manejar registro OAuth: {str(e)}")
+            logger.error(f"❌ Error al procesar OAuth record: {str(e)}")
             db.session.rollback()
             raise ValueError(f"Error de base de datos al procesar cuenta Google: {str(e)}")
 
         return user, user_created
+
+    @staticmethod
+    def upsert_oauth_record(user, google_user_id, email, name, picture):
+        """Create or update OAuth record using MySQL UPSERT (ON DUPLICATE KEY UPDATE).
+
+        This prevents race conditions and IntegrityError by making the operation idempotent.
+        If the record exists, it updates it. If not, it creates a new one.
+        """
+        from sqlalchemy.dialects.mysql import insert
+        from datetime import datetime
+
+        logger.info(f"🔄 Executing MySQL UPSERT for OAuth record: provider=google, user_id={google_user_id}")
+
+        # Prepare the INSERT statement with ON DUPLICATE KEY UPDATE
+        stmt = insert(OAuth.__table__).values(
+            provider='google',
+            provider_user_id=str(google_user_id),
+            user_id=user.id,
+            user_email=email,
+            user_name=name,
+            profile_picture=picture,
+            is_active=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+
+        # Define what to update if duplicate key is found
+        upsert_stmt = stmt.on_duplicate_key_update(
+            user_id=stmt.inserted.user_id,
+            user_email=stmt.inserted.user_email,
+            user_name=stmt.inserted.user_name,
+            profile_picture=stmt.inserted.profile_picture,
+            is_active=stmt.inserted.is_active,
+            updated_at=stmt.inserted.updated_at,
+        )
+
+        # Execute the upsert operation
+        result = db.session.execute(upsert_stmt)
+
+        logger.info(f"✅ MySQL UPSERT ejecutado exitosamente - rows affected: {result.rowcount}")
+        return result
 
     @staticmethod
     def generate_tokens_for_user(user):
