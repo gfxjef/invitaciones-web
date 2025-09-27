@@ -70,7 +70,9 @@ export const Footer1: React.FC<Footer1Props> = ({
   }, []);
 
   return (
-    <footer className="relative bg-[#222222] text-gray-400 pt-24 pb-12 px-6">
+    <footer
+      data-section="footer"
+      className="relative bg-[#222222] text-gray-400 pt-24 pb-12 px-6 avoid-break">
       <div className="container mx-auto max-w-4xl text-center">
         <h2 className="text-6xl md:text-7xl text-white font-great-vibes">
           {coupleNames}

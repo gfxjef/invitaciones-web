@@ -238,7 +238,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
       />
 
       {/* Template content - renders underneath the overlay */}
-      <div className="font-serif bg-white">
+      <div className="font-serif bg-white" data-template-renderer="true">
 
       {/* Render sections in order based on database configuration - DYNAMIC ORDER */}
       {(() => {
@@ -273,13 +273,14 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
         });
 
         return (
-          <SectionWrapper
-            key={sectionType}
-            sectionKey={sectionKey}
-            sectionType={sectionType}
-            props={sectionProps}
-            category={category}
-          />
+          <div key={sectionType} data-section={sectionType}>
+            <SectionWrapper
+              sectionKey={sectionKey}
+              sectionType={sectionType}
+              props={sectionProps}
+              category={category}
+            />
+          </div>
         );
       })}
 

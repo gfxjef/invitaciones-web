@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { useDynamicCustomizer } from '@/lib/hooks/useDynamicCustomizer';
+import { useCustomizerSync } from '@/lib/hooks/useCustomizerSync';
 import { CustomizerButton } from './CustomizerButton';
 import { CustomizerPanel } from './CustomizerPanel';
 
@@ -18,13 +19,17 @@ interface DynamicCustomizerProps {
   templateData?: any;
   sectionsConfig?: any;
   className?: string;
+  templateId?: number;
+  onSaveStateReady?: (saveStateFn: () => void) => void;
 }
 
 export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
   children,
   templateData = {},
   sectionsConfig = {},
-  className = ''
+  className = '',
+  templateId,
+  onSaveStateReady
 }) => {
 
   // 🚨 DEBUG: Log when DynamicCustomizer mounts
@@ -53,10 +58,22 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
     getSectionConfig,
     selectedMode,
     switchMode,
-    basicFields
+    basicFields,
+    customizerData,
+    touchedFields,
+    restoreState
   } = useDynamicCustomizer({
     templateData,
     sectionsConfig
+  });
+
+  // Sync customizer state with localStorage if templateId is provided
+  useCustomizerSync({
+    templateId: templateId || 0,
+    customizerData,
+    touchedFields,
+    onStateRestore: templateId ? restoreState : undefined,
+    onSaveStateReady
   });
 
   // Get progressive transformed data for template sections

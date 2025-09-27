@@ -101,11 +101,12 @@ export function useLogout() {
 
   return useCallback(async () => {
     try {
-      // Call backend logout if needed
-      // await authApi.logout();
+      // Try to revoke Google OAuth tokens if user logged in with Google
+      await authApi.revokeGoogleAuth();
+      console.log('Google tokens revoked successfully');
     } catch (error) {
       // Ignore logout errors, still clear local state
-      console.warn('Logout API call failed:', error);
+      console.warn('Google logout API call failed:', error);
     } finally {
       logout(false);
       toast.success('Sesión cerrada correctamente');

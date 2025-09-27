@@ -24,6 +24,7 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { useLogin, useRequireGuest } from '@/lib/hooks/useAuth';
+import { GoogleLoginButton } from '@/components/auth';
 
 // Validation schema using Zod
 const loginSchema = z.object({
@@ -112,6 +113,24 @@ export default function LoginPage() {
 
         {/* Login Form */}
         <div className="bg-white rounded-xl shadow-lg p-8 border">
+          {/* Google OAuth Section */}
+          <div className="mb-6">
+            <GoogleLoginButton
+              fullWidth
+              text="Iniciar sesión con Google"
+            />
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-4 text-gray-500">O inicia sesión con tu email</span>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email Field */}
             <div>

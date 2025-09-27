@@ -5,6 +5,9 @@ import logging
 
 from models.invitation_media import InvitationMedia, MediaType
 from models.invitation import Invitation
+from models.user import User
+from models.order import Order, OrderStatus, OrderItem
+from models.invitation_sections_data import InvitationSectionsData
 from services.file_upload_service import file_upload_service, FileValidationError, FileProcessingError
 from utils.ftp_manager import FTPUploadError
 from extensions import db
@@ -641,3 +644,214 @@ def get_media_types():
             'icon': 'Custom icons or graphics'
         }
     }), 200
+
+
+# =============================================
+# ANONYMOUS USER CREATION ENDPOINT
+# =============================================
+
+@invitations_bp.route('/create', methods=['POST'])
+def create_anonymous_invitation():
+    """
+    POST /api/invitations/create - Create complete invitation for anonymous users
+
+    Request Body:
+    {
+        "user_data": {
+            "email": "jefferson@example.com",
+            "first_name": "Jefferson",
+            "last_name": "Smith",
+            "phone": "+51999999999"
+        },
+        "invitation_basic": {
+            "template_id": 1,
+            "plan_id": 1,
+            "event_date": "2024-12-15T17:00:00",
+            "event_location": "LIMA, PERU"
+        },
+        "sections_data": {
+            "portada": {
+                "nombre_novio": "Jefferson",
+                "nombre_novia": "Rosemery"
+            },
+            "familiares": {
+                "padre_novio": "EFRAIN ALBERTH HERNANDEZ",
+                "madre_novio": "ROCIO EZQUIVEL GARCIA"
+            }
+        }
+    }
+
+    WHY: Single endpoint for anonymous users to create complete invitations
+    with user account, order, invitation, and all section data in one transaction.
+    Perfect for form submissions where users fill everything and submit once.
+    """
+    try:
+        data = request.get_json() or {}
+
+        # Validate required data
+        user_data = data.get('user_data', {})
+        invitation_basic = data.get('invitation_basic', {})
+        sections_data = data.get('sections_data', {})
+
+        if not user_data.get('email'):
+            return jsonify({'message': 'Email is required'}), 400
+
+        if not user_data.get('first_name'):
+            return jsonify({'message': 'First name is required'}), 400
+
+        if not invitation_basic.get('plan_id'):
+            return jsonify({'message': 'Plan ID is required'}), 400
+
+        # Start database transaction
+        db.session.begin()
+
+        # 1. Create or get user
+        existing_user = User.query.filter_by(email=user_data['email']).first()
+
+        if existing_user:
+            user = existing_user
+        else:
+            user = User(
+                email=user_data['email'],
+                first_name=user_data['first_name'],
+                last_name=user_data.get('last_name', ''),
+                phone=user_data.get('phone', ''),
+                password_hash='anonymous',  # Anonymous users don't need login
+                email_verified=False
+            )
+            db.session.add(user)
+            db.session.flush()  # Get user ID
+
+        # 2. Get plan details for order
+        from models.plan import Plan
+        plan = Plan.query.get(invitation_basic['plan_id'])
+        if not plan:
+            return jsonify({'message': 'Invalid plan ID'}), 400
+
+        # 3. Create order
+        order = Order(
+            user_id=user.id,
+            subtotal=plan.price,
+            total=plan.price,
+            status=OrderStatus.PENDING,
+            billing_name=user.full_name,
+            billing_email=user.email,
+            billing_phone=user.phone
+        )
+        db.session.add(order)
+        db.session.flush()  # Get order ID
+
+        # 4. Create order item
+        order_item = OrderItem(
+            order_id=order.id,
+            plan_id=plan.id,
+            product_name=plan.name,
+            product_description=plan.description,
+            unit_price=plan.price,
+            quantity=1,
+            total_price=plan.price
+        )
+        db.session.add(order_item)
+
+        # 5. Create invitation
+        from datetime import datetime
+
+        # Parse event date if provided
+        event_date = None
+        if invitation_basic.get('event_date'):
+            try:
+                event_date = datetime.fromisoformat(invitation_basic['event_date'].replace('Z', '+00:00'))
+            except:
+                # Default to 6 months from now
+                from datetime import timedelta
+                event_date = datetime.utcnow() + timedelta(days=180)
+        else:
+            from datetime import timedelta
+            event_date = datetime.utcnow() + timedelta(days=180)
+
+        invitation = Invitation(
+            user_id=user.id,
+            order_id=order.id,
+            title=f"Invitación - {user.first_name}",
+            groom_name=sections_data.get('portada', {}).get('nombre_novio', user.first_name),
+            bride_name=sections_data.get('portada', {}).get('nombre_novia', 'Novia'),
+            wedding_date=event_date,
+            ceremony_location=invitation_basic.get('event_location', 'Por definir'),
+            template_name=f"template_{invitation_basic.get('template_id', 1)}",
+            plan_id=plan.id,
+            status='draft'
+        )
+        db.session.add(invitation)
+        db.session.flush()  # Get invitation ID
+
+        # 6. Create sections data
+        created_sections = []
+
+        for section_type, variables in sections_data.items():
+            section_data = InvitationSectionsData(
+                invitation_id=invitation.id,
+                user_id=user.id,
+                order_id=order.id,
+                plan_id=plan.id,
+                section_type=section_type,
+                section_variant=f"{section_type}_1",
+                category='weddings',  # Default category
+                variables_json=variables
+            )
+            db.session.add(section_data)
+            created_sections.append(section_data)
+
+        # Commit transaction
+        db.session.commit()
+
+        # 7. Generate access URLs using the invitation's unique_url
+        invitation_url = f"https://invitaciones.kossomet.com/i/{invitation.unique_url}"
+
+        # Prepare response
+        response_data = {
+            'message': 'Invitation created successfully',
+            'invitation': {
+                'id': invitation.id,
+                'title': invitation.title,
+                'status': invitation.status,
+                'url': invitation_url,
+                'access_code': invitation.unique_url,
+                'groom_name': invitation.groom_name,
+                'bride_name': invitation.bride_name,
+                'wedding_date': invitation.wedding_date.isoformat() if invitation.wedding_date else None,
+                'wedding_location': invitation.ceremony_location,
+                'template_name': invitation.template_name,
+                'created_at': invitation.created_at.isoformat()
+            },
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.full_name
+            },
+            'order': {
+                'id': order.id,
+                'order_number': order.order_number,
+                'total': float(order.total),
+                'status': order.status.value,
+                'plan_name': plan.name
+            },
+            'sections': {
+                'total_created': len(created_sections),
+                'section_types': list(sections_data.keys())
+            }
+        }
+
+        return jsonify(response_data), 201
+
+    except Exception as e:
+        # Rollback transaction on error
+        db.session.rollback()
+        logger.error(f"Error creating anonymous invitation: {str(e)}")
+
+        # Return user-friendly error based on exception type
+        if "users.email" in str(e).lower():
+            return jsonify({'message': 'Email address already exists'}), 409
+        elif "foreign key" in str(e).lower():
+            return jsonify({'message': 'Invalid reference data provided'}), 400
+        else:
+            return jsonify({'message': 'Internal server error'}), 500

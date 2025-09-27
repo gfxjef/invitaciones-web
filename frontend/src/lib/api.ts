@@ -102,7 +102,35 @@ apiClient.interceptors.response.use(
     });
     
     const originalRequest = error.config as any;
-    
+
+    // Handle 500 internal server errors with retry (development mode only)
+    if (error.response?.status === 500 && process.env.NODE_ENV === 'development') {
+      // Initialize retry count
+      originalRequest._retryCount = originalRequest._retryCount || 0;
+      const maxRetries = 3;
+      const retryDelay = Math.min(100 * Math.pow(2, originalRequest._retryCount), 2000); // Exponential backoff: 100ms, 200ms, 400ms, max 2s
+
+      if (originalRequest._retryCount < maxRetries) {
+        originalRequest._retryCount += 1;
+
+        console.warn(`🔄 [API] Retrying request (attempt ${originalRequest._retryCount}/${maxRetries}) after ${retryDelay}ms:`, {
+          url: originalRequest.url,
+          method: originalRequest.method?.toUpperCase(),
+          error: error.message
+        });
+
+        // Wait for exponential backoff delay, then retry
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return apiClient(originalRequest);
+      } else {
+        console.error(`❌ [API] Max retries (${maxRetries}) exceeded for:`, {
+          url: originalRequest.url,
+          method: originalRequest.method?.toUpperCase(),
+          finalError: error.message
+        });
+      }
+    }
+
     // Handle 401 unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -597,6 +625,21 @@ export interface ChangePasswordRequest {
   new_password: string;
 }
 
+export interface GoogleOAuthRequest {
+  credential: string;
+}
+
+export interface GoogleOAuthResponse {
+  access_token: string;
+  refresh_token: string;
+  user: User & {
+    provider: string;
+    google_id?: string;
+    profile_picture?: string;
+  };
+  expires_in: number;
+}
+
 export interface NotificationPreferences {
   email_notifications: boolean;
   sms_notifications: boolean;
@@ -679,6 +722,34 @@ export const authApi = {
    */
   getNotificationPreferences: async (): Promise<NotificationPreferences> => {
     const response = await apiClient.get('/auth/notifications');
+    return response.data;
+  },
+
+  /**
+   * Verify Google OAuth credential and get JWT tokens
+   */
+  verifyGoogleToken: async (data: GoogleOAuthRequest): Promise<GoogleOAuthResponse> => {
+    const response = await apiClient.post('/auth/google/verify', data);
+    return response.data;
+  },
+
+  /**
+   * Get Google OAuth login status
+   */
+  getGoogleAuthStatus: async (): Promise<{
+    connected: boolean;
+    google_email?: string;
+    connected_at?: string;
+  }> => {
+    const response = await apiClient.get('/auth/google/status');
+    return response.data;
+  },
+
+  /**
+   * Revoke Google OAuth connection
+   */
+  revokeGoogleAuth: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post('/auth/google/revoke');
     return response.data;
   },
 };
@@ -1321,7 +1392,7 @@ export const socialSharingApi = {
 // API Methods - Export and Print
 export const exportApi = {
   /**
-   * Export invitation as PDF
+   * Export invitation as PDF using backend Playwright service
    */
   exportToPDF: async (invitationId: number, options?: {
     format?: 'A4' | 'letter' | 'A5' | 'custom';
@@ -1329,8 +1400,34 @@ export const exportApi = {
     quality?: 'high' | 'medium' | 'low';
     include_rsvp?: boolean;
   }): Promise<{ pdf_url: string; download_url: string; expires_at: string }> => {
-    const response = await apiClient.post(`/export/${invitationId}/pdf`, options);
-    return response.data;
+    // Map frontend options to backend API parameters
+    const backendOptions = {
+      invitation_id: invitationId,
+      device_type: 'invitation_mobile', // Use optimized mobile profile
+      quality: options?.quality === 'high' ? 'high' : options?.quality === 'low' ? 'draft' : 'standard',
+      filename: `invitation-${invitationId}.pdf`,
+      options: {
+        format: options?.format || 'A4',
+        orientation: options?.orientation || 'portrait',
+        include_rsvp: options?.include_rsvp ?? true
+      }
+    };
+
+    // Call new backend PDF service with extended timeout for PDF generation
+    const response = await apiClient.post('/pdf/generate', backendOptions, {
+      responseType: 'blob', // Expect PDF binary data
+      timeout: 90000 // 90 seconds for PDF generation (longer than backend timeout)
+    });
+
+    // Create download URL from blob
+    const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+    const download_url = URL.createObjectURL(pdfBlob);
+
+    return {
+      pdf_url: download_url,
+      download_url: download_url,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+    };
   },
 
   /**

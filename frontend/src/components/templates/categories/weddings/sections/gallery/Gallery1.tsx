@@ -66,7 +66,7 @@ export const Gallery1: React.FC<Gallery1Props> = ({
 
   return (
     <>
-      <section id="gallery" className="py-24 px-6 bg-white">
+      <section id="gallery" className="py-24 px-6 bg-white" data-gallery="gallery1">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <p className="text-sm text-amber-700 tracking-[0.2em] font-semibold font-montserrat">

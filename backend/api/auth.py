@@ -1,15 +1,21 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, redirect, url_for
 from flask_jwt_extended import (
-    create_access_token, 
-    create_refresh_token, 
-    jwt_required, 
+    create_access_token,
+    create_refresh_token,
+    jwt_required,
     get_jwt_identity,
     get_current_user
 )
+from flask_dance.contrib.google import make_google_blueprint, google
 from models.user import User
+from models.oauth import OAuth
+from services.google_oauth import GoogleOAuthService
 from extensions import db
 from marshmallow import Schema, fields, ValidationError
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -267,5 +273,186 @@ def get_current_user():
     except Exception as e:
         return jsonify({
             'message': 'Error retrieving user information',
+            'error': 'server_error'
+        }), 500
+
+
+# =============================================================================
+# GOOGLE OAUTH ENDPOINTS
+# =============================================================================
+
+class GoogleTokenSchema(Schema):
+    credential = fields.Str(required=True)
+
+
+@auth_bp.route('/google/verify', methods=['POST'])
+def verify_google_token():
+    """Verify Google ID Token from frontend (recommended flow).
+
+    WHY: Secure server-side verification of Google ID tokens.
+    Frontend sends Google credential, backend validates and creates session.
+    """
+    schema = GoogleTokenSchema()
+    try:
+        data = schema.load(request.json)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+
+    credential = data['credential']
+    logger.info("Received Google login request")
+
+    try:
+        # Use our service to handle the complete Google login flow
+        login_response = GoogleOAuthService.handle_google_login(credential)
+
+        logger.info(f"Google login successful for user: {login_response['user']['email']}")
+        return jsonify(login_response), 200
+
+    except ValueError as e:
+        logger.error(f"Google login validation error: {e}")
+        return jsonify({
+            'message': 'Google login failed',
+            'error': 'invalid_credentials',
+            'details': str(e)
+        }), 401
+
+    except Exception as e:
+        logger.error(f"Google login system error: {e}")
+        return jsonify({
+            'message': 'Google login failed',
+            'error': 'server_error'
+        }), 500
+
+
+@auth_bp.route('/google/login')
+def google_login():
+    """Initiate Google OAuth flow (redirect-based flow).
+
+    WHY: Alternative flow for server-side OAuth dance.
+    Redirects user to Google for authentication.
+    """
+    try:
+        return redirect(url_for("google.login"))
+    except Exception as e:
+        logger.error(f"Google OAuth redirect failed: {e}")
+        return jsonify({
+            'message': 'Google login redirect failed',
+            'error': 'oauth_error'
+        }), 500
+
+
+@auth_bp.route('/google/callback')
+def google_authorized():
+    """Handle Google OAuth callback (redirect-based flow).
+
+    WHY: Processes Google OAuth callback and creates user session.
+    Called by Google after user grants permission.
+    """
+    try:
+        if not google.authorized:
+            logger.warning("Google OAuth authorization failed")
+            return jsonify({
+                'message': 'Failed to log in with Google',
+                'error': 'oauth_denied'
+            }), 400
+
+        # Get user info from Google
+        resp = google.get("/oauth2/v2/userinfo")
+        if not resp.ok:
+            logger.error(f"Failed to fetch Google user info: {resp.status_code}")
+            return jsonify({
+                'message': 'Failed to fetch user info from Google',
+                'error': 'google_api_error'
+            }), 400
+
+        user_info = resp.json()
+        logger.info(f"Google OAuth callback for user: {user_info.get('email')}")
+
+        # Process user with our service
+        user, user_created = GoogleOAuthService.process_google_user(user_info)
+
+        # Generate tokens
+        token_data = GoogleOAuthService.generate_tokens_for_user(user)
+
+        # Redirect to frontend with token (for redirect flow)
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+        redirect_url = f"{frontend_url}/auth/callback?token={token_data['access_token']}"
+
+        logger.info(f"Redirecting to frontend after Google OAuth: {user.email}")
+        return redirect(redirect_url)
+
+    except Exception as e:
+        logger.error(f"Google OAuth callback error: {e}")
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+        error_url = f"{frontend_url}/login?error=oauth_failed"
+        return redirect(error_url)
+
+
+@auth_bp.route('/google/revoke', methods=['POST'])
+@jwt_required()
+def revoke_google_access():
+    """Revoke Google OAuth access for current user.
+
+    WHY: Allows users to disconnect their Google account.
+    Marks OAuth record as inactive but keeps user account.
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        GoogleOAuthService.revoke_google_access(current_user_id)
+
+        return jsonify({
+            'message': 'Google access revoked successfully',
+            'revoked': True
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Failed to revoke Google access: {e}")
+        return jsonify({
+            'message': 'Failed to revoke Google access',
+            'error': 'server_error'
+        }), 500
+
+
+@auth_bp.route('/google/status', methods=['GET'])
+@jwt_required()
+def google_account_status():
+    """Get Google account connection status for current user.
+
+    WHY: Frontend can check if user has Google account linked.
+    Shows OAuth connection details without sensitive data.
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        oauth_record = OAuth.query.filter_by(
+            user_id=current_user_id,
+            provider='google',
+            is_active=True
+        ).first()
+
+        response_data = {
+            'google_connected': oauth_record is not None,
+            'is_oauth_user': user.is_oauth_user,
+            'provider': user.provider,
+            'google_id': user.google_id is not None
+        }
+
+        if oauth_record:
+            response_data.update({
+                'google_email': oauth_record.user_email,
+                'google_name': oauth_record.user_name,
+                'connected_at': oauth_record.created_at.isoformat() if oauth_record.created_at else None
+            })
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get Google status: {e}")
+        return jsonify({
+            'message': 'Failed to get Google account status',
             'error': 'server_error'
         }), 500

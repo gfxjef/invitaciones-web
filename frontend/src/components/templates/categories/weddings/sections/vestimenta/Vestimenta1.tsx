@@ -32,7 +32,7 @@ export const Vestimenta1: React.FC<Vestimenta1Props> = ({
   return (
     <section className="relative bg-gray-800 py-16 md:py-20 overflow-hidden">
       {/* SVG Wave Border - Top Transition */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0] z-10">
+      <div className="absolute top-0 left-0 w-full overflow-hidden leading-[0] z-10" style={{ top: -1 }}>
         <svg
           data-name="Layer 1"
           xmlns="http://www.w3.org/2000/svg"
@@ -159,7 +159,7 @@ export const Vestimenta1: React.FC<Vestimenta1Props> = ({
       </div>
 
       {/* SVG Wave Border - Bottom Transition */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] rotate-180 z-10">
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] rotate-180 z-10" style={{ bottom: -1 }}>
         <svg
           data-name="Layer 1"
           xmlns="http://www.w3.org/2000/svg"

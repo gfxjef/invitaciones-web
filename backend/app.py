@@ -46,7 +46,20 @@ def create_app(config_name=None):
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
-    
+
+    # Google OAuth Configuration
+    app.config['GOOGLE_OAUTH_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
+    app.config['GOOGLE_OAUTH_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
+
+    # Environment-aware configuration
+    app_environment = os.getenv('APP_ENVIRONMENT', 'development')
+    if app_environment == 'production':
+        app.config['FRONTEND_URL'] = os.getenv('FRONTEND_URL_PROD', 'https://invitaciones-web-ten.vercel.app')
+        app.config['GOOGLE_REDIRECT_URI'] = os.getenv('GOOGLE_REDIRECT_URI_PROD')
+    else:
+        app.config['FRONTEND_URL'] = os.getenv('FRONTEND_URL_DEV', 'http://localhost:3000')
+        app.config['GOOGLE_REDIRECT_URI'] = os.getenv('GOOGLE_REDIRECT_URI_DEV')
+
     # CORS Configuration
     cors_origins = os.getenv('CORS_ORIGIN', 'http://localhost:3000').split(',')
     
@@ -55,6 +68,19 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     ma.init_app(app)
+
+    # Google OAuth Blueprint configuration
+    from flask_dance.contrib.google import make_google_blueprint
+    from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+
+    # Configure Google OAuth with correct callback URL
+    google_bp = make_google_blueprint(
+        scope=["openid", "email", "profile"],
+        redirect_to="auth.google_authorized",  # Points to our custom endpoint
+        authorized_url="/api/auth/google/callback",  # Matches Google Console exactly
+        storage=None  # Will configure after models are imported
+    )
+    app.register_blueprint(google_bp, url_prefix="/api/auth")
     
     # JWT identity loaders and error handlers
     @jwt.user_identity_loader
@@ -109,7 +135,12 @@ def create_app(config_name=None):
         try:
             # Import all models - all exist now after recovery
             from models import User, Plan, Template, Invitation, Order, OrderItem, OrderStatus, Cart, CartItem, Coupon, CouponUsage, InvitationURL, Claim, Testimonial, InvitationData, InvitationMedia, InvitationEvent, InvitationResponse
-            
+            from models.oauth import OAuth
+
+            # Configure Google OAuth storage after models are imported
+            from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+            google_bp.storage = SQLAlchemyStorage(OAuth, db.session, user=lambda: None)
+
             # Create all tables if they don't exist
             db.create_all()
             print("[INFO] Database tables created successfully!")
@@ -152,7 +183,8 @@ def create_app(config_name=None):
     from api.coupons import coupons_bp
     from api.cart import cart_bp
     from api.modular_templates import modular_templates_bp
-    
+    from api.pdf_generation import pdf_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/user')
     app.register_blueprint(plans_bp, url_prefix='/api/plans')
@@ -167,6 +199,7 @@ def create_app(config_name=None):
     app.register_blueprint(coupons_bp, url_prefix='/api/coupons')
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
     app.register_blueprint(modular_templates_bp, url_prefix='/api/modular-templates')
+    app.register_blueprint(pdf_bp)  # PDF generation service
     
     # Root endpoint
     @app.route('/')

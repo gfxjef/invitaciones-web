@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { GoogleAuthProvider } from '@/components/auth'
 
 // Dynamic import for Toaster to reduce initial bundle size
 const Toaster = dynamic(() => import('react-hot-toast').then(mod => ({ default: mod.Toaster })), {
@@ -30,10 +31,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster position="top-right" />
-        {children}
-      </AuthProvider>
+      <GoogleAuthProvider>
+        <AuthProvider>
+          <Toaster position="top-right" />
+          {children}
+        </AuthProvider>
+      </GoogleAuthProvider>
     </QueryClientProvider>
   )
 }

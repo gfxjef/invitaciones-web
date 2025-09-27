@@ -54,7 +54,16 @@
       "Bash(findstr:*)",
       "Bash(node:*)",
       "Bash(timeout 60 npm run build)",
-      "Bash(timeout 300 npm run build)"
+      "Bash(timeout 300 npm run build)",
+      "Bash(mysql:*)",
+      "Bash(timeout 5 sleep 5)",
+      "WebSearch",
+      "Bash(sed:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(pip install:*)",
+      "Bash(venvScripts:*)",
+      "Bash(./venv/Scripts/activate)",
+      "Bash(venv\\Scripts\\python.exe -m pip install Flask-Dance[sqla] google-auth)"
     ],
     "deny": []
   },

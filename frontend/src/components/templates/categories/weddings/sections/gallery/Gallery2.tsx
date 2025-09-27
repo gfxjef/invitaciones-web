@@ -88,7 +88,7 @@ export const Gallery2: React.FC<Gallery2Props> = ({
 
   return (
     <>
-      <section id="gallery" className="pt-12 pb-16 md:pt-12 md:pb-24 px-2 bg-white">
+      <section id="gallery" className="pt-12 pb-16 md:pt-12 md:pb-24 px-2 bg-white" data-gallery="gallery2">
         <div className="container mx-auto max-w-7xl px-2">
           {/* Header */}
           <div className="text-center mb-12 md:mb-16">

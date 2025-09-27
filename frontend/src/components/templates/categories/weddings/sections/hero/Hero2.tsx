@@ -15,7 +15,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TemplateProps } from '@/types/template';
 
 interface Hero2Props {
@@ -69,14 +69,27 @@ export const Hero2: React.FC<Hero2Props> = ({
 
   const eventDate = formatWeddingDate(weddingDate);
 
+  // Detect PDF mode - activated by backend pdf-mode class or pdf=1 query param
+  const isPDF = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.location.search.includes('pdf=1') ||
+           document.documentElement.classList.contains('pdf-mode');
+  }, []);
+
   return (
     <section
-      className="relative min-h-screen flex flex-col text-white"
+      data-section="hero2"
+      className={[
+        "relative flex flex-col text-white avoid-break",
+        // Avoid 100vh in PDF; use fixed "safe" height for mobile
+        isPDF ? "min-h-[812px]" : "min-h-screen"
+      ].join(' ')}
       style={{
         backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${heroImageUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
+        // Key: disable fixed attachment in PDF to prevent cropping
+        backgroundAttachment: isPDF ? 'scroll' : 'fixed'
       }}
     >
       {/* Header with Navigation */}
@@ -115,7 +128,10 @@ export const Hero2: React.FC<Hero2Props> = ({
       </header>
 
       {/* Central Content */}
-      <main className="flex-grow flex items-center justify-center px-6">
+      <main className={[
+        "flex-grow flex items-center justify-center px-6",
+        isPDF ? "animate-none" : ""
+      ].join(' ')}>
         <div className="text-center">
           {/* Main Couple Names */}
           <h1
@@ -150,41 +166,57 @@ export const Hero2: React.FC<Hero2Props> = ({
         </div>
       </main>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
-        <div className="w-8 h-12 border-2 border-white rounded-full flex justify-center opacity-70">
-          <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+      {/* Scroll Indicator: hide in PDF */}
+      {!isPDF && (
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
+          <div className="w-8 h-12 border-2 border-white rounded-full flex justify-center opacity-70">
+            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* SVG Wave Border - NEW FEATURE */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] rotate-180">
-        <svg
-          data-name="Layer 1"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-          className="relative block w-[calc(100%+1.3px)] h-[73px]"
-        >
-          <path
-            d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
-            opacity="0.25"
-            className="fill-white"
-          />
-          <path
-            d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
-            opacity="0.5"
-            className="fill-white"
-          />
-          <path
-            d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
-            className="fill-white"
-          />
-        </svg>
-      </div>
+      {/* Wave SVG: avoid absolute/rotate in PDF to prevent page breaks */}
+      {isPDF ? (
+        <WaveSVG className="block w-full h-[73px] -mb-px" flip />
+      ) : (
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] rotate-180" style={{ bottom: -1 }}>
+          <WaveSVG className="relative block w-[calc(100%+1.3px)] h-[73px]" />
+        </div>
+      )}
     </section>
   );
 };
+
+// Reusable Wave SVG Component with flip support
+function WaveSVG({ className, flip = false }: { className?: string; flip?: boolean }) {
+  return (
+    <svg
+      data-name="Layer 1"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1200 120"
+      preserveAspectRatio="none"
+      className={className}
+    >
+      {/* Si flip=true, invertimos verticalmente dentro del propio SVG */}
+      <g transform={flip ? "scale(1,-1) translate(0,-120)" : undefined}>
+        <path
+          d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+          opacity="0.25"
+          className="fill-white"
+        />
+        <path
+          d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+          opacity="0.5"
+          className="fill-white"
+        />
+        <path
+          d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
+          className="fill-white"
+        />
+      </g>
+    </svg>
+  );
+}
 
 // Export default props - same as Hero1 for compatibility
 export const Hero2DefaultProps = {

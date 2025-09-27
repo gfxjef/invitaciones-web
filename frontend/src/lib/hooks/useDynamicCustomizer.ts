@@ -1096,6 +1096,21 @@ export function useDynamicCustomizer({
     setSelectedMode(mode);
   }, []);
 
+  // Restore state function for localStorage sync
+  const restoreState = useCallback((state: { customizerData: CustomizerData; touchedFields: TouchedFields }) => {
+    console.log('🔄 Restoring customizer state:', {
+      customizerFields: Object.keys(state.customizerData || {}).length,
+      touchedFields: Object.keys(state.touchedFields || {}).length
+    });
+
+    if (state.customizerData) {
+      setCustomizerData(state.customizerData);
+    }
+    if (state.touchedFields) {
+      setTouchedFields(state.touchedFields);
+    }
+  }, []);
+
   return {
     // State
     isOpen,
@@ -1124,6 +1139,7 @@ export function useDynamicCustomizer({
     openCustomizer,
     closeCustomizer,
     switchMode,
+    restoreState,
 
     // Data access
     getMergedData,

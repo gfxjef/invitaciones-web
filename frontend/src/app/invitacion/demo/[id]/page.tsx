@@ -10,22 +10,32 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTemplate } from '@/lib/hooks/use-templates';
-import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
+import { DownloadButton } from '@/components/auth/DownloadButton';
+import { ViewModeSwitcher, ViewMode } from '@/components/ui/ViewModeSwitcher';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { DynamicCustomizer } from '@/components/customizer';
 import { LoaderOverlay } from '@/components/ui/LoaderOverlay';
 import { Invitation, InvitationData, TemplateColors, InvitationMedia, InvitationEvent, TemplateMetadata } from '@/types/template';
+import { DeviceFrameset } from 'react-device-frameset';
+import 'react-device-frameset/styles/marvel-devices.min.css';
+
+// Import PDF generation functions - 3 NEW IMPROVED variations for funnel testing
+import { generatePDFMobileOptionA } from '@/lib/pdf/pdfMobileOptionA';
+import { generatePDFMobileOptionB } from '@/lib/pdf/pdfMobileOptionB';
+import { generatePDFMobileOptionC } from '@/lib/pdf/pdfMobileOptionC';
 
 interface TemplateDemoPageProps {
   params: {
     id: string;
+  };
+  searchParams: {
+    embedded?: string;
   };
 }
 
@@ -161,9 +171,12 @@ const createDemoInvitationData = (templateId: number, templateData: any): {
   };
 };
 
-export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
+export default function TemplateDemoPage({ params, searchParams }: TemplateDemoPageProps) {
   const router = useRouter();
   const templateId = parseInt(params.id);
+  const [viewMode, setViewMode] = useState<ViewMode>('desktop');
+  const isEmbedded = searchParams?.embedded === 'true';
+  const saveStateRef = useRef<(() => void) | null>(null);
 
   // Validate ID
   if (isNaN(templateId) || templateId <= 0) {
@@ -172,20 +185,109 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
 
   // Fetch template data
   const { data: templateData, isLoading, error } = useTemplate(templateId);
-  const { addTemplate, isPending } = useAddTemplateToCart();
 
   // Create demo data when template loads (without useState for simplicity)
   const demoInvitationData = templateData ? createDemoInvitationData(templateId, templateData) : null;
 
-  const handleAddToCart = () => {
-    if (templateData) {
-      addTemplate(templateData.template);
-      router.push('/carrito');
+  // Handle download success callback
+  const handleDownloadSuccess = () => {
+    // Optional: Add any additional logic after successful download
+    console.log('Download completed successfully');
+  };
+
+  // Handle PDF test button clicks - Now with 3 NEW IMPROVED variations for funnel testing
+  const handlePDFTest = async (option: 'mobileA' | 'mobileB' | 'mobileC') => {
+    if (!demoInvitationData) {
+      console.error('No demo data available');
+      return;
+    }
+
+    console.log(`🚀 Testing NEW PDF Mobile ${option} (funnel optimization)...`);
+
+    try {
+      let result;
+
+      switch (option) {
+        case 'mobileA':
+          // Mobile Option A: Scale Fix (Básico)
+          console.log('🅰️ Using Mobile Option A: Scale Fix (básico)');
+          result = await generatePDFMobileOptionA({
+            filename: `demo-mobile-A-${templateId}.pdf`,
+            quality: 0.95,
+            waitTime: 3000
+          });
+          break;
+
+        case 'mobileB':
+          // Mobile Option B: Dimension Match (Intermedio)
+          console.log('🅱️ Using Mobile Option B: Dimension Match (intermedio)');
+          result = await generatePDFMobileOptionB({
+            filename: `demo-mobile-B-${templateId}.pdf`,
+            quality: 0.95,
+            targetWidth: 375,
+            targetHeight: 812
+          });
+          break;
+
+        case 'mobileC':
+          // Mobile Option C: Smart Resolution (Avanzado)
+          console.log('🅲 Using Mobile Option C: Smart Resolution (avanzado)');
+          result = await generatePDFMobileOptionC({
+            filename: `demo-mobile-C-${templateId}.pdf`,
+            quality: 0.98,
+            targetDPI: 150,
+            smartScaling: true
+          });
+          break;
+
+        default:
+          console.error('Unknown PDF option:', option);
+          return;
+      }
+
+      if (result.success) {
+        console.log(`✅ PDF Mobile ${option} generated successfully! (Scaling issue fixed)`);
+        alert(`PDF Mobile ${option} generado exitosamente! (Problema de escalado corregido)`);
+      } else {
+        console.error(`❌ PDF Mobile ${option} failed:`, result.error);
+        alert(`Error en PDF Mobile ${option}: ${result.error}`);
+      }
+
+    } catch (error) {
+      console.error(`❌ PDF Mobile ${option} exception:`, error);
+      alert(`Error en PDF Mobile ${option}: ${error}`);
     }
   };
 
   const handleGoBack = () => {
     router.back();
+  };
+
+  // Capture saveState function from DynamicCustomizer
+  const handleSaveStateReady = (saveStateFn: () => void) => {
+    saveStateRef.current = saveStateFn;
+  };
+
+  // Handle view mode changes with immediate save before iframe refresh
+  const handleViewModeChange = (newMode: ViewMode) => {
+    setViewMode(newMode);
+
+    if (newMode === 'mobile') {
+      // 1. Force immediate save to localStorage (bypass debounce)
+      if (saveStateRef.current) {
+        saveStateRef.current();
+        console.log('⚡ Forced immediate save before mobile switch');
+      }
+
+      // 2. Small delay then refresh iframe
+      setTimeout(() => {
+        const iframe = document.querySelector('iframe[title="Vista móvil de la invitación"]') as HTMLIFrameElement;
+        if (iframe) {
+          iframe.src = iframe.src; // Force complete reload
+          console.log('🔄 Refreshing mobile iframe to load latest localStorage');
+        }
+      }, 50); // Reduced from 100ms to 50ms
+    }
   };
 
   if (error || (!templateData && !isLoading)) {
@@ -194,6 +296,39 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
 
   const template = templateData?.template;
   const isPreparingDemo = templateData && !demoInvitationData;
+
+  // If embedded mode, render only the template content with proper mobile viewport
+  if (isEmbedded && templateData && demoInvitationData && template) {
+    return (
+      <>
+        <head>
+          <meta name="viewport" content="width=375, initial-scale=1, user-scalable=no" />
+        </head>
+        <div className="w-full h-full">
+          <DynamicCustomizer
+            templateData={template}
+            sectionsConfig={template.sections_config}
+            templateId={templateId}
+          >
+            <TemplateRenderer
+              invitation={demoInvitationData.invitation}
+              data={demoInvitationData.data}
+              template={{
+                ...template,
+                template_file: template.template_file || `template_${template.id}`
+              } as unknown as TemplateMetadata}
+              colors={demoInvitationData.colors}
+              features={template.supported_features}
+              media={demoInvitationData.media}
+              events={demoInvitationData.events}
+              isPreview={true}
+              isEditing={false}
+            />
+          </DynamicCustomizer>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="relative">
@@ -235,38 +370,102 @@ export default function TemplateDemoPage({ params }: TemplateDemoPageProps) {
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={isPending}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Agregar al Carrito
-                </Button>
+                <div className="flex items-center gap-4">
+                  <ViewModeSwitcher
+                    selectedMode={viewMode}
+                    onModeChange={handleViewModeChange}
+                  />
+                  <DownloadButton
+                    templateData={{
+                      id: templateId,
+                      name: template.name,
+                      template: template
+                    }}
+                    buttonText="Descargar Invitación"
+                    className="bg-purple-600 hover:bg-purple-700"
+                    onDownloadComplete={handleDownloadSuccess}
+                  />
+
+                  {/* PDF Test Buttons - 3 NEW IMPROVED Variations (Funnel System) */}
+                  <div className="flex gap-2 ml-4 border-l pl-4">
+                    <button
+                      onClick={() => handlePDFTest('mobileA')}
+                      className="px-3 py-1 text-xs bg-pink-500 text-white rounded hover:bg-pink-600 transition-colors font-semibold"
+                      title="Mobile A: Scale Fix (básico) - Corrige scale 2→1"
+                    >
+                      MA
+                    </button>
+                    <button
+                      onClick={() => handlePDFTest('mobileB')}
+                      className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors font-semibold"
+                      title="Mobile B: Dimension Match (intermedio) - 375x812px exacto"
+                    >
+                      MB
+                    </button>
+                    <button
+                      onClick={() => handlePDFTest('mobileC')}
+                      className="px-3 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors font-semibold"
+                      title="Mobile C: Smart Resolution (avanzado) - AI optimizado"
+                    >
+                      MC
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Main Template Content with Dynamic Customizer */}
-          <DynamicCustomizer
-            templateData={template}
-            sectionsConfig={template.sections_config}
-          >
-            <TemplateRenderer
-              invitation={demoInvitationData.invitation}
-              data={demoInvitationData.data}
-              template={{
-                ...template,
-                template_file: template.template_file || `template_${template.id}` // TODO: Test this fallback
-              } as unknown as TemplateMetadata}
-              colors={demoInvitationData.colors}
-              features={template.supported_features}
-              media={demoInvitationData.media}
-              events={demoInvitationData.events}
-              isPreview={true}
-              isEditing={false}
-            />
-          </DynamicCustomizer>
+          {/* Main Template Content - Both modes always in DOM */}
+
+          {/* Desktop View - Always in DOM, visibility controlled by class */}
+          <div className={viewMode === 'desktop' ? 'block w-full' : 'hidden'}>
+            <div id="template-content-wrapper">
+              <DynamicCustomizer
+                templateData={template}
+                sectionsConfig={template.sections_config}
+                templateId={templateId}
+                onSaveStateReady={handleSaveStateReady}
+              >
+                <TemplateRenderer
+                  invitation={demoInvitationData.invitation}
+                  data={demoInvitationData.data}
+                  template={{
+                    ...template,
+                    template_file: template.template_file || `template_${template.id}`
+                  } as unknown as TemplateMetadata}
+                  colors={demoInvitationData.colors}
+                  features={template.supported_features}
+                  media={demoInvitationData.media}
+                  events={demoInvitationData.events}
+                  isPreview={true}
+                  isEditing={false}
+                />
+              </DynamicCustomizer>
+            </div>
+          </div>
+
+          {/* Mobile View - Always in DOM, visibility controlled by class */}
+          <div className={viewMode === 'mobile' ? 'block' : 'hidden'}>
+            <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 py-24 px-4 flex items-center justify-center">
+              <div className="scale-75 sm:scale-90 lg:scale-100">
+                <DeviceFrameset
+                  device="iPhone X"
+                  color="black"
+                  landscape={false}
+                >
+                  <iframe
+                    src={`/invitacion/demo/${templateId}?embedded=true`}
+                    style={{
+                      width: '375px',   // Real mobile viewport width
+                      height: '812px',  // iPhone X height
+                      border: 'none'
+                    }}
+                    title="Vista móvil de la invitación"
+                  />
+                </DeviceFrameset>
+              </div>
+            </div>
+          </div>
 
           {/* Demo Notice - Fixed at bottom */}
           <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 text-white text-center py-2 px-4">
