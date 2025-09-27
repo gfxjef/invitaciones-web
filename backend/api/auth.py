@@ -339,14 +339,29 @@ def verify_google_token():
         }), 401
 
     except Exception as e:
-        logger.error(f"❌ Error inesperado en Google login: {str(e)}")
-        logger.error(f"❌ Tipo de error: {type(e).__name__}")
-        logger.error("📨 ========== FIN ENDPOINT /google/verify (ERROR 500) ==========")
-        return jsonify({
-            'error': 'server_error',
-            'message': 'Error interno del servidor al procesar Google login',
-            'details': str(e)
-        }), 500
+        # Import here to avoid circular imports
+        from sqlalchemy.exc import IntegrityError
+
+        # Handle database-specific errors
+        if isinstance(e, IntegrityError):
+            logger.error(f"❌ Error de integridad de base de datos: {str(e)}")
+            logger.error("❌ Posible causa: Cuenta Google ya vinculada o race condition")
+            logger.error("📨 ========== FIN ENDPOINT /google/verify (ERROR 409) ==========")
+            return jsonify({
+                'error': 'account_conflict',
+                'message': 'Esta cuenta de Google ya está vinculada con otro usuario',
+                'details': 'La cuenta ya existe en el sistema',
+                'help': 'Intenta hacer login en lugar de registrarte'
+            }), 409
+        else:
+            logger.error(f"❌ Error inesperado en Google login: {str(e)}")
+            logger.error(f"❌ Tipo de error: {type(e).__name__}")
+            logger.error("📨 ========== FIN ENDPOINT /google/verify (ERROR 500) ==========")
+            return jsonify({
+                'error': 'server_error',
+                'message': 'Error interno del servidor al procesar Google login',
+                'details': str(e)
+            }), 500
 
 
 @auth_bp.route('/google/login')

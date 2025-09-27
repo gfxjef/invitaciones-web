@@ -145,30 +145,65 @@ class GoogleOAuthService:
                 user_created = True
                 logger.info(f"Created new Google user: {email}")
 
-        # Create or update OAuth record
-        oauth_record = OAuth.find_by_provider_user_id('google', google_user_id)
+        # Create or update OAuth record with race condition protection
+        from sqlalchemy.exc import IntegrityError
 
-        if oauth_record:
-            # Update existing OAuth record
-            oauth_record.update_user_info(
-                user_email=email,
-                user_name=name,
-                profile_picture=picture
-            )
-        else:
-            # Create new OAuth record
-            OAuth.create_oauth_user(
-                provider='google',
-                provider_user_id=google_user_id,
-                user_id=user.id,
-                user_email=email,
-                user_name=name,
-                profile_picture=picture
-            )
+        try:
+            # First, try to find existing record
+            oauth_record = OAuth.find_by_provider_user_id('google', google_user_id)
 
-        # Save all changes
-        db.session.add(user)
-        db.session.commit()
+            if oauth_record:
+                logger.info(f"🔄 Actualizando registro OAuth existente para user_id: {google_user_id}")
+                # Update existing OAuth record
+                oauth_record.update_user_info(
+                    user_email=email,
+                    user_name=name,
+                    profile_picture=picture
+                )
+            else:
+                logger.info(f"🆕 Creando nuevo registro OAuth para user_id: {google_user_id}")
+                # Create new OAuth record
+                oauth_record = OAuth.create_oauth_user(
+                    provider='google',
+                    provider_user_id=google_user_id,
+                    user_id=user.id,
+                    user_email=email,
+                    user_name=name,
+                    profile_picture=picture
+                )
+                db.session.add(oauth_record)
+
+            # Save all changes
+            db.session.add(user)
+            db.session.commit()
+            logger.info("✅ Registro OAuth guardado exitosamente")
+
+        except IntegrityError as e:
+            logger.warning(f"⚠️ IntegrityError detectado - posible race condition: {str(e)}")
+            db.session.rollback()
+
+            # Race condition detected - try to find the existing record
+            oauth_record = OAuth.find_by_provider_user_id('google', google_user_id)
+
+            if oauth_record:
+                logger.info(f"🔄 Registro OAuth encontrado después del rollback - actualizando")
+                # Update the existing record found after rollback
+                oauth_record.update_user_info(
+                    user_email=email,
+                    user_name=name,
+                    profile_picture=picture
+                )
+                db.session.add(user)
+                db.session.commit()
+                logger.info("✅ Registro OAuth actualizado después del race condition")
+            else:
+                logger.error(f"❌ Error crítico: No se pudo crear ni encontrar registro OAuth para {google_user_id}")
+                raise ValueError(f"Error crítico de base de datos: OAuth record no se pudo crear ni encontrar para Google ID {google_user_id}")
+
+        except Exception as e:
+            logger.error(f"❌ Error inesperado al manejar registro OAuth: {str(e)}")
+            db.session.rollback()
+            raise ValueError(f"Error de base de datos al procesar cuenta Google: {str(e)}")
 
         return user, user_created
 

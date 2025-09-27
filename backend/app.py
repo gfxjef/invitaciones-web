@@ -29,6 +29,16 @@ def create_app(config_name=None):
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # MySQL Connection Pool Configuration - WHY: Fix "Lost connection to MySQL server" errors
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,      # Test connections before use
+        'pool_recycle': 3600,       # Recycle connections every hour
+        'pool_size': 10,            # Base pool size
+        'max_overflow': 20,         # Maximum additional connections
+        'pool_timeout': 30,         # Timeout to get connection from pool
+        'echo': False               # Set to True for SQL query debugging
+    }
     
     # File Upload Configuration
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', os.path.join(os.path.dirname(__file__), 'uploads'))
