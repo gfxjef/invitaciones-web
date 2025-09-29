@@ -38,12 +38,12 @@ export function CartItemCard({
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity < 1) return;
-    updateItemMutation.mutate({ itemId: item.id, quantity: newQuantity });
+    updateItemMutation.mutate({ id: item.id, quantity: newQuantity, type: item.type });
   };
 
   const handleRemove = () => {
     if (showConfirmDelete) {
-      removeItemMutation.mutate(item.id);
+      removeItemMutation.mutate({ id: item.id, type: item.type });
       setShowConfirmDelete(false);
     } else {
       setShowConfirmDelete(true);
@@ -64,8 +64,8 @@ export function CartItemCard({
           {showImage && (
             <div className="flex-shrink-0">
               <div className={`${compact ? 'w-16 h-20' : 'w-24 h-30'} bg-gray-200 rounded-lg overflow-hidden`}>
-                <Image 
-                  src={item.thumbnail_url || '/placeholder-template.jpg'}
+                <Image
+                  src={item.thumbnail_url || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
                   alt={item.name}
                   width={compact ? 64 : 96}
                   height={compact ? 80 : 120}

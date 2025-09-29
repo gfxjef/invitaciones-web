@@ -1,27 +1,25 @@
 /**
- * DownloadButton Component
+ * DirectDownloadButton Component
  *
- * WHY: Smart button that handles download logic with authentication checks.
- * Shows auth modal for non-authenticated users and processes downloads for authenticated users.
+ * WHY: Maintains the original download functionality - login then immediate PDF download.
+ * This preserves the simple flow for users who want instant downloads without checkout.
  *
  * WHAT: Button that either triggers download immediately (if authenticated)
- * or shows registration modal (if not authenticated).
+ * or shows registration modal then downloads (if not authenticated).
  */
 
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { AuthModal } from './AuthModal';
 import { useAuthHook } from '@/lib/hooks/useAuth';
 import { useExportToPDF } from '@/lib/hooks/usePreview';
-import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { toast } from 'react-hot-toast';
 
-interface DownloadButtonProps {
+interface DirectDownloadButtonProps {
   /**
    * Template/invitation data to download
    */
@@ -66,15 +64,15 @@ interface DownloadButtonProps {
   onAuthSuccess?: () => void;
 }
 
-export function DownloadButton({
+export function DirectDownloadButton({
   templateData,
-  buttonText = "Descargar Invitación",
+  buttonText = "Descargar Auto",
   size = "default",
   className = "",
   onDownloadStart,
   onDownloadComplete,
   onAuthSuccess
-}: DownloadButtonProps) {
+}: DirectDownloadButtonProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -83,12 +81,6 @@ export function DownloadButton({
 
   // PDF export hook
   const exportToPDF = useExportToPDF();
-
-  // Cart hook for adding templates
-  const { addTemplate } = useAddTemplateToCart();
-
-  // Router hook for navigation
-  const router = useRouter();
 
   /**
    * Process the actual download using Playwright PDF service
@@ -136,14 +128,22 @@ export function DownloadButton({
       // More specific error messages
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
-          toast.error('La generación del PDF está tomando más tiempo del esperado. Inténtalo de nuevo.', { id: 'pdf-download' });
+          toast.error('La generación del PDF está tomando más tiempo del esperado. Inténtalo de nuevo.', {
+            id: 'pdf-download'
+          });
         } else if (error.message.includes('Network Error')) {
-          toast.error('Error de conexión. Verifica que el servidor esté funcionando.', { id: 'pdf-download' });
+          toast.error('Error de conexión. Verifica que el servidor esté funcionando.', {
+            id: 'pdf-download'
+          });
         } else {
-          toast.error(`Error al generar el PDF: ${error.message}`, { id: 'pdf-download' });
+          toast.error(`Error al generar el PDF: ${error.message}`, {
+            id: 'pdf-download'
+          });
         }
       } else {
-        toast.error('Error al generar el PDF. Verifica tu conexión e inténtalo de nuevo.', { id: 'pdf-download' });
+        toast.error('Error al generar el PDF. Verifica tu conexión e inténtalo de nuevo.', {
+          id: 'pdf-download'
+        });
       }
     } finally {
       setIsDownloading(false);
@@ -172,30 +172,16 @@ export function DownloadButton({
   };
 
   /**
-   * Handle successful authentication from modal
+   * Handle successful authentication from modal - DIRECT DOWNLOAD (original functionality)
    */
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
     onAuthSuccess?.();
 
-    // Add template to cart and redirect to checkout for payment
-    if (templateData) {
-      const template = {
-        id: templateData.id,
-        name: templateData.name,
-        thumbnail_url: templateData.thumbnail_url || templateData.preview_image_url || '',
-        plan: templateData.plan,
-        is_premium: templateData.is_premium,
-        price: templateData.price
-      };
-
-      addTemplate(template);
-
-      // Redirect to checkout after adding to cart
-      setTimeout(() => {
-        router.push('/checkout');
-      }, 800); // Small delay to show success toast
-    }
+    // Auto-trigger download after successful auth (ORIGINAL FUNCTIONALITY)
+    setTimeout(() => {
+      processDownload();
+    }, 500); // Small delay for better UX
   };
 
   const isLoading = authLoading || isDownloading;
@@ -206,7 +192,7 @@ export function DownloadButton({
         onClick={handleClick}
         disabled={isLoading}
         size={size}
-        className={`bg-purple-600 hover:bg-purple-700 ${className}`}
+        className={`bg-green-600 hover:bg-green-700 ${className}`}
       >
         {isLoading ? (
           <div className="flex items-center gap-2">
@@ -233,9 +219,9 @@ export function DownloadButton({
 }
 
 /**
- * Hook for download functionality (optional utility)
+ * Hook for direct download functionality (optional utility)
  */
-export function useDownload() {
+export function useDirectDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
   const { isAuthenticated } = useAuthHook();
 
@@ -248,7 +234,7 @@ export function useDownload() {
     setIsDownloading(true);
 
     try {
-      // Download logic here
+      // Direct download logic here
       await new Promise(resolve => setTimeout(resolve, 2000));
       toast.success('Descarga completada');
       return true;

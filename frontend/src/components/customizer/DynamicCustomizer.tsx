@@ -72,6 +72,7 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
     templateId: templateId || 0,
     customizerData,
     touchedFields,
+    selectedMode,
     onStateRestore: templateId ? restoreState : undefined,
     onSaveStateReady
   });

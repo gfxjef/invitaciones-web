@@ -80,6 +80,51 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Helper function to detect authorization errors in response content
+const isAuthorizationError = (response: any): boolean => {
+  if (!response || !response.data) return false;
+
+  // Skip OAuth and auth verification endpoints (they legitimately contain "token" in success responses)
+  const url = response.config?.url || '';
+  const oauthEndpoints = [
+    '/auth/google/verify',
+    '/auth/google/callback',
+    '/auth/refresh',
+    '/auth/login',
+    '/auth/register'
+  ];
+
+  if (oauthEndpoints.some(endpoint => url.includes(endpoint))) {
+    return false;
+  }
+
+  const data = response.data;
+  const dataStr = typeof data === 'string' ? data.toLowerCase() : JSON.stringify(data).toLowerCase();
+
+  // More specific error patterns - avoid false positives with success responses
+  const specificErrorPatterns = [
+    'unauthorized',
+    'access denied',
+    'authentication required',
+    'authentication failed',
+    'login required',
+    'session expired',
+    'invalid credentials',
+    'token expired',
+    'token invalid',
+    'permission denied'
+  ];
+
+  // Also check if response has explicit error structure
+  const hasErrorStructure = (
+    (typeof data === 'object' && data !== null) &&
+    (data.error || data.errors || data.message?.toLowerCase().includes('error'))
+  );
+
+  return specificErrorPatterns.some(pattern => dataStr.includes(pattern)) ||
+         (hasErrorStructure && dataStr.includes('auth'));
+};
+
 // Response interceptor for error handling and token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -89,6 +134,27 @@ apiClient.interceptors.response.use(
       status: response.status,
       statusText: response.statusText
     });
+
+    // Check for authorization errors in successful responses (200 status)
+    if (response.status === 200 && isAuthorizationError(response)) {
+      console.warn('⚠️ [API] Authorization error detected in 200 response:', {
+        url: response.config.url,
+        method: response.config.method?.toUpperCase(),
+        data: response.data
+      });
+
+      // Convert to axios error format to trigger refresh logic
+      const authError = new Error('Authorization error in successful response') as any;
+      authError.config = response.config;
+      authError.response = {
+        ...response,
+        status: 401, // Convert to 401 to trigger refresh logic
+        statusText: 'Unauthorized'
+      };
+
+      throw authError;
+    }
+
     return response;
   },
   async (error: AxiosError) => {
@@ -100,7 +166,7 @@ apiClient.interceptors.response.use(
       data: error.response?.data,
       message: error.message
     });
-    
+
     const originalRequest = error.config as any;
 
     // Handle 500 internal server errors with retry (development mode only)
@@ -360,54 +426,91 @@ export const cartApi = {
    */
   getCart: async (): Promise<Cart> => {
     const response = await apiClient.get('/cart/items');
-    const cart = response.data.cart || [];
-    const summary = response.data.summary || { total_items: 0, total_price: 0 };
-    
-    return {
-      id: 1, // Not used in new backend
-      items: cart,
-      item_count: summary.total_items,
-      total_amount: summary.total_price,
-    };
+
+    // Backend returns: { cart: {id, items, total_amount, item_count}, summary: {...} }
+    const cartData = response.data.cart;
+
+    // Handle the backend response structure correctly
+    if (cartData && typeof cartData === 'object' && cartData.items) {
+      // Backend already returns the complete cart object
+      return {
+        id: cartData.id || 1,
+        items: cartData.items || [],
+        item_count: cartData.item_count || 0,
+        total_amount: cartData.total_amount || 0,
+      };
+    } else {
+      // Fallback for unexpected response format
+      const items = Array.isArray(cartData) ? cartData : [];
+      const summary = response.data.summary || { total_items: 0, total_price: 0 };
+
+      return {
+        id: 1,
+        items: items,
+        item_count: summary.total_items || items.length,
+        total_amount: summary.total_price || 0,
+      };
+    }
   },
 
   /**
    * Add template to cart (single template selection)
    */
-  addToCart: async (templateId: number, quantity: number = 1): Promise<Cart> => {
+  addToCart: async (id: number, quantity: number = 1): Promise<Cart> => {
     const response = await apiClient.post('/cart/items', {
       type: 'template',
-      id: templateId,
+      id: id,
       quantity: 1, // Templates always have quantity 1
     });
-    const cart = response.data.cart || [];
-    
-    return {
-      id: 1,
-      items: cart,
-      item_count: cart.length,
-      total_amount: cart.reduce((sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity, 0),
-    };
+
+    // Backend POST returns: { message: "...", cart: {id, items, total_amount, item_count} }
+    const cartData = response.data.cart;
+
+    if (cartData && typeof cartData === 'object' && cartData.items) {
+      // Backend already returns the complete cart object
+      return {
+        id: cartData.id || 1,
+        items: cartData.items || [],
+        item_count: cartData.item_count || 0,
+        total_amount: cartData.total_amount || 0,
+      };
+    } else {
+      // Fallback for unexpected response format
+      const items = Array.isArray(cartData) ? cartData : [];
+      return {
+        id: 1,
+        items: items,
+        item_count: items.length,
+        total_amount: items.reduce((sum: number, item: CartItem) => sum + (item.price || 0) * item.quantity, 0),
+      };
+    }
   },
 
   /**
-   * Update cart item quantity (not applicable for templates)
+   * Update cart item quantity with type parameter
    */
-  updateCartItem: async (itemId: number, quantity: number): Promise<Cart> => {
-    // For templates, this would just replace the selection
-    const response = await apiClient.post('/cart/items', {
-      type: 'template', 
-      id: itemId,
-      quantity: 1,
-    });
-    return response.data.cart || { id: 0, items: [], total_amount: 0, item_count: 0 };
+  updateCartItem: async (id: number, quantity: number, type: 'template' | 'plan'): Promise<Cart> => {
+    const response = await apiClient.patch(`/cart/items/${id}`, { quantity }, { params: { type } });
+    const cartData = response.data?.cart;
+
+    if (cartData && typeof cartData === 'object' && cartData.items) {
+      return {
+        id: cartData.id || 1,
+        items: cartData.items || [],
+        item_count: cartData.item_count || 0,
+        total_amount: cartData.total_amount || 0,
+      };
+    } else {
+      // Fallback
+      return { id: 1, items: [], total_amount: 0, item_count: 0 };
+    }
   },
 
   /**
-   * Remove item from cart
+   * Remove item from cart with type parameter
    */
-  removeFromCart: async (itemId: number): Promise<void> => {
-    await apiClient.delete(`/cart/items/${itemId}?type=template`);
+  removeFromCart: async (id: number, type: 'template' | 'plan'): Promise<void> => {
+    await apiClient.delete(`/cart/items/${id}`, { params: { type } });
   },
 
   /**

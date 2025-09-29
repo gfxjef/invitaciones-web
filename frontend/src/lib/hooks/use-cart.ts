@@ -53,21 +53,21 @@ export const useAddToCart = () => {
   const { addItemOptimistic, setCart, setUpdating, cart } = useCartStore();
   
   return useMutation({
-    mutationFn: ({ 
-      templateId, 
-      quantity = 1, 
+    mutationFn: ({
+      id,
+      quantity = 1,
       templateName,
       templateThumbnail,
-      unitPrice 
-    }: { 
-      templateId: number; 
+      unitPrice
+    }: {
+      id: number;
       quantity?: number;
       templateName: string;
       templateThumbnail: string;
       unitPrice: number;
-    }) => cartApi.addToCart(templateId, quantity),
+    }) => cartApi.addToCart(id, quantity),
     
-    onMutate: async ({ templateId, quantity = 1, templateName, templateThumbnail, unitPrice }) => {
+    onMutate: async ({ id, quantity = 1, templateName, templateThumbnail, unitPrice }) => {
       setUpdating(true);
       
       // Cancel outgoing refetches
@@ -77,7 +77,7 @@ export const useAddToCart = () => {
       const previousCart = cart;
       
       // Optimistically update cart in Zustand
-      addItemOptimistic(templateId, templateName, templateThumbnail, unitPrice, quantity);
+      addItemOptimistic(id, templateName, templateThumbnail, unitPrice, quantity);
       
       return { previousCart };
     },
@@ -110,12 +110,12 @@ export const useAddToCart = () => {
 export const useUpdateCartItem = () => {
   const queryClient = useQueryClient();
   const { updateItemOptimistic, setCart, setUpdating, cart } = useCartStore();
-  
+
   return useMutation({
-    mutationFn: ({ itemId, quantity }: { itemId: number; quantity: number }) =>
-      cartApi.updateCartItem(itemId, quantity),
+    mutationFn: ({ id, quantity, type }: { id: number; quantity: number; type: 'template' | 'plan' }) =>
+      cartApi.updateCartItem(id, quantity, type),
     
-    onMutate: async ({ itemId, quantity }) => {
+    onMutate: async ({ id, quantity }) => {
       setUpdating(true);
       
       await queryClient.cancelQueries({ queryKey: ['cart'] });
@@ -124,7 +124,7 @@ export const useUpdateCartItem = () => {
       const previousCart = cart;
       
       // Optimistically update cart in Zustand
-      updateItemOptimistic(itemId, quantity);
+      updateItemOptimistic(id, quantity);
       
       return { previousCart };
     },
@@ -154,25 +154,25 @@ export const useUpdateCartItem = () => {
 export const useRemoveFromCart = () => {
   const queryClient = useQueryClient();
   const { removeItemOptimistic, setCart, setUpdating, cart } = useCartStore();
-  
+
   return useMutation({
-    mutationFn: (itemId: number) => cartApi.removeFromCart(itemId),
+    mutationFn: ({ id, type }: { id: number; type: 'template' | 'plan' }) => cartApi.removeFromCart(id, type),
     
-    onMutate: async (itemId) => {
+    onMutate: async ({ id }) => {
       setUpdating(true);
-      
+
       await queryClient.cancelQueries({ queryKey: ['cart'] });
-      
+
       // Snapshot the previous cart state from Zustand
       const previousCart = cart;
-      
+
       // Optimistically remove item from Zustand
-      removeItemOptimistic(itemId);
-      
+      removeItemOptimistic(id);
+
       return { previousCart };
     },
     
-    onSuccess: (_, itemId) => {
+    onSuccess: (_, { id }) => {
       toast.success('Plantilla removida del carrito');
       // Refetch cart to get updated server state
       queryClient.invalidateQueries({ queryKey: ['cart'] });
@@ -250,7 +250,7 @@ export const useAddTemplateToCart = () => {
                        (template.is_premium ? 49.90 : 29.90); // Fallback using actual plan prices
       
       return addToCart.mutate({
-        templateId: template.id,
+        id: template.id,
         quantity: 1, // Templates always have quantity 1
         templateName: template.name,
         templateThumbnail: template.thumbnail_url || template.preview_image_url,

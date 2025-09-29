@@ -1097,10 +1097,11 @@ export function useDynamicCustomizer({
   }, []);
 
   // Restore state function for localStorage sync
-  const restoreState = useCallback((state: { customizerData: CustomizerData; touchedFields: TouchedFields }) => {
+  const restoreState = useCallback((state: { customizerData: CustomizerData; touchedFields: TouchedFields; selectedMode?: CustomizerMode }) => {
     console.log('🔄 Restoring customizer state:', {
       customizerFields: Object.keys(state.customizerData || {}).length,
-      touchedFields: Object.keys(state.touchedFields || {}).length
+      touchedFields: Object.keys(state.touchedFields || {}).length,
+      mode: state.selectedMode || 'basic'
     });
 
     if (state.customizerData) {
@@ -1108,6 +1109,9 @@ export function useDynamicCustomizer({
     }
     if (state.touchedFields) {
       setTouchedFields(state.touchedFields);
+    }
+    if (state.selectedMode) {
+      setSelectedMode(state.selectedMode);
     }
   }, []);
 

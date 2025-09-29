@@ -111,7 +111,7 @@ def create_order():
     WHY: Convierte el carrito temporal en una orden persistente para pago,
     integrando el sistema de cupones para aplicar descuentos y billing info.
     """
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())  # Convert to int for consistency with cart.py
     data = request.get_json() or {}
     
     try:
@@ -122,6 +122,8 @@ def create_order():
         from api.cart import user_carts
         
         # Get user's cart from the cart API system
+        logger.info(f"DEBUG: current_user_id type: {type(current_user_id)}, value: {current_user_id}")
+        logger.info(f"DEBUG: user_carts keys: {list(user_carts.keys()) if user_carts else 'empty'}")
         cart_items = user_carts.get(current_user_id, [])
         logger.info(f"Cart items found: {len(cart_items)} items")
         

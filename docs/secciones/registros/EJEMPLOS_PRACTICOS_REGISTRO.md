@@ -650,6 +650,434 @@ class TestSectionRegistration:
 
 ---
 
+## **📦 CASO 9: ESTRUCTURA DEL LOCALSTORAGE Y TRANSFORMACIÓN**
+
+### **CONTEXTO**
+El frontend almacena los datos de personalización en localStorage como un objeto plano. Para enviarlos al backend, necesitan ser agrupados por secciones.
+
+### **ESTRUCTURA ACTUAL EN LOCALSTORAGE**
+
+```json
+{
+  "customizerData": {
+    // TODOS los campos en un objeto plano (sin agrupación)
+    "groom_name": "Jefferson",
+    "bride_name": "Rosmery",
+    "weddingDate": "2024-12-15T17:00:00",
+    "eventLocation": "Lima, Perú",
+    "heroImageUrl": "https://cdn.example.com/hero-image.jpg",
+
+    // Campos con prefijos que indican su sección
+    "familiares_padre_novio": "Juan Pérez",
+    "familiares_madre_novio": "María García",
+    "familiares_padre_novia": "Carlos López",
+    "familiares_madre_novia": "Ana Martínez",
+
+    "welcome_title": "¡Nos Casamos!",
+    "welcome_description": "Con alegría queremos compartir este momento...",
+    "welcome_couplePhotoUrl": "https://cdn.example.com/couple.jpg",
+
+    "place_religioso_titulo": "Ceremonia Religiosa",
+    "place_religioso_lugar": "Iglesia San Pedro",
+    "place_religioso_direccion": "Av. Principal 123, Lima",
+
+    "gallery_images": [
+      {"url": "https://cdn.example.com/img1.jpg", "alt": "Foto 1"},
+      {"url": "https://cdn.example.com/img2.jpg", "alt": "Foto 2"}
+    ],
+
+    "countdown_title": "Cuenta Regresiva",
+    "story_moment_1_title": "Nos Conocimos",
+    "itinerary_event_ceremonia_time": "16:00"
+  },
+
+  "touchedFields": {
+    // Campos que el usuario ha modificado
+    "groom_name": true,
+    "bride_name": true,
+    "familiares_padre_novio": true,
+    "welcome_title": true
+  },
+
+  "selectedMode": "basic",  // NUEVO: "basic" o "full" - determina el plan_id
+
+  "timestamp": 1706234567890  // Unix timestamp
+}
+```
+
+### **PROCESO DE TRANSFORMACIÓN**
+
+```javascript
+// frontend/src/lib/utils/localStorage-to-sections.ts
+
+function groupCustomizerDataBySections(customizerData) {
+  const sections = {};
+
+  Object.entries(customizerData).forEach(([key, value]) => {
+    let sectionName = null;
+
+    // 1. Detectar sección por prefijo
+    if (key.startsWith('familiares_')) {
+      sectionName = 'familiares';
+    } else if (key.startsWith('welcome_')) {
+      sectionName = 'welcome';
+    } else if (key.startsWith('place_religioso_')) {
+      sectionName = 'place_religioso';
+    } else if (key.startsWith('place_ceremonia_')) {
+      sectionName = 'place_ceremonia';
+    } else if (key.startsWith('gallery_')) {
+      sectionName = 'gallery';
+    }
+    // ... más prefijos
+
+    // 2. Campos sin prefijo van a 'hero' por defecto
+    else if (['groom_name', 'bride_name', 'weddingDate',
+              'eventLocation', 'heroImageUrl'].includes(key)) {
+      sectionName = 'hero';
+    }
+
+    // 3. Agrupar por sección
+    if (sectionName) {
+      if (!sections[sectionName]) {
+        sections[sectionName] = {};
+      }
+      sections[sectionName][key] = value;
+    }
+  });
+
+  return sections;
+}
+```
+
+### **ESTRUCTURA TRANSFORMADA PARA EL BACKEND**
+
+```json
+{
+  "user_data": {
+    "email": "usuario@example.com",
+    "first_name": "Jefferson",
+    "last_name": "Smith",
+    "phone": "+51999999999"
+  },
+
+  "invitation_basic": {
+    "template_id": 1,
+    "plan_id": 1,
+    "event_date": "2024-12-15T17:00:00",
+    "event_location": "Lima, Perú"
+  },
+
+  "sections_data": {
+    "hero": {
+      "groom_name": "Jefferson",
+      "bride_name": "Rosmery",
+      "weddingDate": "2024-12-15T17:00:00",
+      "eventLocation": "Lima, Perú",
+      "heroImageUrl": "https://cdn.example.com/hero-image.jpg"
+    },
+
+    "familiares": {
+      "familiares_padre_novio": "Juan Pérez",
+      "familiares_madre_novio": "María García",
+      "familiares_padre_novia": "Carlos López",
+      "familiares_madre_novia": "Ana Martínez"
+    },
+
+    "welcome": {
+      "welcome_title": "¡Nos Casamos!",
+      "welcome_description": "Con alegría queremos compartir este momento...",
+      "welcome_couplePhotoUrl": "https://cdn.example.com/couple.jpg"
+    },
+
+    "place_religioso": {
+      "place_religioso_titulo": "Ceremonia Religiosa",
+      "place_religioso_lugar": "Iglesia San Pedro",
+      "place_religioso_direccion": "Av. Principal 123, Lima"
+    },
+
+    "gallery": {
+      "gallery_images": [
+        {"url": "https://cdn.example.com/img1.jpg", "alt": "Foto 1"},
+        {"url": "https://cdn.example.com/img2.jpg", "alt": "Foto 2"}
+      ]
+    }
+  }
+}
+```
+
+### **OBTENCIÓN DE DATOS DEL USUARIO LOGEADO**
+
+El sistema de autenticación guarda los datos del usuario en localStorage y Zustand store después del login.
+
+#### **Datos Disponibles del Usuario Autenticado**
+
+```javascript
+// localStorage keys después del login
+localStorage.getItem('auth_token')     // JWT access token
+localStorage.getItem('refresh_token')  // JWT refresh token
+localStorage.getItem('user_data')      // Datos completos del usuario (JSON)
+
+// Estructura de user_data
+{
+  "id": 123,
+  "email": "usuario@example.com",
+  "first_name": "Juan",
+  "last_name": "Pérez",
+  "phone": "+51999999999",
+  "role": "CLIENT",
+  "is_active": true,
+  "email_verified": true,
+  "google_id": "1234567890",      // Si es login con Google
+  "provider": "google",            // O null si es login normal
+  "profile_picture": "https://..." // URL de foto de perfil
+}
+```
+
+#### **Mapeo de Datos del Usuario al Endpoint**
+
+| Campo Auth Store | Campo Endpoint | Requerido | Ejemplo |
+|-----------------|----------------|-----------|---------|
+| `user.email` | `user_data.email` | ✅ Sí | `"usuario@example.com"` |
+| `user.first_name` | `user_data.first_name` | ✅ Sí | `"Juan"` |
+| `user.last_name` | `user_data.last_name` | ⚪ Opcional | `"Pérez"` |
+| `user.phone` | `user_data.phone` | ⚪ Opcional | `"+51999999999"` |
+
+#### **Mapeo de Modo de Personalización a Plan ID**
+
+| Modo en Customizer | Plan ID en Backend | Descripción |
+|-------------------|-------------------|-------------|
+| `"basic"` | `1` | Plan Básico - Campos limitados |
+| `"full"` | `2` | Plan Completo/Premium - Todos los campos |
+| `undefined` | `1` | Default a Plan Básico |
+
+### **IMPLEMENTACIÓN COMPLETA CON USUARIO AUTENTICADO**
+
+```javascript
+// frontend/src/lib/api/invitation-create.ts
+
+import { prepareInvitationCreateRequest } from '../utils/localStorage-to-sections';
+import { useUser } from '@/store/authStore';
+
+// OPCIÓN 1: Usando Zustand Store (Recomendado)
+async function saveInvitationFromAuthenticatedUser(templateId, planId) {
+  // Obtener usuario desde el store
+  const user = useUser();
+
+  if (!user) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  try {
+    // 1. Preparar request con datos del usuario autenticado
+    const requestData = prepareInvitationCreateRequest(
+      templateId,
+      {
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone
+      },
+      planId
+    );
+
+    // 2. Enviar al backend
+    const response = await fetch('/api/invitations/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al crear invitación');
+    }
+
+    const data = await response.json();
+
+    // 3. Redirigir a la URL de la invitación
+    window.location.href = data.invitation.url;
+
+    return data;
+
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
+
+// OPCIÓN 2: Obteniendo datos directamente de localStorage
+async function saveInvitationFromLocalStorage(templateId, planId) {
+  // Obtener datos del usuario desde localStorage
+  const userDataString = localStorage.getItem('user_data');
+
+  if (!userDataString) {
+    throw new Error('No hay datos de usuario en localStorage');
+  }
+
+  const userData = JSON.parse(userDataString);
+
+  try {
+    // 1. Obtener datos del customizer
+    const customizerData = getCustomizerDataFromLocalStorage(templateId);
+
+    if (!customizerData) {
+      throw new Error('No hay datos de personalización');
+    }
+
+    // 2. Agrupar por secciones
+    const sectionsData = groupCustomizerDataBySections(customizerData.customizerData);
+
+    // 3. Construir request completo
+    const requestData = {
+      user_data: {
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name || '',
+        phone: userData.phone || ''
+      },
+      invitation_basic: {
+        template_id: templateId,
+        plan_id: planId,
+        event_date: customizerData.customizerData.weddingDate || new Date().toISOString(),
+        event_location: customizerData.customizerData.eventLocation || 'Por definir'
+      },
+      sections_data: sectionsData
+    };
+
+    // 4. Enviar al backend
+    const response = await fetch('/api/invitations/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al crear invitación');
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
+```
+
+### **VALIDACIONES ANTES DE ENVIAR**
+
+```javascript
+function validateCustomizerData(templateId) {
+  const errors = [];
+  const warnings = [];
+
+  const data = getCustomizerDataFromLocalStorage(templateId);
+
+  if (!data) {
+    errors.push('No hay datos en localStorage');
+    return { isValid: false, errors };
+  }
+
+  const { customizerData, touchedFields } = data;
+
+  // Validar campos mínimos
+  if (!customizerData.groom_name && !customizerData.bride_name) {
+    warnings.push('Faltan nombres de los novios');
+  }
+
+  if (Object.keys(touchedFields).length === 0) {
+    warnings.push('No se ha personalizado ningún campo');
+  }
+
+  // Verificar agrupación
+  const sections = groupCustomizerDataBySections(customizerData);
+  if (Object.keys(sections).length === 0) {
+    errors.push('No se pueden agrupar los campos');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
+}
+```
+
+### **MAPEO DE PREFIJOS A SECCIONES**
+
+| Prefijo | Sección | Ejemplo de Campo |
+|---------|---------|------------------|
+| Sin prefijo | `hero` | `groom_name`, `bride_name`, `weddingDate` |
+| `familiares_` | `familiares` | `familiares_padre_novio` |
+| `welcome_` | `welcome` | `welcome_title` |
+| `place_religioso_` | `place_religioso` | `place_religioso_lugar` |
+| `place_ceremonia_` | `place_ceremonia` | `place_ceremonia_hora` |
+| `vestimenta_` | `vestimenta` | `vestimenta_etiqueta` |
+| `countdown_` | `countdown` | `countdown_title` |
+| `gallery_` | `gallery` | `gallery_images` |
+| `story_` | `story` | `story_moment_1_title` |
+| `itinerary_` | `itinerary` | `itinerary_event_ceremonia_time` |
+| `couple_` | `couple` | `couple_sectionTitle` |
+| `video_` | `video` | `video_videoEmbedUrl` |
+| `footer_` | `footer` | `footer_copyrightText` |
+
+### **EJEMPLO DE USO SIMPLIFICADO (RECOMENDADO)**
+
+```javascript
+// frontend/src/lib/api/invitation-create.ts
+
+import { createInvitationFromAuth } from '@/lib/api/invitation-create';
+
+// Función simplificada para usuarios autenticados
+async function guardarInvitacion(templateId, planId = 1) {
+  try {
+    // Todo automático: obtiene user_data, customizer_data, agrupa por secciones
+    const result = await createInvitationFromAuth(templateId, planId);
+
+    // Redirigir automáticamente a la invitación creada
+    window.location.href = result.invitation.url;
+
+    return result;
+
+  } catch (error) {
+    console.error('Error al guardar:', error.message);
+    // Mostrar error al usuario
+    alert(`Error: ${error.message}`);
+  }
+}
+
+// Uso en componente React
+function SaveButton({ templateId }) {
+  const handleSave = () => {
+    guardarInvitacion(templateId, 1); // Plan básico
+  };
+
+  return (
+    <button onClick={handleSave}>
+      Guardar Invitación
+    </button>
+  );
+}
+```
+
+### **VENTAJAS DEL ENFOQUE INTEGRADO**
+
+1. **✅ Automático**: No necesitas pasar datos del usuario manualmente
+2. **✅ Seguro**: Usa datos verificados del sistema de auth
+3. **✅ Simple**: Solo requiere `templateId` y `planId`
+4. **✅ Completo**: Incluye customizer + user_data + secciones agrupadas
+5. **✅ Error Handling**: Manejo completo de errores de auth y API
+
+### **NOTAS IMPORTANTES**
+
+1. **NO se requiere cambiar nombres de variables** - El backend acepta cualquier estructura JSON en `variables_json`
+2. **Los prefijos se mantienen** - No es necesario removerlos al agrupar
+3. **Flexibilidad total** - El backend no valida nombres específicos de campos
+4. **localStorage es plano** - Siempre requiere transformación antes de enviar
+5. **touchedFields** indica qué campos fueron modificados por el usuario
+6. **Datos del usuario automáticos** - Se obtienen del auth store sin intervención manual
+
+---
+
 **🎯 RESUMEN DE CASOS DE USO:**
 
 1. **✅ Wedding Básico** - Registro estándar con validaciones
@@ -660,5 +1088,6 @@ class TestSectionRegistration:
 6. **✅ Analytics Avanzados** - Business Intelligence
 7. **✅ Validación Robusta** - Manejo de errores en producción
 8. **✅ Testing Completo** - Cobertura de casos edge
+9. **✅ localStorage Integration** - Transformación de datos del frontend
 
 **Esta documentación cubre todos los escenarios reales de uso del sistema** 🚀

@@ -21,6 +21,8 @@ import { useTemplates, useTemplateCategories } from '@/lib/hooks/use-templates';
 import { useAddTemplateToCart, useRemoveFromCart } from '@/lib/hooks/use-cart';
 import { useHasCartItem, useCartItems } from '@/store/cartStore';
 import { Template } from '@/lib/api';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { useAuthHook } from '@/lib/hooks/useAuth';
 
 // Selected Template Banner Component
 const SelectedTemplateBanner = () => {
@@ -80,13 +82,35 @@ const TemplateCard = ({ template }: { template: Template }) => {
   const { addTemplate, isPending } = useAddTemplateToCart();
   const isSelected = useHasCartItem(template.id);
 
+  // Auth state and modal management
+  const { isAuthenticated } = useAuthHook();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
+
   const handleViewDemo = () => {
     router.push(`/plantillas/${template.id}`);
   };
 
   const handleSelectTemplate = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addTemplate(template);
+
+    if (isAuthenticated) {
+      // Usuario autenticado → ejecutar directamente
+      addTemplate(template);
+    } else {
+      // Usuario no autenticado → mostrar modal de login
+      setPendingTemplate(template);
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    if (pendingTemplate) {
+      // Ejecutar la acción pendiente después del login exitoso
+      addTemplate(pendingTemplate);
+      setPendingTemplate(null);
+    }
   };
 
   return (
@@ -109,7 +133,7 @@ const TemplateCard = ({ template }: { template: Template }) => {
       {/* Image Container */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <img 
-          src={template.preview_image_url || '/placeholder-template.jpg'}
+          src={template.preview_image_url || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
           alt={template.name}
           className={`w-full h-full object-cover transition-all duration-300 ${
             isSelected ? 'scale-105' : 'group-hover:scale-105'
@@ -222,6 +246,17 @@ const TemplateCard = ({ template }: { template: Template }) => {
           )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingTemplate(null);
+        }}
+        initialTab="login"
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };

@@ -28,16 +28,16 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
 
   if (!isOpen) return null;
 
-  const handleRemoveItem = (itemId: number) => {
-    removeFromCart.mutate(itemId);
+  const handleRemoveItem = (id: number, type: 'template' | 'plan') => {
+    removeFromCart.mutate({ id, type });
   };
 
-  const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
+  const handleUpdateQuantity = (id: number, newQuantity: number, type: 'template' | 'plan') => {
     if (newQuantity < 1) {
-      handleRemoveItem(itemId);
+      handleRemoveItem(id, type);
       return;
     }
-    updateCartItem.mutate({ itemId, quantity: newQuantity });
+    updateCartItem.mutate({ id, quantity: newQuantity, type });
   };
 
   const handleViewCart = () => {
@@ -81,8 +81,8 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
             {cartItems.map((item) => (
               <div key={item.id} className="p-4 border-b last:border-b-0">
                 <div className="flex items-center gap-3">
-                  <Image 
-                    src={item.thumbnail_url || '/placeholder-template.jpg'}
+                  <Image
+                    src={item.thumbnail_url || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
                     alt={item.name}
                     width={48}
                     height={48}
@@ -99,7 +99,7 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center border border-gray-300 rounded">
                       <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1, item.type)}
                         className="p-1 hover:bg-gray-100"
                         disabled={updateCartItem.isPending}
                       >
@@ -107,7 +107,7 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
                       </button>
                       <span className="px-2 py-1 text-sm">{item.quantity}</span>
                       <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1, item.type)}
                         className="p-1 hover:bg-gray-100"
                         disabled={updateCartItem.isPending}
                       >
@@ -115,7 +115,7 @@ export const MiniCart = ({ isOpen, onClose }: MiniCartProps) => {
                       </button>
                     </div>
                     <button
-                      onClick={() => handleRemoveItem(item.id)}
+                      onClick={() => handleRemoveItem(item.id, item.type)}
                       className="p-1 text-red-600 hover:bg-red-50 rounded"
                       disabled={removeFromCart.isPending}
                     >

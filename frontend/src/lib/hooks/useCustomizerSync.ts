@@ -11,7 +11,8 @@ interface UseCustomizerSyncProps {
   templateId: number;
   customizerData: any;
   touchedFields: any;
-  onStateRestore?: (data: { customizerData: any; touchedFields: any }) => void;
+  selectedMode?: 'basic' | 'full';
+  onStateRestore?: (data: { customizerData: any; touchedFields: any; selectedMode?: 'basic' | 'full' }) => void;
   onSaveStateReady?: (saveStateFn: () => void) => void;
 }
 
@@ -19,6 +20,7 @@ export const useCustomizerSync = ({
   templateId,
   customizerData,
   touchedFields,
+  selectedMode,
   onStateRestore,
   onSaveStateReady
 }: UseCustomizerSyncProps) => {
@@ -32,6 +34,7 @@ export const useCustomizerSync = ({
     const state = {
       customizerData,
       touchedFields,
+      selectedMode: selectedMode || 'basic',
       timestamp: Date.now()
     };
 
@@ -40,7 +43,8 @@ export const useCustomizerSync = ({
       console.log('💾 Customizer state saved to localStorage:', {
         templateId,
         fieldsCount: Object.keys(customizerData || {}).length,
-        touchedCount: Object.keys(touchedFields || {}).length
+        touchedCount: Object.keys(touchedFields || {}).length,
+        mode: selectedMode || 'basic'
       });
 
       // Dispatch custom event for real-time sync between desktop and mobile
@@ -56,7 +60,7 @@ export const useCustomizerSync = ({
     } catch (error) {
       console.error('Failed to save customizer state:', error);
     }
-  }, [templateId, customizerData, touchedFields, storageKey]);
+  }, [templateId, customizerData, touchedFields, selectedMode, storageKey]);
 
   // Load state from localStorage on mount
   const loadState = useCallback(() => {
@@ -81,7 +85,8 @@ export const useCustomizerSync = ({
 
         onStateRestore({
           customizerData: state.customizerData,
-          touchedFields: state.touchedFields
+          touchedFields: state.touchedFields,
+          selectedMode: state.selectedMode
         });
       }
     } catch (error) {

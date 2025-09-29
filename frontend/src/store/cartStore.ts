@@ -173,12 +173,12 @@ export const useCartStore = create<CartState>()(
 
       hasItem: (templateId: number) => {
         const state = get();
-        return state.cart?.items.some(item => item.type === 'template' && item.id === templateId) || false;
+        return state.cart?.items?.some(item => item.type === 'template' && item.id === templateId) || false;
       },
 
       getItem: (templateId: number) => {
         const state = get();
-        return state.cart?.items.find(item => item.type === 'template' && item.id === templateId);
+        return state.cart?.items?.find(item => item.type === 'template' && item.id === templateId);
       },
 
       // Reset state
@@ -231,11 +231,11 @@ export const useCouponDiscount = () => useCartStore(state => state.couponDiscoun
 /**
  * Custom hook to get cart item by template ID
  */
-export const useCartItem = (templateId: number) => 
-  useCartStore(state => state.cart?.items.find(item => item.type === 'template' && item.id === templateId));
+export const useCartItem = (templateId: number) =>
+  useCartStore(state => state.cart?.items?.find(item => item.type === 'template' && item.id === templateId));
 
 /**
  * Custom hook to check if template is in cart
  */
-export const useHasCartItem = (templateId: number) => 
-  useCartStore(state => state.cart?.items.some(item => item.type === 'template' && item.id === templateId) || false);
+export const useHasCartItem = (templateId: number) =>
+  useCartStore(state => state.cart?.items?.some(item => item.type === 'template' && item.id === templateId) || false);

@@ -17,7 +17,7 @@ const nextConfig = {
   
   // Image optimization
   images: {
-    domains: ['localhost', 'api.tudominio.com'],
+    domains: ['localhost', 'api.tudominio.com', 'images.pexels.com'],
     formats: ['image/webp', 'image/avif'],
   },
   

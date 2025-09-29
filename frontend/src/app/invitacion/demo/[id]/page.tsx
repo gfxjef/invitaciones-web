@@ -17,6 +17,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTemplate } from '@/lib/hooks/use-templates';
 import { DownloadButton } from '@/components/auth/DownloadButton';
+import { DirectDownloadButton } from '@/components/auth/DirectDownloadButton';
 import { ViewModeSwitcher, ViewMode } from '@/components/ui/ViewModeSwitcher';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { DynamicCustomizer } from '@/components/customizer';
@@ -379,10 +380,28 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
                     templateData={{
                       id: templateId,
                       name: template.name,
-                      template: template
+                      thumbnail_url: template.thumbnail_url,
+                      preview_image_url: template.preview_image_url,
+                      plan: template.plan,
+                      is_premium: template.is_premium,
+                      price: template.price
                     }}
                     buttonText="Descargar Invitación"
                     className="bg-purple-600 hover:bg-purple-700"
+                    onDownloadComplete={handleDownloadSuccess}
+                  />
+                  <DirectDownloadButton
+                    templateData={{
+                      id: templateId,
+                      name: template.name,
+                      thumbnail_url: template.thumbnail_url,
+                      preview_image_url: template.preview_image_url,
+                      plan: template.plan,
+                      is_premium: template.is_premium,
+                      price: template.price
+                    }}
+                    buttonText="Descargar Auto"
+                    className="bg-green-600 hover:bg-green-700"
                     onDownloadComplete={handleDownloadSuccess}
                   />
 

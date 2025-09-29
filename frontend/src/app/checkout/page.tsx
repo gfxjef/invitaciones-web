@@ -101,8 +101,8 @@ const OrderSummary = ({ cart }: { cart: any }) => {
         {cart?.items?.map((item: any) => (
           <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <div className="w-12 h-16 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-              <img 
-                src={item.template_thumbnail || '/placeholder-template.jpg'}
+              <img
+                src={item.template_thumbnail || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
                 alt={item.template_name}
                 className="w-full h-full object-cover"
               />

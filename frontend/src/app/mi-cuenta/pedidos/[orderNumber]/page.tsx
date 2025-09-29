@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ordersApi, type Order } from '@/lib/api';
+import { useExportToPDF } from '@/lib/hooks/usePreview';
 import toast from 'react-hot-toast';
 
 interface OrderDetailsPageProps {
@@ -42,9 +43,13 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [downloadingIds, setDownloadingIds] = useState<Set<number>>(new Set());
+
   const isSuccess = searchParams.get('success') === 'true';
   const isFailed = searchParams.get('failed') === 'true';
+
+  // PDF export hook
+  const exportToPDF = useExportToPDF();
 
   const loadOrderDetails = useCallback(async () => {
     setIsLoading(true);
@@ -65,9 +70,69 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
     loadOrderDetails();
   }, [loadOrderDetails]);
 
-  const handleDownloadTemplate = (templateId: number, templateName: string) => {
-    toast.success(`Descargando ${templateName}...`);
-    // TODO: Implement actual download functionality
+  const handleDownloadTemplate = async (templateId: number, templateName: string) => {
+    setDownloadingIds(prev => new Set([...prev, templateId]));
+
+    try {
+      // Show progress toast with time estimate
+      toast.loading('Generando PDF de alta calidad... (esto puede tomar 10-15 segundos)', {
+        id: `pdf-download-${templateId}`,
+        duration: 20000 // Show for 20 seconds max
+      });
+
+      // Use Playwright PDF service
+      const result = await exportToPDF.mutateAsync({
+        invitationId: templateId,
+        options: {
+          format: 'A4',
+          orientation: 'portrait',
+          quality: 'high',
+          include_rsvp: true
+        }
+      });
+
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = result.download_url;
+      link.download = `${templateName || 'invitation'}-${templateId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('¡PDF generado y descargado exitosamente!', {
+        id: `pdf-download-${templateId}`
+      });
+
+    } catch (error) {
+      console.error('PDF Download error:', error);
+
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          toast.error('La generación del PDF está tomando más tiempo del esperado. Inténtalo de nuevo.', {
+            id: `pdf-download-${templateId}`
+          });
+        } else if (error.message.includes('Network Error')) {
+          toast.error('Error de conexión. Verifica que el servidor esté funcionando.', {
+            id: `pdf-download-${templateId}`
+          });
+        } else {
+          toast.error(`Error al generar el PDF: ${error.message}`, {
+            id: `pdf-download-${templateId}`
+          });
+        }
+      } else {
+        toast.error('Error al generar el PDF. Verifica tu conexión e inténtalo de nuevo.', {
+          id: `pdf-download-${templateId}`
+        });
+      }
+    } finally {
+      setDownloadingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(templateId);
+        return newSet;
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => `S/ ${amount.toFixed(2)}`;
@@ -297,10 +362,20 @@ export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
                 {(order.status === 'PAID' || order.status === 'completed') && (
                   <Button
                     onClick={() => handleDownloadTemplate(item.id, item.product_name)}
+                    disabled={downloadingIds.has(item.id)}
                     className="flex items-center gap-2"
                   >
-                    <Download className="w-4 h-4" />
-                    Descargar
+                    {downloadingIds.has(item.id) ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        Descargando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Descargar
+                      </>
+                    )}
                   </Button>
                 )}
               </div>

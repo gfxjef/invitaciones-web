@@ -119,7 +119,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
             {/* Main Image */}
             <div className="aspect-[3/4] bg-white rounded-xl shadow-sm overflow-hidden">
               <img
-                src={galleryImages[selectedImageIndex] || '/placeholder-template.jpg'}
+                src={galleryImages[selectedImageIndex] || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
                 alt={template.name}
                 className="w-full h-full object-cover"
               />
