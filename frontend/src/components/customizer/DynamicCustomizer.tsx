@@ -32,13 +32,6 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
   onSaveStateReady
 }) => {
 
-  // 🚨 DEBUG: Log when DynamicCustomizer mounts
-  console.log('🚨 DynamicCustomizer mounted with:', {
-    templateData: templateData?.id || 'no-id',
-    sectionsConfig,
-    hasSectionsConfig: !!sectionsConfig
-  });
-
   const {
     isOpen,
     fieldsByCategory,
@@ -119,18 +112,6 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
       />
 
       {/* 🚨 DEBUG: Log fieldsByCategory being passed to CustomizerPanel */}
-      {(() => {
-        console.log('🚨 DynamicCustomizer passing to CustomizerPanel:', {
-          fieldsByCategory,
-          sectionsCount,
-          fieldsCount,
-          gallerySection: fieldsByCategory?.gallery || 'NO GALLERY',
-          galleryFields: fieldsByCategory?.gallery?.length || 0,
-          selectedMode,
-          basicFields: basicFields?.slice(0, 5) || []
-        });
-        return null;
-      })()}
     </div>
   );
 };

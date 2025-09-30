@@ -31,6 +31,9 @@ import { generatePDFMobileOptionA } from '@/lib/pdf/pdfMobileOptionA';
 import { generatePDFMobileOptionB } from '@/lib/pdf/pdfMobileOptionB';
 import { generatePDFMobileOptionC } from '@/lib/pdf/pdfMobileOptionC';
 
+// Import customizer hook for data transformation
+import { useDynamicCustomizer } from '@/lib/hooks/useDynamicCustomizer';
+
 interface TemplateDemoPageProps {
   params: {
     id: string;
@@ -48,38 +51,63 @@ const createDemoInvitationData = (templateId: number, templateData: any): {
   media: InvitationMedia[];
   events: InvitationEvent[];
 } => {
+  // Logs removed for performance
+
   const template = templateData.template;
 
+  // Check for customized data in localStorage first
+  const getStoredValue = (key: string, defaultValue: any) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `demo-customizer-${templateId}`;
+        const saved = localStorage.getItem(storageKey);
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const customValue = parsed.customizerData?.[key];
+
+          if (customValue !== undefined && customValue !== null && customValue !== '') {
+            return customValue;
+          }
+        }
+      } catch (error) {
+        // Error removed for performance
+      }
+    }
+
+    return defaultValue;
+  };
+
   const data: InvitationData = {
-    couple_groom_name: 'Carlos Rodríguez',
-    couple_bride_name: 'María González',
-    couple_groom_parents: 'Sr. Luis Rodríguez y Sra. Ana Pérez',
-    couple_bride_parents: 'Sr. Miguel González y Sra. Carmen Silva',
-    couple_story: 'Queremos compartir contigo este momento tan especial de nuestras vidas. Tu presencia será el regalo más importante para nosotros.',
+    couple_groom_name: getStoredValue('groom_name', 'Carlos Rodríguez'),
+    couple_bride_name: getStoredValue('bride_name', 'María González'),
+    couple_groom_parents: getStoredValue('couple_groom_parents', 'Sr. Luis Rodríguez y Sra. Ana Pérez'),
+    couple_bride_parents: getStoredValue('couple_bride_parents', 'Sr. Miguel González y Sra. Carmen Silva'),
+    couple_story: getStoredValue('story_content', 'Queremos compartir contigo este momento tan especial de nuestras vidas. Tu presencia será el regalo más importante para nosotros.'),
 
-    event_date: '2024-12-15',
-    event_time: '16:00',
-    event_venue_name: 'Iglesia San José',
-    event_venue_address: 'Av. Lima 456, Miraflores, Lima',
-    event_venue_location_url: 'https://maps.google.com/?q=Iglesia+San+José+Miraflores',
+    event_date: getStoredValue('weddingDate', '2024-12-15'),
+    event_time: getStoredValue('event_time', '16:00'),
+    event_venue_name: getStoredValue('eventLocation', 'Iglesia San José'),
+    event_venue_address: getStoredValue('place_religioso_address', 'Av. Lima 456, Miraflores, Lima'),
+    event_venue_location_url: getStoredValue('place_religioso_mapUrl', 'https://maps.google.com/?q=Iglesia+San+José+Miraflores'),
 
-    message_welcome_text: '¡Nos casamos!',
-    message_invitation_text: 'Con la bendición de Dios y de nuestros padres, tenemos el honor de invitarlos a celebrar nuestra unión.',
-    message_thank_you: '¡Esperamos verte en nuestro día especial!',
+    message_welcome_text: getStoredValue('welcome_title', '¡Nos casamos!'),
+    message_invitation_text: getStoredValue('welcome_subtitle', 'Con la bendición de Dios y de nuestros padres, tenemos el honor de invitarlos a celebrar nuestra unión.'),
+    message_thank_you: getStoredValue('footer_message', '¡Esperamos verte en nuestro día especial!'),
 
-    gallery_hero_image: 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260',
+    gallery_hero_image: getStoredValue('heroImageUrl', 'https://images.pexels.com/photos/265856/pexels-photo-265856.jpeg?auto=compress&cs=tinysrgb&w=1260'),
 
-    rsvp_enabled: true,
-    rsvp_deadline: '2024-11-15',
-    rsvp_max_guests: 5,
-    rsvp_whatsapp: '51987654321',
-    rsvp_email: 'rsvp@boda-maria-carlos.com',
-    rsvp_message: 'Por favor confirma tu asistencia antes del 15 de noviembre',
+    rsvp_enabled: getStoredValue('rsvp_enabled', true),
+    rsvp_deadline: getStoredValue('rsvp_deadline', '2024-11-15'),
+    rsvp_max_guests: getStoredValue('rsvp_max_guests', 5),
+    rsvp_whatsapp: getStoredValue('rsvp_whatsapp', '51987654321'),
+    rsvp_email: getStoredValue('rsvp_email', 'rsvp@boda-maria-carlos.com'),
+    rsvp_message: getStoredValue('rsvp_message', 'Por favor confirma tu asistencia antes del 15 de noviembre'),
 
-    social_hashtag: '#MariaYCarlos2024',
-    social_instagram: '@maria_y_carlos_boda',
+    social_hashtag: getStoredValue('social_hashtag', '#MariaYCarlos2024'),
+    social_instagram: getStoredValue('social_instagram', '@maria_y_carlos_boda'),
 
-    dress_code: 'Formal / Elegante'
+    dress_code: getStoredValue('vestimenta_title', 'Formal / Elegante')
   };
 
   const media: InvitationMedia[] = [
@@ -163,6 +191,8 @@ const createDemoInvitationData = (templateId: number, templateData: any): {
     events
   };
 
+  // Logs removed for performance
+
   return {
     invitation,
     data,
@@ -190,28 +220,37 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
   // Create demo data when template loads (without useState for simplicity)
   const demoInvitationData = templateData ? createDemoInvitationData(templateId, templateData) : null;
 
+  // Initialize dynamic customizer for data transformation
+  // IMPORTANT: Hook must be called unconditionally (React rules)
+  // This hook processes customizer data from localStorage and merges it with template defaults
+  const customizer = useDynamicCustomizer({
+    templateId,
+    templateData: templateData?.template || null,
+    category: 'weddings' as 'weddings' | 'kids' | 'corporate'
+  });
+
+  // Get transformed data for rendering - this includes gallery_images processing
+  // Uses getProgressiveMergedData() which applies touched fields over defaults
+  const transformedData = templateData && customizer ? customizer.getProgressiveMergedData() : null;
+
+  // Logs removed for performance
+
   // Handle download success callback
   const handleDownloadSuccess = () => {
     // Optional: Add any additional logic after successful download
-    console.log('Download completed successfully');
   };
 
   // Handle PDF test button clicks - Now with 3 NEW IMPROVED variations for funnel testing
   const handlePDFTest = async (option: 'mobileA' | 'mobileB' | 'mobileC') => {
     if (!demoInvitationData) {
-      console.error('No demo data available');
       return;
     }
-
-    console.log(`🚀 Testing NEW PDF Mobile ${option} (funnel optimization)...`);
 
     try {
       let result;
 
       switch (option) {
         case 'mobileA':
-          // Mobile Option A: Scale Fix (Básico)
-          console.log('🅰️ Using Mobile Option A: Scale Fix (básico)');
           result = await generatePDFMobileOptionA({
             filename: `demo-mobile-A-${templateId}.pdf`,
             quality: 0.95,
@@ -220,8 +259,6 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
           break;
 
         case 'mobileB':
-          // Mobile Option B: Dimension Match (Intermedio)
-          console.log('🅱️ Using Mobile Option B: Dimension Match (intermedio)');
           result = await generatePDFMobileOptionB({
             filename: `demo-mobile-B-${templateId}.pdf`,
             quality: 0.95,
@@ -231,8 +268,6 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
           break;
 
         case 'mobileC':
-          // Mobile Option C: Smart Resolution (Avanzado)
-          console.log('🅲 Using Mobile Option C: Smart Resolution (avanzado)');
           result = await generatePDFMobileOptionC({
             filename: `demo-mobile-C-${templateId}.pdf`,
             quality: 0.98,
@@ -242,20 +277,16 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
           break;
 
         default:
-          console.error('Unknown PDF option:', option);
           return;
       }
 
       if (result.success) {
-        console.log(`✅ PDF Mobile ${option} generated successfully! (Scaling issue fixed)`);
-        alert(`PDF Mobile ${option} generado exitosamente! (Problema de escalado corregido)`);
+        alert(`PDF Mobile ${option} generado exitosamente!`);
       } else {
-        console.error(`❌ PDF Mobile ${option} failed:`, result.error);
         alert(`Error en PDF Mobile ${option}: ${result.error}`);
       }
 
     } catch (error) {
-      console.error(`❌ PDF Mobile ${option} exception:`, error);
       alert(`Error en PDF Mobile ${option}: ${error}`);
     }
   };
@@ -264,30 +295,45 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
     router.back();
   };
 
-  // Capture saveState function from DynamicCustomizer
+  // Enhanced saveState handler to manage multiple customizers (desktop + mobile/embedded)
+  const saveStateFunctionsRef = useRef<{
+    desktop?: () => void;
+    mobile?: () => void;
+  }>({});
+
+  // Capture saveState function from DynamicCustomizer (Desktop)
   const handleSaveStateReady = (saveStateFn: () => void) => {
+    saveStateFunctionsRef.current.desktop = saveStateFn;
+    // For backward compatibility, also set the main ref to desktop
     saveStateRef.current = saveStateFn;
+  };
+
+  // Capture saveState function from DynamicCustomizer (Mobile/Embedded)
+  const handleMobileSaveStateReady = (saveStateFn: () => void) => {
+    saveStateFunctionsRef.current.mobile = saveStateFn;
   };
 
   // Handle view mode changes with immediate save before iframe refresh
   const handleViewModeChange = (newMode: ViewMode) => {
+    // Save state from CURRENT mode before switching
+    const currentSaveFunction = viewMode === 'desktop'
+      ? saveStateFunctionsRef.current.desktop
+      : saveStateFunctionsRef.current.mobile;
+
+    if (currentSaveFunction) {
+      currentSaveFunction();
+    }
+
     setViewMode(newMode);
 
     if (newMode === 'mobile') {
-      // 1. Force immediate save to localStorage (bypass debounce)
-      if (saveStateRef.current) {
-        saveStateRef.current();
-        console.log('⚡ Forced immediate save before mobile switch');
-      }
-
-      // 2. Small delay then refresh iframe
+      // Small delay then refresh iframe
       setTimeout(() => {
         const iframe = document.querySelector('iframe[title="Vista móvil de la invitación"]') as HTMLIFrameElement;
         if (iframe) {
           iframe.src = iframe.src; // Force complete reload
-          console.log('🔄 Refreshing mobile iframe to load latest localStorage');
         }
-      }, 50); // Reduced from 100ms to 50ms
+      }, 50);
     }
   };
 
@@ -310,10 +356,12 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
             templateData={template}
             sectionsConfig={template.sections_config}
             templateId={templateId}
+            onSaveStateReady={handleMobileSaveStateReady}
           >
             <TemplateRenderer
               invitation={demoInvitationData.invitation}
               data={demoInvitationData.data}
+              customPreviewData={transformedData || undefined}
               template={{
                 ...template,
                 template_file: template.template_file || `template_${template.id}`
@@ -448,6 +496,7 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
                 <TemplateRenderer
                   invitation={demoInvitationData.invitation}
                   data={demoInvitationData.data}
+                  customPreviewData={transformedData || undefined}
                   template={{
                     ...template,
                     template_file: template.template_file || `template_${template.id}`

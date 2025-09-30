@@ -47,18 +47,15 @@ export const MultiImageGalleryPicker: React.FC<MultiImageGalleryPickerProps> = (
 
   // Update local state when external value changes
   useEffect(() => {
-    console.log('🚨 External value changed:', value);
-
     // Validate and filter images with valid URLs
     const validImages = value.filter((img, index) => {
       if (!img.url || typeof img.url !== 'string') {
-        console.warn(`🚨 Image at index ${index} has invalid URL:`, img);
+        console.warn(`Invalid image URL at index ${index}`);
         return false;
       }
       return true;
     });
 
-    console.log('🚨 Valid images after filtering:', validImages);
     setSelectedImages(validImages);
   }, [value]);
 
@@ -67,7 +64,7 @@ export const MultiImageGalleryPicker: React.FC<MultiImageGalleryPickerProps> = (
     return `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-  const handleFilesSelect = useCallback((files: File[]) => {
+  const handleFilesSelect = useCallback(async (files: File[]) => {
     if (disabled) return;
 
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -76,21 +73,44 @@ export const MultiImageGalleryPicker: React.FC<MultiImageGalleryPickerProps> = (
 
     if (filesToProcess.length === 0) return;
 
-    const newImages: GalleryImage[] = filesToProcess.map((file, index) => {
+    // Convert all files to base64 for PDF generation compatibility
+    const newImagesPromises = filesToProcess.map(async (file, index) => {
       const objectURL = URL.createObjectURL(file);
       const imageId = generateImageId();
 
       // Store in file manager
       fileManager.setFile(`${fieldKey}_${imageId}`, file, objectURL);
 
-      return {
-        id: imageId,
-        url: objectURL,
-        alt: `Imagen ${selectedImages.length + index + 1}`,
-        category: 'gallery',
-        file
-      };
+      // Convert to base64
+      try {
+        const base64String = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        return {
+          id: imageId,
+          url: base64String, // Use base64 instead of blob URL
+          alt: `Imagen ${selectedImages.length + index + 1}`,
+          category: 'gallery',
+          file
+        };
+      } catch (error) {
+        console.error('Failed to convert image to base64, using blob URL:', error);
+        // Fallback to blob URL if conversion fails
+        return {
+          id: imageId,
+          url: objectURL,
+          alt: `Imagen ${selectedImages.length + index + 1}`,
+          category: 'gallery',
+          file
+        };
+      }
     });
+
+    const newImages = await Promise.all(newImagesPromises);
 
     const updatedImages = [...selectedImages, ...newImages];
     setSelectedImages(updatedImages);
@@ -139,18 +159,13 @@ export const MultiImageGalleryPicker: React.FC<MultiImageGalleryPickerProps> = (
   }, [disabled, handleFilesSelect]);
 
   const handleRemoveImage = useCallback((imageId: string) => {
-    console.log('🚨 Removing image:', { imageId, selectedImages });
     const imageToRemove = selectedImages.find(img => img.id === imageId);
 
-    console.log('🚨 Image to remove:', imageToRemove);
-
     if (imageToRemove) {
-      // Cleanup blob URL if it's a local file - with defensive validation
+      // Cleanup blob URL if it exists (for old format compatibility)
+      // Note: New images use base64 which doesn't need cleanup
       if (imageToRemove.url && typeof imageToRemove.url === 'string' && imageToRemove.url.startsWith('blob:')) {
-        console.log('🚨 Revoking blob URL:', imageToRemove.url);
         URL.revokeObjectURL(imageToRemove.url);
-      } else {
-        console.warn('🚨 Image URL is invalid or not a blob:', imageToRemove.url);
       }
 
       // Remove from file manager
@@ -160,8 +175,6 @@ export const MultiImageGalleryPicker: React.FC<MultiImageGalleryPickerProps> = (
       const updatedImages = selectedImages.filter(img => img.id !== imageId);
       setSelectedImages(updatedImages);
       onChange(updatedImages);
-    } else {
-      console.error('🚨 Image to remove not found:', imageId);
     }
   }, [selectedImages, fieldKey, fileManager, onChange]);
 

@@ -116,7 +116,8 @@ class PDFGenerator:
         url: str,
         device_type: str = 'mobile',
         quality_preset: str = 'standard',
-        custom_options: Optional[Dict[str, Any]] = None
+        custom_options: Optional[Dict[str, Any]] = None,
+        custom_data: Optional[Dict[str, Any]] = None
     ) -> bytes:
         """
         Generate PDF from URL with device-specific configuration
@@ -155,11 +156,18 @@ class PDFGenerator:
             # Create new page with device configuration
             page = await self._browser.new_page()
 
+            # Set up console logging to capture frontend logs
+            def handle_console_log(msg):
+                # Log ALL console messages from the embedded page
+                logger.info(f"🖥️ [Frontend Console] {msg.type}: {msg.text}")
+
+            page.on('console', handle_console_log)
+
             # Configure viewport and device settings
             await self._configure_page(page, device_profile)
 
-            # Navigate to URL with proper waiting
-            await self._navigate_and_wait(page, url, quality_config)
+            # Navigate to URL with proper waiting and custom data injection
+            await self._navigate_and_wait(page, url, quality_config, custom_data)
 
             # Generate PDF with device-specific settings
             pdf_bytes = await self._generate_pdf_content(page, device_profile, quality_config, custom_options)
@@ -199,7 +207,7 @@ class PDFGenerator:
 
         logger.debug(f"Page configured with viewport: {viewport['width']}x{viewport['height']}, media: screen")
 
-    async def _navigate_and_wait(self, page: 'Page', url: str, quality_config: Dict[str, Any]) -> None:
+    async def _navigate_and_wait(self, page: 'Page', url: str, quality_config: Dict[str, Any], custom_data: Optional[Dict[str, Any]] = None) -> None:
         """Navigate to URL and wait for content to be ready"""
         # Set timeout
         page.set_default_timeout(quality_config.get('timeout', PDF_CONFIG['timeout']))
@@ -208,12 +216,108 @@ class PDFGenerator:
         url_separator = '&' if '?' in url else '?'
         pdf_url = f"{url}{url_separator}pdf=1"
 
-        # Navigate to page with PDF parameter
+        # First navigate to get the domain context for localStorage
         await page.goto(
             pdf_url,
-            wait_until='networkidle',  # Wait for network to be idle
+            wait_until='domcontentloaded',  # Wait just for DOM, faster than networkidle
             timeout=quality_config.get('timeout', PDF_CONFIG['timeout'])
         )
+
+        # Inject custom localStorage data if provided
+        if custom_data:
+            # Extract invitation ID from URL
+            import re
+            match = re.search(r'/invitacion/demo/(\d+)', url)
+            if match:
+                template_id = match.group(1)
+                storage_key = f"demo-customizer-{template_id}"
+
+                # DEBUG: Log custom_data structure and content
+                logger.info(f"🔍 [PDF Generator] Processing custom_data injection:")
+                logger.info(f"  - URL: {url}")
+                logger.info(f"  - Extracted template_id: {template_id}")
+                logger.info(f"  - Storage key: {storage_key}")
+                logger.info(f"  - custom_data type: {type(custom_data)}")
+                logger.info(f"  - custom_data length: {len(custom_data) if custom_data else 0}")
+
+                if custom_data:
+                    logger.info(f"🎯 [PDF Generator] COMPLETE custom_data content:")
+                    for key, value in custom_data.items():
+                        logger.info(f"    [{key}] = {value}")
+
+                # Create localStorage state object
+                # Calculate touched fields: any field with a non-empty value
+                touched_fields = {}
+                for key, value in custom_data.items():
+                    # Mark as touched if value is not empty
+                    # Handle different types: strings, numbers, booleans, lists
+                    if value:  # Truthy check: non-empty string, non-zero number, True, non-empty list
+                        touched_fields[key] = True
+                    elif isinstance(value, bool):  # Keep false booleans as touched
+                        touched_fields[key] = True
+                    elif isinstance(value, (int, float)) and value == 0:  # Keep 0 as touched
+                        touched_fields[key] = True
+
+                logger.info(f"🔧 [PDF Generator] Calculated touched fields: {len(touched_fields)} out of {len(custom_data)} total fields")
+
+                storage_data = {
+                    'customizerData': custom_data,
+                    'touchedFields': touched_fields,  # ✅ Calculated touched fields
+                    'selectedMode': 'basic',
+                    'timestamp': int(time.time() * 1000)  # Current timestamp in milliseconds
+                }
+
+                logger.info(f"🔧 [PDF Generator] ✅ Injecting localStorage data for template {template_id} with {len(custom_data)} fields")
+
+                # Inject localStorage data
+                import json
+                storage_data_json = json.dumps(storage_data)
+
+                logger.info(f"💉 [PDF Generator] COMPLETE localStorage injection JSON:")
+                logger.info(f"    storage_key: {storage_key}")
+                logger.info(f"    storage_data_json: {storage_data_json}")
+
+                await page.evaluate(f'''
+                    () => {{
+                        const storageKey = '{storage_key}';
+                        const storageData = {storage_data_json};
+                        localStorage.setItem(storageKey, JSON.stringify(storageData));
+                        console.log('✅ Custom localStorage data injected for PDF generation:', storageKey);
+
+                        // Verify injection worked
+                        const verify = localStorage.getItem(storageKey);
+                        console.log('🔍 Verification - localStorage content after injection:', verify);
+
+                        // List all localStorage keys
+                        const allKeys = Object.keys(localStorage);
+                        console.log('🔍 All localStorage keys after injection:', allKeys);
+                    }}
+                ''')
+
+                # Reload page to apply localStorage data
+                await page.reload(wait_until='networkidle')
+
+                # Give extra time for React to re-render with localStorage data
+                logger.info(f"⏳ [PDF Generator] Waiting 3 seconds for React to re-render with localStorage data")
+                await asyncio.sleep(3)
+
+                # Trigger a forced re-evaluation to ensure React reads localStorage
+                await page.evaluate('''
+                    () => {
+                        console.log('🔄 Triggering React re-evaluation after localStorage injection');
+                        // Force a resize event to trigger React re-render
+                        window.dispatchEvent(new Event('resize'));
+                        // Also trigger storage event
+                        window.dispatchEvent(new Event('storage'));
+                    }
+                ''')
+
+                await asyncio.sleep(1)  # Small additional wait
+            else:
+                logger.warning("Could not extract template ID from URL for localStorage injection")
+        else:
+            # If no custom data, wait for network idle normally
+            await page.wait_for_load_state('networkidle')
         logger.debug(f"Initial page load complete (networkidle) - URL: {pdf_url}")
 
         # Inject pdf-mode class to document root for CSS targeting
@@ -269,6 +373,52 @@ class PDFGenerator:
         if additional_wait > 0:
             logger.debug(f"Additional wait: {additional_wait}ms")
             await asyncio.sleep(additional_wait / 1000)  # Convert to seconds
+
+        # FINAL VERIFICATION: Check what values are actually displayed on the page
+        final_values = await page.evaluate('''
+            () => {
+                // Extract text from common selectors for bride/groom names
+                const selectors = [
+                    '[data-groom-name]',
+                    '[data-bride-name]',
+                    'h1', 'h2', 'h3',
+                    '.couple-names',
+                    '.hero-title',
+                    '.groom-name',
+                    '.bride-name'
+                ];
+
+                const foundTexts = [];
+                selectors.forEach(selector => {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        if (el.textContent.trim()) {
+                            foundTexts.push(`${selector}: "${el.textContent.trim()}"`);
+                        }
+                    });
+                });
+
+                // Also check the first h1 or title-like element
+                const firstH1 = document.querySelector('h1');
+                const firstH2 = document.querySelector('h2');
+                const result = {
+                    foundTexts: foundTexts.slice(0, 10), // Limit to first 10 matches
+                    firstH1: firstH1 ? firstH1.textContent.trim() : 'NOT FOUND',
+                    firstH2: firstH2 ? firstH2.textContent.trim() : 'NOT FOUND',
+                    pageTitle: document.title,
+                    currentURL: window.location.href
+                };
+
+                console.log('🔍 FINAL PAGE CONTENT CHECK:', result);
+                return result;
+            }
+        ''')
+
+        logger.info(f"🔍 [PDF Generator] FINAL VERIFICATION - Page content:")
+        logger.info(f"    First H1: {final_values.get('firstH1', 'N/A')}")
+        logger.info(f"    First H2: {final_values.get('firstH2', 'N/A')}")
+        logger.info(f"    Page Title: {final_values.get('pageTitle', 'N/A')}")
+        logger.info(f"    Found texts: {final_values.get('foundTexts', [])}")
 
         logger.debug(f"Page fully loaded and ready for PDF generation")
 
@@ -753,7 +903,8 @@ class PDFGenerator:
 async def generate_invitation_pdf(
     url: str,
     device_type: str = 'invitation_mobile',
-    quality: str = 'high'
+    quality: str = 'high',
+    custom_data: Optional[Dict[str, Any]] = None
 ) -> bytes:
     """
     Quick utility function to generate invitation PDFs
@@ -769,14 +920,16 @@ async def generate_invitation_pdf(
     generator = PDFGenerator()
     try:
         await generator.initialize()
-        return await generator.generate_pdf(url, device_type, quality)
+        return await generator.generate_pdf(url, device_type, quality, None, custom_data)
     finally:
         await generator.cleanup()
 
 def generate_invitation_pdf_sync(
     url: str,
     device_type: str = 'invitation_mobile',
-    quality: str = 'high'
+    quality: str = 'high',
+    custom_data: Optional[Dict[str, Any]] = None
 ) -> bytes:
     """Synchronous version of generate_invitation_pdf"""
-    return asyncio.run(generate_invitation_pdf(url, device_type, quality))
+    # Pass custom_data as the 4th parameter to match the async function signature
+    return asyncio.run(generate_invitation_pdf(url, device_type, quality, custom_data))

@@ -291,6 +291,7 @@ export function useExportToPDF() {
         orientation?: 'portrait' | 'landscape';
         quality?: 'high' | 'medium' | 'low';
         include_rsvp?: boolean;
+        customData?: any;
       };
     }) => exportApi.exportToPDF(invitationId, options),
   });

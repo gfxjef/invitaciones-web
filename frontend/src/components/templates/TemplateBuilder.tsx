@@ -15,7 +15,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { TemplateProps } from '@/types/template';
 import { getWeddingSectionComponent } from './categories/weddings/sections/registry';
 import { apiClient } from '@/lib/api';
@@ -157,41 +157,33 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     invitation?.id === 7 // Demo invitation
   );
 
-  // Fetch modular data from API ONLY if NOT in development mode and data is not already transformed
+  // Update modular data when customizer data changes
   useEffect(() => {
+    if (isTransformedData && data) {
+      setModularData(data as ModularData);
+      setLoading(false);
+      setError(null);
+    } else if (isDevelopmentMode && !isTransformedData) {
+      setModularData(null);
+      setLoading(false);
+      setError(null);
+    }
+  }, [data, isTransformedData, isDevelopmentMode]);
+
+  // Fetch from API only once for non-development mode
+  useEffect(() => {
+    // Skip if in development mode or data is already transformed
+    if (isDevelopmentMode || isTransformedData) {
+      return;
+    }
+
+    if (!invitation?.id) {
+      setError('No invitation ID provided');
+      setLoading(false);
+      return;
+    }
+
     const fetchModularData = async () => {
-      // If data is already transformed (from customizer), use it directly
-      if (isTransformedData) {
-        console.log('🎨 Customizer Mode: Using transformed data');
-        console.log('🔍 FULL modularData from customizer:', data);
-        console.log('🔍 modularData.hero:', (data as any)?.hero);
-        console.log('🔍 modularData.couple:', (data as any)?.couple);
-        setModularData(data as ModularData);
-        setLoading(false);
-        setError(null);
-        return;
-      }
-
-      // In development mode, prioritize customizer data over component defaults
-      if (isDevelopmentMode) {
-        if (isTransformedData) {
-          console.log('🎨 Development Mode + Customizer: Using transformed customizer data');
-          setModularData(data as ModularData);
-        } else {
-          console.log('🔧 Development Mode: Using component defaults for hot reload');
-          setModularData(null); // Will trigger component defaults
-        }
-        setLoading(false);
-        setError(null);
-        return;
-      }
-
-      if (!invitation?.id) {
-        setError('No invitation ID provided');
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         const response = await apiClient.get(`/modular-templates/invitation/${invitation.id}/template-props`);
@@ -211,7 +203,7 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     };
 
     fetchModularData();
-  }, [invitation?.id, isDevelopmentMode, isTransformedData, data]);
+  }, [invitation?.id, isDevelopmentMode, isTransformedData]);
 
 
   // Error state - only show if error AND no fallback data
@@ -263,15 +255,6 @@ export const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
 
         // 🔍 DEBUG: Log props for each section
         const sectionProps = modularData?.[sectionType] || {};
-        console.log(`🔍 TemplateBuilder - Section: ${sectionType}`, {
-          sectionKey,
-          sectionProps,
-          hasGroom: 'groom_name' in sectionProps,
-          hasBride: 'bride_name' in sectionProps,
-          groomValue: sectionProps.groom_name,
-          brideValue: sectionProps.bride_name
-        });
-
         return (
           <div key={sectionType} data-section={sectionType}>
             <SectionWrapper

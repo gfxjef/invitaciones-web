@@ -93,6 +93,27 @@ def generate_pdf():
         quality = data.get('quality', 'standard')
         filename = data.get('filename')
         custom_options = data.get('options', {})
+        custom_data = data.get('custom_data')  # Custom localStorage data from frontend
+
+        # DEBUG: Log received custom_data to see what's coming from frontend
+        logger.info(f"🔍 [PDF API] Received request data structure:")
+        logger.info(f"  - invitation_id: {invitation_id}")
+        logger.info(f"  - url: {url}")
+        logger.info(f"  - device_type: {device_type}")
+        logger.info(f"  - quality: {quality}")
+        logger.info(f"  - filename: {filename}")
+        logger.info(f"  - custom_options type: {type(custom_options)}")
+        logger.info(f"  - custom_options content: {custom_options}")
+        logger.info(f"  - custom_data type: {type(custom_data)}")
+
+        if custom_data:
+            logger.info(f"🎯 [PDF API] ✅ custom_data RECEIVED - {len(custom_data)} fields:")
+            logger.info(f"📋 [PDF API] COMPLETE FIELD LIST:")
+            # Log ALL fields with complete values
+            for key, value in custom_data.items():
+                logger.info(f"    [{key}] = {value}")
+        else:
+            logger.info(f"🚨 [PDF API] ❌ custom_data is EMPTY/NULL")
 
         # Validate input
         if not url and not invitation_id:
@@ -150,7 +171,7 @@ def generate_pdf():
         start_time = time.time()
 
         try:
-            pdf_bytes = generate_invitation_pdf_sync(url, device_type, quality)
+            pdf_bytes = generate_invitation_pdf_sync(url, device_type, quality, custom_data)
 
             if not pdf_bytes:
                 return jsonify(create_error_response(

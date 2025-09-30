@@ -57,25 +57,11 @@ apiClient.interceptors.request.use(
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔐 [API] Adding auth header to request:', {
-        url: config.url,
-        method: config.method?.toUpperCase(),
-        hasToken: !!token,
-        tokenPrefix: token ? token.substring(0, 10) + '...' : 'none'
-      });
-    } else {
-      console.warn('⚠️ [API] No auth token available for request:', {
-        url: config.url,
-        method: config.method?.toUpperCase(),
-        authStoreRef: !!authStoreRef,
-        localStorage: typeof window !== 'undefined' ? !!localStorage.getItem('auth_token') : false
-      });
     }
     
     return config;
   },
   (error) => {
-    console.error('❌ [API] Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -128,20 +114,8 @@ const isAuthorizationError = (response: any): boolean => {
 // Response interceptor for error handling and token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('✅ [API] Response received:', {
-      url: response.config.url,
-      method: response.config.method?.toUpperCase(),
-      status: response.status,
-      statusText: response.statusText
-    });
-
     // Check for authorization errors in successful responses (200 status)
     if (response.status === 200 && isAuthorizationError(response)) {
-      console.warn('⚠️ [API] Authorization error detected in 200 response:', {
-        url: response.config.url,
-        method: response.config.method?.toUpperCase(),
-        data: response.data
-      });
 
       // Convert to axios error format to trigger refresh logic
       const authError = new Error('Authorization error in successful response') as any;
@@ -158,14 +132,6 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    console.error('❌ [API] Response error:', {
-      url: error.config?.url,
-      method: error.config?.method?.toUpperCase(),
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message
-    });
 
     const originalRequest = error.config as any;
 
@@ -178,22 +144,9 @@ apiClient.interceptors.response.use(
 
       if (originalRequest._retryCount < maxRetries) {
         originalRequest._retryCount += 1;
-
-        console.warn(`🔄 [API] Retrying request (attempt ${originalRequest._retryCount}/${maxRetries}) after ${retryDelay}ms:`, {
-          url: originalRequest.url,
-          method: originalRequest.method?.toUpperCase(),
-          error: error.message
-        });
-
         // Wait for exponential backoff delay, then retry
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return apiClient(originalRequest);
-      } else {
-        console.error(`❌ [API] Max retries (${maxRetries}) exceeded for:`, {
-          url: originalRequest.url,
-          method: originalRequest.method?.toUpperCase(),
-          finalError: error.message
-        });
       }
     }
 
@@ -1502,6 +1455,7 @@ export const exportApi = {
     orientation?: 'portrait' | 'landscape';
     quality?: 'high' | 'medium' | 'low';
     include_rsvp?: boolean;
+    customData?: any;
   }): Promise<{ pdf_url: string; download_url: string; expires_at: string }> => {
     // Map frontend options to backend API parameters
     const backendOptions = {
@@ -1509,6 +1463,7 @@ export const exportApi = {
       device_type: 'invitation_mobile', // Use optimized mobile profile
       quality: options?.quality === 'high' ? 'high' : options?.quality === 'low' ? 'draft' : 'standard',
       filename: `invitation-${invitationId}.pdf`,
+      custom_data: options?.customData || null, // Add custom localStorage data
       options: {
         format: options?.format || 'A4',
         orientation: options?.orientation || 'portrait',

@@ -902,47 +902,21 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
  * Get fields available for customization based on template sections
  */
 export function getAvailableFields(activeSections: string[]): CustomizerField[] {
-  // 🚨 DEBUG: Log available fields calculation
-  console.log('🔍 getAvailableFields called with activeSections:', activeSections);
-
   const fieldsSet = new Set<string>();
 
   // Collect all fields from active sections
   activeSections.forEach(sectionName => {
     const section = WEDDING_SECTION_FIELDS_MAP[sectionName];
     if (section) {
-      console.log(`🔍 Section "${sectionName}" has fields:`, section.fields);
       section.fields.forEach(fieldKey => fieldsSet.add(fieldKey));
-
-      // Check specifically for gallery_images
-      if (sectionName === 'gallery' && section.fields.includes('gallery_images')) {
-        console.log('✅ gallery_images found in gallery section fields');
-      }
-    } else {
-      console.log(`❌ No field mapping found for section "${sectionName}"`);
     }
   });
 
-  console.log('🔍 All collected field keys:', Array.from(fieldsSet));
-  console.log('🔍 gallery_images in fieldsSet?', fieldsSet.has('gallery_images'));
-
   // Convert to field definitions
   const result = Array.from(fieldsSet)
-    .map(fieldKey => {
-      const definition = FIELD_DEFINITIONS[fieldKey];
-      if (!definition && fieldKey === 'gallery_images') {
-        console.log('❌ gallery_images field definition NOT FOUND in FIELD_DEFINITIONS');
-      }
-      return definition;
-    })
+    .map(fieldKey => FIELD_DEFINITIONS[fieldKey])
     .filter(Boolean)
     .sort((a, b) => a.category.localeCompare(b.category));
-
-  console.log('🎯 getAvailableFields final result:', {
-    totalFields: result.length,
-    galleryImagesIncluded: result.some(f => f.key === 'gallery_images'),
-    fieldKeys: result.map(f => f.key)
-  });
 
   return result;
 }
@@ -952,15 +926,7 @@ export function getAvailableFields(activeSections: string[]): CustomizerField[] 
  * Preserves the order as defined in the database sections_config
  */
 export function detectActiveSections(sectionsConfig: any, templateData?: any): string[] {
-  // 🚨 DEBUG: Log input parameters
-  console.log('🔍 detectActiveSections called with:', {
-    sectionsConfig,
-    templateData,
-    sections_config_ordered: templateData?.sections_config_ordered
-  });
-
   if (!sectionsConfig) {
-    console.log('❌ detectActiveSections: No sectionsConfig provided');
     return [];
   }
 
@@ -969,11 +935,9 @@ export function detectActiveSections(sectionsConfig: any, templateData?: any): s
   // Use sections_config_ordered if available (preserves database order)
   if (templateData?.sections_config_ordered && Array.isArray(templateData.sections_config_ordered)) {
     sectionOrder = templateData.sections_config_ordered.map((item: [string, string]) => item[0]);
-    console.log('✅ Using sections_config_ordered:', sectionOrder);
   } else {
     // Fallback to Object.keys (may be alphabetical due to JSON serialization)
     sectionOrder = Object.keys(sectionsConfig);
-    console.log('✅ Using Object.keys fallback:', sectionOrder);
   }
 
   // Filter to only enabled sections while preserving order
@@ -983,12 +947,8 @@ export function detectActiveSections(sectionsConfig: any, templateData?: any): s
            (typeof value === 'object' && value?.enabled !== false) ||
            (typeof value === 'string'); // For modular templates like "hero_1", "welcome_1"
 
-    console.log(`🔍 Section "${sectionName}": value=${JSON.stringify(value)}, enabled=${isEnabled}`);
     return isEnabled;
   });
-
-  console.log('🎯 detectActiveSections final result:', result);
-  console.log('🎯 Gallery section included?', result.includes('gallery'));
 
   return result;
 }
@@ -1009,13 +969,6 @@ export function getOrderedSections(activeSections: string[]): string[] {
  * Uses the order from activeSections (database order) instead of field appearance order
  */
 export function getFieldsByOrderedSections(availableFields: CustomizerField[], activeSections: string[]): Record<string, CustomizerField[]> {
-  // 🚨 DEBUG: Log input parameters
-  console.log('🔍 getFieldsByOrderedSections called with:', {
-    availableFields: availableFields.map(f => ({ key: f.key, section: f.section })),
-    activeSections,
-    totalFields: availableFields.length
-  });
-
   const fieldsBySections: Record<string, CustomizerField[]> = {};
   const processedFields = new Set<string>(); // Para evitar duplicados
 
@@ -1036,19 +989,6 @@ export function getFieldsByOrderedSections(availableFields: CustomizerField[], a
         }
         fieldsBySections[firstActiveSection].push(field);
         processedFields.add(field.key);
-
-        // 🚨 DEBUG: Log field assignment (only for gallery_images)
-        if (field.key === 'gallery_images') {
-          console.log(`✅ gallery_images assigned to section "${firstActiveSection}"`);
-        }
-      } else if (field.key === 'gallery_images') {
-        // 🚨 DEBUG: Log why gallery_images was NOT assigned
-        console.log(`❌ gallery_images NOT assigned:`, {
-          fieldSections: sections,
-          firstActiveSection,
-          alreadyProcessed: processedFields.has(field.key),
-          activeSections
-        });
       }
     }
   });
@@ -1059,14 +999,6 @@ export function getFieldsByOrderedSections(availableFields: CustomizerField[], a
     if (fieldsBySections[sectionName] && fieldsBySections[sectionName].length > 0) {
       result[sectionName] = fieldsBySections[sectionName];
     }
-  });
-
-  // 🚨 DEBUG: Log final result
-  console.log('🎯 getFieldsByOrderedSections final result:', {
-    sections: Object.keys(result),
-    galleryFields: result.gallery?.length || 0,
-    galleryHasGalleryImages: result.gallery?.some(f => f.key === 'gallery_images') || false,
-    totalFieldsReturned: Object.values(result).flat().length
   });
 
   return result;
@@ -1166,11 +1098,6 @@ export function getAvailableFieldsForVariant(
   activeSections: string[],
   sectionsConfig: Record<string, string>
 ): CustomizerField[] {
-  console.log('🔍 getAvailableFieldsForVariant called with:', {
-    activeSections,
-    sectionsConfig
-  });
-
   const fieldsSet = new Set<string>();
 
   // For each active section, get its variant and add variant-specific fields
@@ -1179,31 +1106,21 @@ export function getAvailableFieldsForVariant(
 
     if (variantId && SECTION_VARIANTS_FIELDS[variantId]) {
       const variantFields = SECTION_VARIANTS_FIELDS[variantId];
-      console.log(`✅ Section "${sectionName}" using variant "${variantId}" with fields:`, variantFields);
-
       variantFields.forEach(fieldKey => fieldsSet.add(fieldKey));
     } else {
       // Fallback to generic section fields if no variant configuration
       const section = WEDDING_SECTION_FIELDS_MAP[sectionName];
       if (section) {
-        console.log(`⚠️ Section "${sectionName}" using fallback generic fields:`, section.fields);
         section.fields.forEach(fieldKey => fieldsSet.add(fieldKey));
       }
     }
   });
-
-  console.log('🔍 Collected field keys for variants:', Array.from(fieldsSet));
 
   // Convert to field definitions
   const result = Array.from(fieldsSet)
     .map(fieldKey => FIELD_DEFINITIONS[fieldKey])
     .filter(Boolean)
     .sort((a, b) => a.category.localeCompare(b.category));
-
-  console.log('🎯 getAvailableFieldsForVariant final result:', {
-    totalFields: result.length,
-    fieldKeys: result.map(f => f.key)
-  });
 
   return result;
 }

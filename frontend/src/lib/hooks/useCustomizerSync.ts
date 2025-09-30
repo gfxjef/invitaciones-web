@@ -40,12 +40,6 @@ export const useCustomizerSync = ({
 
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
-      console.log('💾 Customizer state saved to localStorage:', {
-        templateId,
-        fieldsCount: Object.keys(customizerData || {}).length,
-        touchedCount: Object.keys(touchedFields || {}).length,
-        mode: selectedMode || 'basic'
-      });
 
       // Dispatch custom event for real-time sync between desktop and mobile
       const syncEvent = new CustomEvent('customizer-sync', {
@@ -56,9 +50,8 @@ export const useCustomizerSync = ({
         }
       });
       document.dispatchEvent(syncEvent);
-      console.log('📡 Dispatched customizer-sync event for template:', templateId);
     } catch (error) {
-      console.error('Failed to save customizer state:', error);
+      // Silent error handling
     }
   }, [templateId, customizerData, touchedFields, selectedMode, storageKey]);
 
@@ -76,13 +69,6 @@ export const useCustomizerSync = ({
       const isRecent = Date.now() - (state.timestamp || 0) < 24 * 60 * 60 * 1000;
 
       if (isRecent && state.customizerData && state.touchedFields) {
-        console.log('📥 Loading customizer state from localStorage:', {
-          templateId,
-          fieldsCount: Object.keys(state.customizerData || {}).length,
-          touchedCount: Object.keys(state.touchedFields || {}).length,
-          age: Math.round((Date.now() - state.timestamp) / 1000 / 60) + ' minutes'
-        });
-
         onStateRestore({
           customizerData: state.customizerData,
           touchedFields: state.touchedFields,
@@ -90,7 +76,6 @@ export const useCustomizerSync = ({
         });
       }
     } catch (error) {
-      console.error('Failed to load customizer state:', error);
       // Clear corrupted data
       localStorage.removeItem(storageKey);
     }
@@ -121,12 +106,6 @@ export const useCustomizerSync = ({
 
       // Only process events for the same template
       if (eventTemplateId === templateId) {
-        console.log('📥 Received customizer-sync event:', {
-          templateId: eventTemplateId,
-          timestamp,
-          source
-        });
-
         // Load fresh state from localStorage
         loadState();
       }
@@ -134,11 +113,9 @@ export const useCustomizerSync = ({
 
     // Add event listener for sync events
     document.addEventListener('customizer-sync', handleSyncEvent as EventListener);
-    console.log('🎧 Listening for customizer-sync events for template:', templateId);
 
     return () => {
       document.removeEventListener('customizer-sync', handleSyncEvent as EventListener);
-      console.log('🔇 Stopped listening for customizer-sync events for template:', templateId);
     };
   }, [templateId, onStateRestore, loadState]);
 
@@ -152,8 +129,7 @@ export const useCustomizerSync = ({
   // Clear state for specific template
   const clearState = useCallback(() => {
     localStorage.removeItem(storageKey);
-    console.log('🗑️ Cleared customizer state for template:', templateId);
-  }, [storageKey, templateId]);
+  }, [storageKey]);
 
   return {
     saveState,

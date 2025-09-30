@@ -20,6 +20,7 @@ import { useAuthHook } from '@/lib/hooks/useAuth';
 import { useExportToPDF } from '@/lib/hooks/usePreview';
 import { useAddTemplateToCart } from '@/lib/hooks/use-cart';
 import { toast } from 'react-hot-toast';
+import { getCustomizerDataFromLocalStorage } from '@/lib/utils/localStorage-to-sections';
 
 interface DownloadButtonProps {
   /**
@@ -109,14 +110,20 @@ export function DownloadButton({
         duration: 20000 // Show for 20 seconds max
       });
 
-      // Use new Playwright PDF service
+      // Get customized data from localStorage if available
+      const storageKey = `demo-customizer-${templateData.id}`;
+
+      const localStorageData = getCustomizerDataFromLocalStorage(templateData.id);
+
+      // Use new Playwright PDF service with custom data
       const result = await exportToPDF.mutateAsync({
         invitationId: templateData.id,
         options: {
           format: 'A4',
           orientation: 'portrait',
           quality: 'high',
-          include_rsvp: true
+          include_rsvp: true,
+          customData: localStorageData?.customizerData || null
         }
       });
 

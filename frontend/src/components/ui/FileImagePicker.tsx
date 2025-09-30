@@ -61,7 +61,7 @@ export const FileImagePicker: React.FC<FileImagePickerProps> = ({
     };
   }, [previewUrl]);
 
-  const handleFileSelect = useCallback((file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
     if (!file || !file.type.startsWith('image/')) {
       console.warn('Only image files are allowed');
       return;
@@ -82,8 +82,25 @@ export const FileImagePicker: React.FC<FileImagePickerProps> = ({
       fileManager.setFile(fieldKey, file, objectURL);
     }
 
-    // Notify parent component with blob URL and file
-    onChange(objectURL, file);
+    // Convert to base64 for PDF generation compatibility
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Notify parent component with base64 string and file
+        onChange(base64String, file);
+      };
+      reader.onerror = () => {
+        console.error('Failed to convert image to base64');
+        // Fallback to blob URL if conversion fails
+        onChange(objectURL, file);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error converting to base64:', error);
+      // Fallback to blob URL if conversion fails
+      onChange(objectURL, file);
+    }
   }, [onChange, previewUrl, fieldKey, fileManager]);
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {

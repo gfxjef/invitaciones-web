@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
+import logging
 from datetime import timedelta
 
 # Load environment variables
@@ -11,9 +12,25 @@ load_dotenv()
 # Import extensions from centralized module to avoid circular imports
 from extensions import db, migrate, jwt, ma, configure_jwt
 
+# Import session logger
+from utils.session_logger import setup_session_logging
+
 
 def create_app(config_name=None):
     app = Flask(__name__)
+
+    # ============================================================================
+    # LOGGING CONFIGURATION - Setup session logging FIRST
+    # ============================================================================
+    log_level = logging.DEBUG if os.getenv('FLASK_DEBUG', 'False').lower() == 'true' else logging.INFO
+    session_logger = setup_session_logging(
+        app,
+        log_file=None,  # Uses default: backend/logs/session.log
+        log_level=log_level
+    )
+
+    logger = logging.getLogger(__name__)
+    logger.info("Iniciando configuración de Flask app...")
     
     # Build MySQL connection string from individual variables
     db_host = os.getenv('DB_HOST', 'localhost')
@@ -24,7 +41,9 @@ def create_app(config_name=None):
     
     # MySQL connection string
     database_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-    
+
+    logger.info(f"Conectando a base de datos: {db_host}:{db_port}/{db_name}")
+
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -72,12 +91,15 @@ def create_app(config_name=None):
 
     # CORS Configuration
     cors_origins = os.getenv('CORS_ORIGIN', 'http://localhost:3000').split(',')
-    
+    logger.info(f"CORS configurado para orígenes: {cors_origins}")
+
     # Initialize extensions with app
+    logger.info("Inicializando extensiones de Flask...")
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     ma.init_app(app)
+    logger.info("Extensiones inicializadas correctamente")
 
     # Google OAuth Blueprint configuration
     from flask_dance.contrib.google import make_google_blueprint
@@ -153,7 +175,7 @@ def create_app(config_name=None):
 
             # Create all tables if they don't exist
             db.create_all()
-            print("[INFO] Database tables created successfully!")
+            logger.info("Tablas de base de datos creadas/verificadas correctamente")
             
             # Create admin user if doesn't exist
             admin_email = os.getenv('ADMIN_EMAIL', 'admin@invitaciones.com')
@@ -172,13 +194,16 @@ def create_app(config_name=None):
                 admin_user.set_password(os.getenv('ADMIN_PASSWORD', 'admin123'))
                 db.session.add(admin_user)
                 db.session.commit()
-                print(f"[INFO] Admin user created: {admin_email}")
+                logger.info(f"Usuario admin creado: {admin_email}")
+            else:
+                logger.info(f"Usuario admin ya existe: {admin_email}")
                 
         except Exception as e:
-            print(f"[WARNING] Database initialization error: {e}")
-            print("[INFO] You may need to run 'python init_db.py' manually")
+            logger.error(f"Error en inicialización de base de datos: {e}")
+            logger.info("Es posible que necesites ejecutar 'python init_db.py' manualmente")
 
     # Register blueprints - Now all files exist
+    logger.info("Registrando blueprints...")
     from api.auth import auth_bp
     from api.users import users_bp
     from api.plans import plans_bp
@@ -210,7 +235,10 @@ def create_app(config_name=None):
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
     app.register_blueprint(modular_templates_bp, url_prefix='/api/modular-templates')
     app.register_blueprint(pdf_bp)  # PDF generation service
-    
+
+    logger.info("Todos los blueprints registrados correctamente")
+    logger.info(f"Aplicación Flask configurada y lista en modo: {app_environment}")
+
     # Root endpoint
     @app.route('/')
     def index():
@@ -255,10 +283,24 @@ def create_app(config_name=None):
 
 if __name__ == '__main__':
     app = create_app()
+
+    # Get logger for startup messages
+    logger = logging.getLogger(__name__)
+
     # Use PORT from environment (Render uses this) or fallback to FLASK_PORT
     port = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+
+    logger.info("=" * 80)
+    logger.info("SERVIDOR FLASK INICIANDO")
+    logger.info(f"Host: 0.0.0.0")
+    logger.info(f"Puerto: {port}")
+    logger.info(f"Modo debug: {debug_mode}")
+    logger.info(f"Frontend URL: {app.config.get('FRONTEND_URL')}")
+    logger.info("=" * 80)
+
     app.run(
         host='0.0.0.0',
         port=port,
-        debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+        debug=debug_mode
     )

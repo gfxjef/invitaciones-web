@@ -54,30 +54,17 @@ export function useDynamicCustomizer({
 
   // Helper function to get the specific section variant being used
   const getSectionVariant = useCallback((sectionType: string): string => {
-    console.log('🔍 getSectionVariant called:', { sectionType, sectionsConfig });
-
     if (!sectionsConfig) {
-      console.log('❌ No sectionsConfig, defaulting to:', `${sectionType}_1`);
       return `${sectionType}_1`; // Default to variant 1
     }
 
-    // Get the variant from sectionsConfig (e.g., sectionsConfig.welcome = "welcome_2")
-    const configKeys = Object.keys(sectionsConfig);
-    console.log('🔍 sectionsConfig keys:', configKeys);
-
     const sectionVariant = sectionsConfig[sectionType];
-    console.log('🔍 Found variant for', sectionType, ':', sectionVariant);
-
-    const result = sectionVariant || `${sectionType}_1`;
-    console.log('🎯 Final variant result:', result);
-
-    return result; // Default to variant 1
+    return sectionVariant || `${sectionType}_1`; // Default to variant 1
   }, [sectionsConfig]);
 
   // Helper function to get default props for a section variant
   const getSectionDefaultProps = useCallback((sectionType: string) => {
     const variant = getSectionVariant(sectionType);
-    console.log('🔍 getSectionDefaultProps called:', { sectionType, variant });
 
     let result;
     switch (variant) {
@@ -92,7 +79,6 @@ export function useDynamicCustomizer({
         break;
       case 'welcome_2':
         result = Welcome2DefaultProps;
-        console.log('✅ Using Welcome2DefaultProps:', result.description);
         break;
       case 'couple_1':
         result = Couple1DefaultProps;
@@ -131,7 +117,6 @@ export function useDynamicCustomizer({
         result = Footer1DefaultProps;
         break;
       default:
-        console.log('⚠️ No specific variant found, using fallback for:', sectionType);
         // Fallback to variant 1 defaults
         switch (sectionType) {
           case 'hero':
@@ -139,7 +124,6 @@ export function useDynamicCustomizer({
             break;
           case 'welcome':
             result = Welcome1DefaultProps;
-            console.log('⚠️ Fallback to Welcome1DefaultProps:', result.description);
             break;
           case 'couple':
             result = Couple1DefaultProps;
@@ -148,7 +132,7 @@ export function useDynamicCustomizer({
             result = Countdown1DefaultProps;
             break;
           case 'gallery':
-            result = Gallery1DefaultProps; // Always fallback to Gallery1
+            result = Gallery1DefaultProps;
             break;
           case 'story':
             result = Story1DefaultProps;
@@ -175,12 +159,11 @@ export function useDynamicCustomizer({
             result = Footer1DefaultProps;
             break;
           default:
-            result = Gallery1DefaultProps; // Safe fallback for gallery type checking
+            result = Gallery1DefaultProps;
             break;
         }
     }
 
-    console.log('🎯 getSectionDefaultProps final result for', sectionType, ':', result?.description || result);
     return result;
   }, [getSectionVariant, sectionsConfig]);
 
@@ -211,14 +194,28 @@ export function useDynamicCustomizer({
   const availableFields = useMemo(() => {
     // Use variant-specific field detection if sectionsConfig contains variant information
     if (sectionsConfig && Object.keys(sectionsConfig).length > 0) {
-      console.log('🔧 Using variant-specific field detection');
       return getAvailableFieldsForVariant(activeSections, sectionsConfig);
     }
 
     // Fallback to generic section-based detection for legacy compatibility
-    console.log('🔧 Using legacy section-based field detection');
     return getAvailableFields(activeSections);
   }, [activeSections, sectionsConfig]);
+
+  // Memoize stringified dependencies to prevent unnecessary re-runs
+  const availableFieldsKey = useMemo(
+    () => JSON.stringify(availableFields.map(f => f.key)),
+    [availableFields]
+  );
+
+  const templateDataKey = useMemo(
+    () => JSON.stringify(templateData),
+    [templateData]
+  );
+
+  const initialDataKey = useMemo(
+    () => JSON.stringify(initialData),
+    [initialData]
+  );
 
   // Initialize progressive override system
   useEffect(() => {
@@ -641,7 +638,7 @@ export function useDynamicCustomizer({
 
         default:
           // Try to extract from template data or use field placeholder
-          defaultValue = templateData[field.key] || field.placeholder || '';
+          defaultValue = (templateData && templateData[field.key]) || field.placeholder || '';
       }
 
       extractedDefaults[field.key] = defaultValue;
@@ -659,7 +656,8 @@ export function useDynamicCustomizer({
     setTemplateDefaults(extractedDefaults);
     setCustomizerData(initialMergedData);
     setTouchedFields(initialTouchedFields);
-  }, [JSON.stringify(availableFields.map(f => f.key)), JSON.stringify(templateData), JSON.stringify(initialData), getSectionDefaultProps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableFieldsKey, templateDataKey, initialDataKey]);
 
   // Update a specific field with touch tracking
   const updateField = useCallback((fieldKey: string, value: string | boolean | GalleryImage[]) => {
@@ -705,13 +703,14 @@ export function useDynamicCustomizer({
 
   // Transform flat customizer data to template component props structure
   const transformToTemplateProps = useCallback((data: any) => {
-    console.log('🔍 transformToTemplateProps called with data:', data);
+    // Guard: if data is null/undefined, return empty structure with defaults
+    if (!data) {
+      return {};
+    }
 
     // Get defaults based on current variants
     const heroDefaults = getSectionDefaultProps('hero') as any;
     const welcomeDefaults = getSectionDefaultProps('welcome') as any;
-
-    console.log('🔍 welcomeDefaults from variant:', welcomeDefaults);
 
     return {
       hero: {
@@ -731,17 +730,7 @@ export function useDynamicCustomizer({
         couplePhotoUrl: data.welcome_couplePhotoUrl || data.gallery_couple_image || welcomeDefaults.couplePhotoUrl,
         welcomeText: data.welcome_welcomeText || welcomeDefaults.welcomeText,
         title: data.welcome_title || welcomeDefaults.title,
-        description: (() => {
-          const finalDescription = data.welcome_description || data.message_welcome_text || data.couple_story || welcomeDefaults.description;
-          console.log('🔍 Welcome description logic:', {
-            'data.welcome_description': data.welcome_description,
-            'data.message_welcome_text': data.message_welcome_text,
-            'data.couple_story': data.couple_story,
-            'welcomeDefaults.description': welcomeDefaults.description,
-            'finalDescription': finalDescription
-          });
-          return finalDescription;
-        })(),
+        description: data.welcome_description || data.message_welcome_text || data.couple_story || welcomeDefaults.description,
       },
       couple: {
         sectionTitle: data.couple_sectionTitle || Couple1DefaultProps.sectionTitle,
@@ -992,36 +981,13 @@ export function useDynamicCustomizer({
 
   // Get fields grouped by ordered sections with mode filtering
   const fieldsBySection = useMemo(() => {
-    // 🚨 DEBUG: Log mode filtering process
-    console.log('🔍 useDynamicCustomizer fieldsBySection calculation:', {
-      selectedMode,
-      totalAvailableFields: availableFields.length,
-      activeSections,
-      basicFieldsCount: WEDDING_BASIC_FIELDS.length,
-      galleryInBasicFields: WEDDING_BASIC_FIELDS.includes('gallery_images')
-    });
-
     // Filter fields by selected mode first
     const filteredFields = selectedMode === 'basic'
       ? availableFields.filter(field => WEDDING_BASIC_FIELDS.includes(field.key))
       : availableFields;
 
-    // 🚨 DEBUG: Log filtering result
-    console.log('🔍 After mode filtering:', {
-      filteredFieldsCount: filteredFields.length,
-      galleryImagesIncluded: filteredFields.some(f => f.key === 'gallery_images'),
-      filteredFieldKeys: filteredFields.map(f => f.key)
-    });
-
     // Then group by sections
     const result = getFieldsByOrderedSections(filteredFields, activeSections);
-
-    // 🚨 DEBUG: Log final result from useDynamicCustomizer
-    console.log('🎯 useDynamicCustomizer final fieldsBySection:', {
-      sections: Object.keys(result),
-      gallerySection: result.gallery || 'NO GALLERY SECTION',
-      galleryFieldsCount: result.gallery?.length || 0
-    });
 
     return result;
   }, [availableFields, activeSections, selectedMode]);
@@ -1098,12 +1064,6 @@ export function useDynamicCustomizer({
 
   // Restore state function for localStorage sync
   const restoreState = useCallback((state: { customizerData: CustomizerData; touchedFields: TouchedFields; selectedMode?: CustomizerMode }) => {
-    console.log('🔄 Restoring customizer state:', {
-      customizerFields: Object.keys(state.customizerData || {}).length,
-      touchedFields: Object.keys(state.touchedFields || {}).length,
-      mode: state.selectedMode || 'basic'
-    });
-
     if (state.customizerData) {
       setCustomizerData(state.customizerData);
     }
