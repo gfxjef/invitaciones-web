@@ -115,20 +115,28 @@ export const IzipayCheckout: React.FC<IzipayCheckoutProps> = ({
           setPaymentError(errorMessage);
         });
 
-        // Set up success handling
+        // Set up success handling - CALLBACK PATTERN (not redirect)
+        // WHY: Using callback allows us to create invitation BEFORE redirect
         KR.onSubmit((result: any) => {
-          console.log('Payment successful:', result);
-          // El formulario automáticamente redirige al kr-post-url-success
-          // Pero podemos mostrar un mensaje de éxito mientras tanto
+          console.log('✅ [IzipayCheckout] Payment successful, calling onPaymentComplete:', result);
           toast.success('¡Pago procesado exitosamente!');
+
+          // Call parent callback to create invitation
+          try {
+            onPaymentComplete(result);
+          } catch (error) {
+            console.error('❌ [IzipayCheckout] Error in onPaymentComplete:', error);
+            onPaymentError(error);
+          }
         });
 
-        // Configure form with enhanced settings
+        // Configure form - NO REDIRECT URL (using callback pattern instead)
+        // WHY: Removed kr-post-url-success to prevent automatic redirect
+        // that would prevent onPaymentComplete from executing
         await KR.setFormConfig({
           formToken: paymentConfig.formToken,
           'kr-public-key': publicKey,
-          'kr-language': 'es-PE',
-          'kr-post-url-success': `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/payments/result`
+          'kr-language': 'es-PE'
         });
         console.log('Form config set successfully');
 

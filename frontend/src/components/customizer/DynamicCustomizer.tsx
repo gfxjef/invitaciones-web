@@ -8,7 +8,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useDynamicCustomizer } from '@/lib/hooks/useDynamicCustomizer';
 import { useCustomizerSync } from '@/lib/hooks/useCustomizerSync';
 import { CustomizerButton } from './CustomizerButton';
@@ -61,7 +61,8 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
   });
 
   // Sync customizer state with localStorage if templateId is provided
-  useCustomizerSync({
+  // CAPTURE saveState for immediate save on close
+  const { saveState: syncSaveState } = useCustomizerSync({
     templateId: templateId || 0,
     customizerData,
     touchedFields,
@@ -69,6 +70,19 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
     onStateRestore: templateId ? restoreState : undefined,
     onSaveStateReady
   });
+
+  // Override closeCustomizer to force immediate save before closing
+  // WHY: Prevents race condition where debounced save (500ms) is cancelled
+  // when user closes panel quickly and navigates to checkout
+  const closeCustomizerWithSave = useCallback(() => {
+    // Force immediate save to localStorage (bypasses 500ms debounce)
+    if (syncSaveState && templateId) {
+      console.log('🔒 [DynamicCustomizer] Forcing immediate save before close');
+      syncSaveState();
+    }
+    // Then close the panel
+    closeCustomizer();
+  }, [syncSaveState, closeCustomizer, templateId]);
 
   // Get progressive transformed data for template sections
   const transformedData = getProgressiveMergedData();
@@ -94,7 +108,7 @@ export const DynamicCustomizer: React.FC<DynamicCustomizerProps> = ({
       {/* Customizer Panel with Progressive Override Support */}
       <CustomizerPanel
         isOpen={isOpen}
-        onClose={closeCustomizer}
+        onClose={closeCustomizerWithSave}
         fieldsByCategory={fieldsByCategory}
         getFieldValue={getFieldValue}
         updateField={updateField}

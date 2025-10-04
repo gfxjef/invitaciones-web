@@ -19,32 +19,67 @@ def get_invitation_modular_data(invitation_id: int) -> Dict[str, Any]:
     """
     Get all modular template data for an invitation organized by section
 
+    UPDATED: Now queries invitations_sections_data table (NEW modular system)
+    instead of invitation_data table (OLD category system).
+
     Args:
         invitation_id: ID of the invitation
 
     Returns:
         Dictionary organized by section with all necessary props
     """
-    # Get all custom data fields
-    data_dict = InvitationData.get_invitation_data_dict(invitation_id)
+    from models.invitation_sections_data import InvitationSectionsData
 
-    # Get media files
-    media_files = InvitationMedia.query.filter_by(invitation_id=invitation_id).all()
+    # Query sections from NEW modular table
+    sections = InvitationSectionsData.query.filter_by(
+        invitation_id=invitation_id
+    ).all()
 
-    # Get events
-    events = InvitationEvent.query.filter_by(invitation_id=invitation_id).all()
+    # Transform to dict by section type
+    sections_dict = {}
+    for section in sections:
+        sections_dict[section.section_type] = section.variables_json
 
-    # Organize data by sections
+    # Fallback to OLD system if no sections found in NEW table
+    if not sections_dict:
+        # Get all custom data fields from OLD table
+        data_dict = InvitationData.get_invitation_data_dict(invitation_id)
+
+        # Get media files
+        media_files = InvitationMedia.query.filter_by(invitation_id=invitation_id).all()
+
+        # Get events
+        events = InvitationEvent.query.filter_by(invitation_id=invitation_id).all()
+
+        # Use OLD extraction methods
+        return {
+            'hero': extract_hero_data(data_dict),
+            'welcome': extract_welcome_data(data_dict),
+            'couple': extract_couple_data(data_dict),
+            'countdown': extract_countdown_data(data_dict),
+            'story': extract_story_data(data_dict),
+            'video': extract_video_data(data_dict),
+            'gallery': extract_gallery_data(data_dict, media_files),
+            'footer': extract_footer_data(data_dict),
+            'config': extract_section_config(data_dict)
+        }
+
+    # Use NEW extraction methods for modular sections
     return {
-        'hero': extract_hero_data(data_dict),
-        'welcome': extract_welcome_data(data_dict),
-        'couple': extract_couple_data(data_dict),
-        'countdown': extract_countdown_data(data_dict),
-        'story': extract_story_data(data_dict),
-        'video': extract_video_data(data_dict),
-        'gallery': extract_gallery_data(data_dict, media_files),
-        'footer': extract_footer_data(data_dict),
-        'config': extract_section_config(data_dict)
+        'hero': extract_hero_from_sections(sections_dict),
+        'welcome': extract_welcome_from_sections(sections_dict),
+        'couple': extract_couple_from_sections(sections_dict),
+        'countdown': extract_countdown_from_sections(sections_dict),
+        'story': extract_story_from_sections(sections_dict),
+        'video': extract_video_from_sections(sections_dict),
+        'gallery': extract_gallery_from_sections(sections_dict),
+        'footer': extract_footer_from_sections(sections_dict),
+        'familiares': extract_familiares_from_sections(sections_dict),
+        'place_religioso': extract_place_religioso_from_sections(sections_dict),
+        'place_ceremonia': extract_place_ceremonia_from_sections(sections_dict),
+        'vestimenta': extract_vestimenta_from_sections(sections_dict),
+        'itinerary': extract_itinerary_from_sections(sections_dict),
+        'config': {'sections_enabled': {}, 'colors': {}, 'custom_css': ''}
     }
 
 def extract_hero_data(data_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -316,4 +351,280 @@ def get_modular_template_props(invitation_id: int, sections_config: Dict[str, st
     return {
         'section_props': section_props,
         'config': modular_data.get('config', {})
+    }
+
+# ==============================================================================
+# NEW EXTRACTION FUNCTIONS FOR MODULAR SECTIONS (invitations_sections_data)
+# ==============================================================================
+
+def extract_hero_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extract Hero component props from sections_dict
+    Maps from 'hero' section to Hero component props
+
+    FIXED: Now reads from 'hero' section instead of 'general' section
+    because the field mapping system correctly prefixes fields as hero_*
+
+    FIELD MAPPING:
+    - date → weddingDate (component expects weddingDate)
+    - location/eventLocation → eventLocation
+    - image/heroImageUrl → heroImageUrl
+    """
+    hero = sections_dict.get('hero', {})
+
+    return {
+        'groom_name': hero.get('groom_name'),
+        'bride_name': hero.get('bride_name'),
+        'weddingDate': hero.get('date') or hero.get('weddingDate'),  # Map date → weddingDate
+        'eventLocation': hero.get('eventLocation') or hero.get('location'),  # Handle both field names
+        'heroImageUrl': hero.get('heroImageUrl') or hero.get('image')  # Handle both field names
+    }
+
+def extract_welcome_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Welcome component props from sections_dict"""
+    welcome = sections_dict.get('welcome', {})
+
+    return {
+        'welcome_bannerImageUrl': welcome.get('welcome_bannerImageUrl'),
+        'welcome_couplePhotoUrl': welcome.get('welcome_couplePhotoUrl'),
+        'welcome_welcomeText': welcome.get('welcome_welcomeText'),
+        'welcome_title': welcome.get('welcome_title'),
+        'welcome_description': welcome.get('welcome_description')
+    }
+
+def extract_couple_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Couple component props from sections_dict"""
+    couple = sections_dict.get('couple', {})
+
+    return {
+        'couple_sectionTitle': couple.get('couple_sectionTitle'),
+        'couple_sectionSubtitle': couple.get('couple_sectionSubtitle'),
+        'bride_name': couple.get('bride_name'),
+        'bride_role': couple.get('bride_role'),
+        'bride_description': couple.get('bride_description'),
+        'bride_imageUrl': couple.get('bride_imageUrl'),
+        'groom_name': couple.get('groom_name'),
+        'groom_role': couple.get('groom_role'),
+        'groom_description': couple.get('groom_description'),
+        'groom_imageUrl': couple.get('groom_imageUrl')
+    }
+
+def extract_countdown_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Countdown component props from sections_dict
+
+    FIXED: Field names in DB don't have section prefix, so we read:
+    - preTitle (not countdown_preTitle)
+    - title (not countdown_title)
+    - backgroundImageUrl (not countdown_backgroundImageUrl)
+
+    INHERITANCE: weddingDate can come from countdown → hero → general
+    This allows invitations with only 'hero' section to work in countdown
+    """
+    countdown = sections_dict.get('countdown', {})
+    hero = sections_dict.get('hero', {})
+    general = sections_dict.get('general', {})
+
+    # HERENCIA: countdown → hero (with date mapping) → general
+    wedding_date = (
+        countdown.get('weddingDate') or
+        hero.get('weddingDate') or
+        hero.get('date') or  # Map date → weddingDate
+        general.get('weddingDate')
+    )
+
+    return {
+        'weddingDate': wedding_date,
+        'countdown_backgroundImageUrl': countdown.get('backgroundImageUrl'),
+        'countdown_preTitle': countdown.get('preTitle'),
+        'countdown_title': countdown.get('title')
+    }
+
+def extract_story_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Story component props from sections_dict"""
+    story = sections_dict.get('story', {})
+
+    return {
+        'sectionSubtitle': story.get('sectionSubtitle'),
+        'sectionTitle': story.get('sectionTitle'),
+        'story_moment_1_date': story.get('story_moment_1_date'),
+        'story_moment_1_title': story.get('story_moment_1_title'),
+        'story_moment_1_description': story.get('story_moment_1_description'),
+        'story_moment_1_imageUrl': story.get('story_moment_1_imageUrl'),
+        'story_moment_2_date': story.get('story_moment_2_date'),
+        'story_moment_2_title': story.get('story_moment_2_title'),
+        'story_moment_2_description': story.get('story_moment_2_description'),
+        'story_moment_2_imageUrl': story.get('story_moment_2_imageUrl'),
+        'story_moment_3_date': story.get('story_moment_3_date'),
+        'story_moment_3_title': story.get('story_moment_3_title'),
+        'story_moment_3_description': story.get('story_moment_3_description'),
+        'story_moment_3_imageUrl': story.get('story_moment_3_imageUrl')
+    }
+
+def extract_video_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Video component props from sections_dict"""
+    video = sections_dict.get('video', {})
+
+    return {
+        'video_backgroundImageUrl': video.get('video_backgroundImageUrl'),
+        'video_videoEmbedUrl': video.get('video_videoEmbedUrl'),
+        'video_preTitle': video.get('video_preTitle'),
+        'video_title': video.get('video_title')
+    }
+
+def extract_gallery_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Gallery component props from sections_dict
+
+    FIXED: Field name in DB is 'images' (not 'gallery_images')
+    """
+    gallery = sections_dict.get('gallery', {})
+
+    # Try 'images' first (correct name), fallback to 'gallery_images'
+    gallery_images = gallery.get('images') or gallery.get('gallery_images', [])
+    if isinstance(gallery_images, str):
+        try:
+            gallery_images = json.loads(gallery_images)
+        except:
+            gallery_images = []
+
+    return {
+        'sectionSubtitle': gallery.get('sectionSubtitle'),
+        'sectionTitle': gallery.get('sectionTitle'),
+        'gallery_images': gallery_images
+    }
+
+def extract_footer_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Footer component props from sections_dict
+
+    FIXED: Field name in DB is 'copyrightText' (not 'footer_copyrightText')
+
+    INHERITANCE: Shared fields (groom_name, bride_name, weddingDate, eventLocation)
+    can come from general → hero → footer
+    This allows invitations with only 'hero' section to work in footer
+    """
+    footer = sections_dict.get('footer', {})
+    hero = sections_dict.get('hero', {})
+    general = sections_dict.get('general', {})
+
+    # HERENCIA para campos compartidos: general → hero → footer
+    return {
+        'groom_name': (
+            general.get('groom_name') or
+            hero.get('groom_name') or
+            footer.get('groom_name')
+        ),
+        'bride_name': (
+            general.get('bride_name') or
+            hero.get('bride_name') or
+            footer.get('bride_name')
+        ),
+        'weddingDate': (
+            general.get('weddingDate') or
+            hero.get('weddingDate') or
+            hero.get('date') or  # Map date → weddingDate
+            footer.get('weddingDate')
+        ),
+        'eventLocation': (
+            general.get('eventLocation') or
+            hero.get('eventLocation') or
+            hero.get('location') or  # Map location → eventLocation
+            footer.get('eventLocation')
+        ),
+        'footer_copyrightText': footer.get('copyrightText')
+    }
+
+def extract_familiares_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Familiares component props from sections_dict (Template 9)"""
+    familiares = sections_dict.get('familiares', {})
+
+    return {
+        'familiares_titulo_padres': familiares.get('titulo_padres'),
+        'familiares_titulo_padrinos': familiares.get('titulo_padrinos'),
+        'familiares_padre_novio': familiares.get('padre_novio'),
+        'familiares_madre_novio': familiares.get('madre_novio'),
+        'familiares_padre_novia': familiares.get('padre_novia'),
+        'familiares_madre_novia': familiares.get('madre_novia'),
+        'familiares_padrino': familiares.get('padrino'),
+        'familiares_madrina': familiares.get('madrina')
+    }
+
+def extract_place_religioso_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract PlaceReligioso component props from sections_dict (Template 9)
+
+    INHERITANCE: weddingDate can come from place_religioso → hero → general
+    This allows invitations with only 'hero' section to work in place_religioso
+    """
+    place_religioso = sections_dict.get('place_religioso', {})
+    hero = sections_dict.get('hero', {})
+    general = sections_dict.get('general', {})
+
+    # HERENCIA: place_religioso → hero (with date mapping) → general
+    wedding_date = (
+        place_religioso.get('weddingDate') or
+        hero.get('weddingDate') or
+        hero.get('date') or  # Map date → weddingDate
+        general.get('weddingDate')
+    )
+
+    return {
+        'place_religioso_titulo': place_religioso.get('titulo'),
+        'weddingDate': wedding_date,
+        'place_religioso_lugar': place_religioso.get('lugar'),
+        'place_religioso_direccion': place_religioso.get('direccion'),
+        'place_religioso_mapa_url': place_religioso.get('mapa_url')
+    }
+
+def extract_place_ceremonia_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract PlaceCeremonia component props from sections_dict (Template 9)
+
+    INHERITANCE: weddingDate can come from place_ceremonia → hero → general
+    This allows invitations with only 'hero' section to work in place_ceremonia
+    """
+    place_ceremonia = sections_dict.get('place_ceremonia', {})
+    hero = sections_dict.get('hero', {})
+    general = sections_dict.get('general', {})
+
+    # HERENCIA: place_ceremonia → hero (with date mapping) → general
+    wedding_date = (
+        place_ceremonia.get('weddingDate') or
+        hero.get('weddingDate') or
+        hero.get('date') or  # Map date → weddingDate
+        general.get('weddingDate')
+    )
+
+    return {
+        'place_ceremonia_titulo': place_ceremonia.get('titulo'),
+        'weddingDate': wedding_date,
+        'place_ceremonia_hora': place_ceremonia.get('hora'),
+        'place_ceremonia_lugar': place_ceremonia.get('lugar'),
+        'place_ceremonia_direccion': place_ceremonia.get('direccion'),
+        'place_ceremonia_mapa_url': place_ceremonia.get('mapa_url')
+    }
+
+def extract_vestimenta_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Vestimenta component props from sections_dict (Template 9)"""
+    vestimenta = sections_dict.get('vestimenta', {})
+
+    return {
+        'vestimenta_titulo': vestimenta.get('titulo'),
+        'vestimenta_etiqueta': vestimenta.get('etiqueta'),
+        'vestimenta_no_colores_titulo': vestimenta.get('no_colores_titulo'),
+        'vestimenta_no_colores_info': vestimenta.get('no_colores_info')
+    }
+
+def extract_itinerary_from_sections(sections_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract Itinerary component props from sections_dict (Template 9)"""
+    itinerary = sections_dict.get('itinerary', {})
+
+    return {
+        'itinerary_title': itinerary.get('title'),
+        'itinerary_event_ceremonia_enabled': itinerary.get('event_ceremonia_enabled'),
+        'itinerary_event_ceremonia_time': itinerary.get('event_ceremonia_time'),
+        'itinerary_event_recepcion_enabled': itinerary.get('event_recepcion_enabled'),
+        'itinerary_event_recepcion_time': itinerary.get('event_recepcion_time'),
+        'itinerary_event_entrada_enabled': itinerary.get('event_entrada_enabled'),
+        'itinerary_event_entrada_time': itinerary.get('event_entrada_time'),
+        'itinerary_event_comida_enabled': itinerary.get('event_comida_enabled'),
+        'itinerary_event_comida_time': itinerary.get('event_comida_time'),
+        'itinerary_event_fiesta_enabled': itinerary.get('event_fiesta_enabled'),
+        'itinerary_event_fiesta_time': itinerary.get('event_fiesta_time')
     }

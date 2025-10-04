@@ -17,7 +17,7 @@ class Invitation(db.Model):
     bride_name = db.Column(db.String(100), nullable=False)
     
     # Fecha y ubicación
-    wedding_date = db.Column(db.DateTime, nullable=False)
+    wedding_date = db.Column(db.DateTime, nullable=True)
     ceremony_location = db.Column(db.String(500))
     ceremony_address = db.Column(db.Text)
     reception_location = db.Column(db.String(500))

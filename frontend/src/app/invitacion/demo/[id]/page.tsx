@@ -224,9 +224,7 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
   // IMPORTANT: Hook must be called unconditionally (React rules)
   // This hook processes customizer data from localStorage and merges it with template defaults
   const customizer = useDynamicCustomizer({
-    templateId,
-    templateData: templateData?.template || null,
-    category: 'weddings' as 'weddings' | 'kids' | 'corporate'
+    templateData: templateData?.template || null
   });
 
   // Get transformed data for rendering - this includes gallery_images processing

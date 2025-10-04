@@ -16,12 +16,13 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  CreditCard, 
-  Lock, 
-  User, 
-  Mail, 
-  Phone, 
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  CreditCard,
+  Lock,
+  User,
+  Mail,
+  Phone,
   MapPin,
   ArrowLeft,
   CheckCircle,
@@ -37,6 +38,7 @@ import { useCart } from '@/lib/hooks/use-cart';
 import { useAppliedCoupon, useCouponDiscount, useCartStore } from '@/store/cartStore';
 import { useRemoveCoupon } from '@/lib/hooks/use-coupons';
 import { ordersApi, paymentsApi } from '@/lib/api';
+import { createInvitationFromOrder, extractInvitationMetadata } from '@/lib/api/invitations';
 import { IzipayCheckout } from '@/components/ui/izipay-checkout';
 import toast from 'react-hot-toast';
 
@@ -179,6 +181,7 @@ const OrderSummary = ({ cart }: { cart: any }) => {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: cart, isLoading: cartLoading } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -186,6 +189,7 @@ export default function CheckoutPage() {
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
   const appliedCoupon = useAppliedCoupon();
   const [currentStep, setCurrentStep] = useState(1);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   const {
     register,
@@ -200,10 +204,50 @@ export default function CheckoutPage() {
 
   const documentType = watch('documentType');
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (ONLY if payment hasn't been completed)
   useEffect(() => {
-    if (!cartLoading && (!cart || !cart.items || cart.items.length === 0)) {
+    if (!paymentCompleted && !cartLoading && (!cart || !cart.items || cart.items.length === 0)) {
       router.push('/carrito');
+    }
+  }, [cart, cartLoading, router, paymentCompleted]);
+
+  // Check if customizer data exists before allowing checkout
+  useEffect(() => {
+    if (!cartLoading && cart && cart.items && cart.items.length > 0) {
+      const templateItem = cart.items.find(item => item.type === 'template');
+      if (templateItem) {
+        const templateId = templateItem.id;
+        const storageKey = `demo-customizer-${templateId}`;
+        const savedState = localStorage.getItem(storageKey);
+
+        if (!savedState) {
+          console.warn('⚠️ [Checkout Mount] No localStorage data found - redirecting to customizer');
+          toast.error('Por favor personaliza tu invitación antes de proceder al pago');
+          router.push(`/invitacion/demo/${templateId}`);
+          return;
+        }
+
+        // Check if there's actual non-empty data
+        try {
+          const parsed = JSON.parse(savedState);
+          const customizerData = parsed.customizerData || {};
+          const hasNonEmptyData = Object.values(customizerData).some(value =>
+            value !== null && value !== undefined && value !== ''
+          );
+
+          if (!hasNonEmptyData) {
+            console.warn('⚠️ [Checkout Mount] Only empty data found - TEMPORARILY ALLOWING FOR TESTING');
+            // toast.error('Por favor personaliza tu invitación antes de proceder al pago');
+            // router.push(`/invitacion/demo/${templateId}`);
+            // return;
+          }
+
+          console.log('✅ [Checkout Mount] Customizer data validated - proceeding with checkout');
+        } catch (error) {
+          console.error('❌ [Checkout Mount] Error parsing localStorage:', error);
+          router.push(`/invitacion/demo/${templateId}`);
+        }
+      }
     }
   }, [cart, cartLoading, router]);
 
@@ -238,17 +282,25 @@ export default function CheckoutPage() {
       });
       
       const orderResponse = await ordersApi.createOrder(orderData);
-      
+
       console.log('✅ [CHECKOUT] Order creation response:', orderResponse);
-      
+
       if (!orderResponse.success || !orderResponse.order) {
         console.error('❌ [CHECKOUT] Order creation failed:', orderResponse);
         throw new Error('Failed to create order: ' + ((orderResponse as any).error || 'Unknown error'));
       }
-      
+
       const order = orderResponse.order;
+      console.log('📦 [CHECKOUT] Order created from API response:', {
+        id: order.id,
+        order_number: order.order_number,
+        total: order.total,
+        status: order.status
+      });
+
       setCurrentOrder(order);
-      
+      console.log('✅ [CHECKOUT] currentOrder state updated with order ID:', order.id);
+
       // Step 2: Create payment token for Izipay
       setIsLoadingPayment(true);
       const tokenData = {
@@ -318,9 +370,20 @@ export default function CheckoutPage() {
   // Handle successful payment
   const handlePaymentSuccess = async (paymentResult: any) => {
     try {
+      console.log('🎉 [CHECKOUT] handlePaymentSuccess called');
+      console.log('🔍 [CHECKOUT] currentOrder state:', currentOrder ? {
+        id: currentOrder.id,
+        order_number: currentOrder.order_number,
+        status: currentOrder.status,
+        total: currentOrder.total
+      } : 'NULL');
+
       if (!currentOrder) {
+        console.error('❌ [CHECKOUT] currentOrder is NULL/undefined!');
         throw new Error('No order found');
       }
+
+      console.log('✅ [CHECKOUT] Using order ID for payment processing:', currentOrder.id);
 
       // Process the payment result
       await paymentsApi.processPayment({
@@ -332,9 +395,129 @@ export default function CheckoutPage() {
         },
       });
 
-      toast.success('¡Pago completado exitosamente!');
-      router.push(`/mi-cuenta/pedidos/${currentOrder.order_number}?success=true`);
-      
+      console.log('✅ [CHECKOUT] Payment processed successfully for order:', currentOrder.order_number);
+
+      // Mark payment as completed to prevent cart redirect
+      setPaymentCompleted(true);
+
+      // Clear cart after successful payment (not before)
+      console.log('🧹 [CHECKOUT] Clearing cart after successful payment');
+      const { clearCartOptimistic } = useCartStore.getState();
+      clearCartOptimistic(); // Clears Zustand store + localStorage
+      queryClient.invalidateQueries({ queryKey: ['cart'] }); // Invalidates React Query cache
+      queryClient.refetchQueries({ queryKey: ['cart'] }); // Forces immediate refetch from backend
+
+      // Save customizer data from localStorage to database
+      try {
+        console.log('🔍 [Checkout] Checking invitation creation...');
+        console.log('🛒 cart items:', cart?.items);
+
+        // Get template ID from cart
+        // WHY: CartItem.id IS the template_id when type === 'template'
+        const templateItem = cart?.items?.find(item => item.type === 'template');
+        const templateId = templateItem?.id;
+
+        console.log('🎯 [Checkout] Found template item:', templateItem);
+        console.log('🆔 [Checkout] Extracted template_id:', templateId);
+
+        // Load customizer data from the CORRECT localStorage key
+        // WHY: Demo page saves data in 'demo-customizer-{templateId}' format
+        let customizerData: any = {};
+
+        if (templateId) {
+          const storageKey = `demo-customizer-${templateId}`;
+          console.log('🔑 [Checkout] Looking for localStorage key:', storageKey);
+
+          const savedState = localStorage.getItem(storageKey);
+          console.log('💾 [Checkout] Raw localStorage data:', savedState ? savedState.substring(0, 200) + '...' : 'null');
+
+          if (savedState) {
+            const parsed = JSON.parse(savedState);
+            console.log('📦 [Checkout] Parsed state structure:', Object.keys(parsed));
+
+            // Extract customizerData from the saved state object
+            customizerData = parsed.customizerData || {};
+            console.log('✨ [Checkout] Extracted customizerData keys:', Object.keys(customizerData));
+          } else {
+            console.warn('⚠️ [Checkout] No data found in localStorage for key:', storageKey);
+          }
+        } else {
+          console.warn('⚠️ [Checkout] No templateId found in cart items');
+        }
+
+        console.log('📊 customizerData keys count:', Object.keys(customizerData).length);
+        console.log('📊 customizerData FULL content:', customizerData);
+
+        // Count non-empty fields (fields with actual values)
+        const nonEmptyFields = Object.entries(customizerData).filter(([k, v]) => {
+          if (v === '' || v === null || v === undefined) return false;
+          if (Array.isArray(v)) return v.length > 0;
+          if (typeof v === 'object') return Object.keys(v).length > 0;
+          return true;
+        });
+        console.log('📊 Non-empty fields count:', nonEmptyFields.length);
+        console.log('📊 Non-empty fields:', nonEmptyFields.map(([k]) => k));
+
+        // Check if we have meaningful customization data
+        // WHY: If user never opened customizer or didn't make changes, use template defaults
+        const hasMeaningfulData = nonEmptyFields.length > 0;
+
+        if (templateId) {
+          console.log('✅ [Checkout] Creating invitation from order...');
+          console.log('🔍 [CHECKOUT] About to call createInvitationFromOrder with:');
+          console.log('   - currentOrder.id:', currentOrder.id);
+          console.log('   - currentOrder.order_number:', currentOrder.order_number);
+          console.log('   - templateId:', templateId);
+          console.log('   - customizerData keys:', Object.keys(customizerData).length);
+          console.log('   - customizerData NON-EMPTY keys:', nonEmptyFields.length);
+          console.log('   - hasMeaningfulData:', hasMeaningfulData);
+
+          // Use empty object if no meaningful customization (backend will use defaults)
+          const dataToSend = hasMeaningfulData ? customizerData : {};
+
+          const metadata = extractInvitationMetadata(dataToSend);
+          console.log('📋 [Checkout] Extracted metadata:', metadata);
+
+          const invitationResponse = await createInvitationFromOrder(
+            currentOrder.id,
+            templateId,
+            dataToSend,  // ← Send empty object if no customization (backend uses defaults)
+            metadata
+          );
+
+          console.log('🎊 [CHECKOUT] createInvitationFromOrder SUCCESS! Response:', invitationResponse);
+
+          console.log('✅ [Checkout] Invitation created:', invitationResponse);
+
+          // Clear localStorage after successful save
+          // WHY: Clear the correct key that was used to store the data
+          const storageKey = `demo-customizer-${templateId}`;
+          localStorage.removeItem(storageKey);
+          console.log('🧹 [Checkout] Cleaned up localStorage key:', storageKey);
+
+          toast.success('¡Pago completado e invitación creada exitosamente!');
+          router.push(invitationResponse.invitation_url);
+        } else {
+          console.warn('⚠️ [Checkout] Skipping invitation creation:');
+          console.warn('   - templateId present:', !!templateId);
+          console.warn('   - customizerData not empty:', Object.keys(customizerData).length > 0);
+          console.warn('   - Redirecting to order page instead');
+
+          // No customizer data found - still redirect to order confirmation
+          toast.success('¡Pago completado exitosamente!');
+          router.push(`/mi-cuenta/pedidos/${currentOrder.order_number}?success=true`);
+        }
+      } catch (invitationError: any) {
+        console.error('❌ [Checkout] Error creating invitation:', invitationError);
+        console.error('   Error details:', invitationError.message);
+        console.error('   Stack:', invitationError.stack);
+
+        // Payment was successful, but invitation creation failed
+        // Still redirect to order confirmation
+        toast.success('¡Pago completado! Tu invitación será creada pronto.');
+        router.push(`/mi-cuenta/pedidos/${currentOrder.order_number}?success=true`);
+      }
+
     } catch (error: any) {
       console.error('Error processing payment:', error);
       toast.error('Error confirmando el pago. Contacta con soporte.');

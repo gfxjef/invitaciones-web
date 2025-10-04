@@ -71,89 +71,20 @@ const ORDER_STATUS_CONFIG = {
   },
 };
 
-// Mock data for development - will be replaced with real API calls
-const mockOrders: Order[] = [
-  {
-    id: 1,
-    order_number: 'ORD-2024-001',
-    status: 'completed',
-    total: 690.00,
-    total_amount: 690.00,
-    subtotal: 690.00,
-    discount_amount: 0,
-    currency: 'PEN',
-    created_at: '2024-07-20T10:30:00Z',
-    items: [
-      {
-        id: 1,
-        product_name: 'Elegancia Rosa - Boda Premium',
-        quantity: 1,
-        unit_price: 690.00,
-        total_price: 690.00,
-      },
-    ],
-  },
-  {
-    id: 2,
-    order_number: 'ORD-2024-002',
-    status: 'processing',
-    total: 290.00,
-    total_amount: 290.00,
-    subtotal: 290.00,
-    discount_amount: 0,
-    currency: 'PEN',
-    created_at: '2024-07-15T16:45:00Z',
-    items: [
-      {
-        id: 2,
-        product_name: 'Clásico Dorado - XV Años',
-        quantity: 1,
-        unit_price: 290.00,
-        total_price: 290.00,
-      },
-    ],
-  },
-  {
-    id: 3,
-    order_number: 'ORD-2024-003',
-    status: 'cancelled',
-    total: 190.00,
-    total_amount: 190.00,
-    subtotal: 190.00,
-    discount_amount: 0,
-    currency: 'PEN',
-    created_at: '2024-07-10T12:00:00Z',
-    items: [
-      {
-        id: 3,
-        product_name: 'Moderno Minimalista - Cumpleaños',
-        quantity: 1,
-        unit_price: 190.00,
-        total_price: 190.00,
-      },
-    ],
-  },
-  {
-    id: 4,
-    order_number: 'ORD-2024-004',
-    status: 'pending',
-    total: 480.00,
-    total_amount: 480.00,
-    subtotal: 480.00,
-    discount_amount: 0,
-    currency: 'PEN',
-    created_at: '2024-07-08T14:20:00Z',
-    items: [
-      {
-        id: 4,
-        product_name: 'Vintage Floral - Baby Shower',
-        quantity: 2,
-        unit_price: 240.00,
-        total_price: 480.00,
-      },
-    ],
-  },
-];
+/**
+ * Maps backend order status to frontend status
+ * Backend: PENDING, PAID, CANCELLED, REFUNDED
+ * Frontend: pending, processing, completed, cancelled, shipped
+ */
+const mapOrderStatus = (backendStatus: string): string => {
+  const statusMap: Record<string, string> = {
+    'PENDING': 'pending',
+    'PAID': 'completed',
+    'CANCELLED': 'cancelled',
+    'REFUNDED': 'cancelled',
+  };
+  return statusMap[backendStatus] || backendStatus.toLowerCase();
+};
 
 export default function PedidosPage() {
   const router = useRouter();
@@ -169,13 +100,16 @@ export default function PedidosPage() {
   const loadOrders = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call
-      // const response = await ordersApi.getOrders();
-      // setOrders(response.items);
-      
-      // Using mock data for now
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setOrders(mockOrders);
+      const response = await ordersApi.getOrders();
+
+      // Map backend status to frontend status and normalize total_amount
+      const mappedOrders = response.orders.map(order => ({
+        ...order,
+        status: mapOrderStatus(order.status),
+        total_amount: order.total_amount || order.total,
+      }));
+
+      setOrders(mappedOrders);
     } catch (error) {
       toast.error('Error cargando pedidos');
       console.error('Error loading orders:', error);
@@ -494,7 +428,19 @@ export default function PedidosPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/invitacion/${order.id}`)}
+                          onClick={async () => {
+                            try {
+                              const response = await ordersApi.getOrderInvitation(order.id);
+                              if (response.success && response.invitation) {
+                                router.push(response.invitation.full_url);
+                              } else {
+                                toast.error(response.message || 'No se encontró invitación para este pedido');
+                              }
+                            } catch (error) {
+                              toast.error('Error al obtener la invitación');
+                              console.error('Error getting invitation:', error);
+                            }
+                          }}
                         >
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Ver invitación

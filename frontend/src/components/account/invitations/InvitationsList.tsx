@@ -230,21 +230,24 @@ export default function InvitationsList() {
   const loadInvitations = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call with filters
-      // const response = await invitationsApi.getInvitations({
-      //   page: 1,
-      //   per_page: 50,
-      //   status: filters.status !== 'all' ? filters.status : undefined,
-      //   event_type: filters.eventType !== 'all' ? filters.eventType : undefined
-      // });
-      // setInvitations(response.items);
-      
-      // Using mock data for now
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setInvitations(mockInvitations);
+      // Call real API endpoint
+      const response = await invitationsApi.getInvitations({
+        page: 1,
+        per_page: 100,
+        status: filters.status !== 'all' ? filters.status : undefined,
+        event_type: filters.eventType !== 'all' ? filters.eventType : undefined
+      });
+
+      // Backend returns { invitations: [...], total: N }
+      // Map to frontend format if needed
+      const mappedInvitations = response.invitations || response.items || [];
+      setInvitations(mappedInvitations);
+
+      console.log(`✅ Loaded ${mappedInvitations.length} invitations from API`);
     } catch (error) {
       toast.error('Error cargando invitaciones');
       console.error('Error loading invitations:', error);
+      setInvitations([]); // Clear on error
     } finally {
       setIsLoading(false);
     }
@@ -325,12 +328,12 @@ export default function InvitationsList() {
           bValue = new Date(b.event_date);
           break;
         case 'views':
-          aValue = a.stats.total_views;
-          bValue = b.stats.total_views;
+          aValue = a.stats.views;
+          bValue = b.stats.views;
           break;
         case 'confirmations':
-          aValue = a.stats.rsvp_confirmed;
-          bValue = b.stats.rsvp_confirmed;
+          aValue = a.stats.rsvps;
+          bValue = b.stats.rsvps;
           break;
         default:
           aValue = a.updated_at;
@@ -692,7 +695,7 @@ export default function InvitationsList() {
                             <EventTypeIcon className="w-5 h-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{invitation.name}</p>
+                            <p className="font-medium text-gray-900">{invitation.title}</p>
                             <p className="text-sm text-gray-600">
                               {EVENT_TYPE_LABELS[invitation.event_type]} • {invitation.template_name}
                             </p>
@@ -712,11 +715,11 @@ export default function InvitationsList() {
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
                               <Eye className="w-3 h-3 text-gray-400" />
-                              <span>{invitation.stats.total_views}</span>
+                              <span>{invitation.stats.views}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Users className="w-3 h-3 text-gray-400" />
-                              <span>{invitation.stats.rsvp_confirmed}</span>
+                              <span>{invitation.stats.rsvps}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Share2 className="w-3 h-3 text-gray-400" />

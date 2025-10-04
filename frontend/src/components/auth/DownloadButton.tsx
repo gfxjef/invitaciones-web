@@ -160,6 +160,7 @@ export function DownloadButton({
 
   /**
    * Handle button click
+   * ALWAYS redirects to checkout (no direct downloads)
    */
   const handleClick = () => {
     if (authLoading) {
@@ -167,8 +168,24 @@ export function DownloadButton({
     }
 
     if (isAuthenticated) {
-      // User is authenticated, process download immediately
-      processDownload();
+      // User is authenticated, add to cart and redirect to checkout
+      if (templateData) {
+        const template = {
+          id: templateData.id,
+          name: templateData.name,
+          thumbnail_url: templateData.thumbnail_url || templateData.preview_image_url || '',
+          plan: templateData.plan,
+          is_premium: templateData.is_premium,
+          price: templateData.price
+        };
+
+        addTemplate(template);
+
+        // Redirect to checkout for payment
+        setTimeout(() => {
+          router.push('/checkout');
+        }, 800); // Small delay to show success toast
+      }
     } else {
       // User is not authenticated, save current URL and show auth modal
       if (typeof window !== 'undefined') {

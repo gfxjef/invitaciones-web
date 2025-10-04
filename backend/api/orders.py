@@ -30,9 +30,9 @@ orders_bp = Blueprint('orders', __name__)
 def get_user_orders():
     """
     GET /api/orders/
-    
+
     Obtiene todas las órdenes del usuario actual.
-    
+
     Returns:
         {
             "orders": [
@@ -48,17 +48,54 @@ def get_user_orders():
         }
     """
     current_user_id = get_jwt_identity()
-    
+
     try:
+        # WHY: Fetch orders without eager loading since items is lazy='dynamic'
+        # The to_dict() method will handle items fetching per order
         orders = Order.query.filter_by(user_id=current_user_id)\
                            .order_by(Order.created_at.desc())\
                            .all()
-        
+
+        # Manually convert to dict to avoid N+1 - fetch all items in one query
+        from sqlalchemy import select
+        from models.order import OrderItem
+
+        # Get all order IDs
+        order_ids = [order.id for order in orders]
+
+        # Fetch all items for these orders in one query
+        items_query = OrderItem.query.filter(OrderItem.order_id.in_(order_ids)).all()
+
+        # Group items by order_id
+        items_by_order = {}
+        for item in items_query:
+            if item.order_id not in items_by_order:
+                items_by_order[item.order_id] = []
+            items_by_order[item.order_id].append(item.to_dict())
+
+        # Build response with pre-fetched items
+        orders_data = []
+        for order in orders:
+            order_dict = {
+                'id': order.id,
+                'order_number': order.order_number,
+                'subtotal': float(order.subtotal),
+                'discount_amount': float(order.discount_amount),
+                'total': float(order.total),
+                'currency': order.currency,
+                'status': order.status.value,
+                'coupon_code': order.coupon_code,
+                'created_at': order.created_at.isoformat() if order.created_at else None,
+                'paid_at': order.paid_at.isoformat() if order.paid_at else None,
+                'items': items_by_order.get(order.id, [])
+            }
+            orders_data.append(order_dict)
+
         return jsonify({
             'success': True,
-            'orders': [order.to_dict() for order in orders]
+            'orders': orders_data
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error getting user orders: {str(e)}")
         return jsonify({
@@ -216,9 +253,12 @@ def create_order():
             user_carts[current_user_id] = []
         
         db.session.commit()
-        
+
         logger.info(f"Order {order.order_number} created for user {current_user_id} with discount ${discount_amount}")
-        
+        logger.info(f"   Order DB ID: {order.id}")
+        logger.info(f"   Order user_id: {order.user_id}")
+        logger.info(f"   Order status: {order.status}")
+
         return jsonify({
             'success': True,
             'order': order.to_dict()
@@ -273,30 +313,101 @@ def get_order(order_id):
 def get_order_by_number(order_number):
     """
     GET /api/orders/number/<order_number>
-    
+
     Obtiene los detalles de una orden específica por número de orden.
     """
     current_user_id = get_jwt_identity()
-    
+
     try:
         order = Order.query.filter_by(
             order_number=order_number,
             user_id=current_user_id
         ).first()
-        
+
         if not order:
             return jsonify({
                 'success': False,
                 'error': 'Order not found'
             }), 404
-        
+
         return jsonify({
             'success': True,
             'order': order.to_dict()
         }), 200
-        
+
     except Exception as e:
         logger.error(f"Error getting order by number: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}'
+        }), 500
+
+
+@orders_bp.route('/<int:order_id>/invitation', methods=['GET'])
+@jwt_required()
+def get_order_invitation(order_id):
+    """
+    GET /api/orders/<order_id>/invitation
+
+    Obtiene la invitación asociada a una orden.
+    Usado por el botón "Ver invitación" en la página de pedidos.
+
+    Returns:
+        {
+            "success": true,
+            "invitation": {
+                "id": int,
+                "url_slug": str,
+                "full_url": str,
+                "status": str,
+                "title": str
+            }
+        }
+    """
+    current_user_id = get_jwt_identity()
+
+    try:
+        # Verify order belongs to user
+        order = Order.query.filter_by(
+            id=order_id,
+            user_id=current_user_id
+        ).first()
+
+        if not order:
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+
+        # Import Invitation model
+        from models.invitation import Invitation
+
+        # Get invitation for this order
+        invitation = Invitation.query.filter_by(order_id=order_id).first()
+
+        if not invitation:
+            return jsonify({
+                'success': False,
+                'error': 'No invitation found for this order',
+                'message': 'Esta orden aún no tiene una invitación creada'
+            }), 404
+
+        # Get URL slug (custom_url has priority over unique_url)
+        url_slug = invitation.custom_url or invitation.unique_url
+
+        return jsonify({
+            'success': True,
+            'invitation': {
+                'id': invitation.id,
+                'url_slug': url_slug,
+                'full_url': f'/invitacion/{url_slug}',
+                'status': invitation.status,
+                'title': invitation.title
+            }
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error getting order invitation: {str(e)}")
         return jsonify({
             'success': False,
             'error': f'Internal error: {str(e)}'

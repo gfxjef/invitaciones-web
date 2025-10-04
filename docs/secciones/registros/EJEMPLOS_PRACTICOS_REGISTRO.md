@@ -1078,6 +1078,923 @@ function SaveButton({ templateId }) {
 
 ---
 
+## **📦 CASO 10: CREACIÓN DESDE CHECKOUT POST-PAGO**
+
+### **CONTEXTO**
+Cuando un usuario completa el pago exitosamente en el checkout, se debe crear automáticamente la invitación con todos los datos personalizados que guardó en localStorage durante la personalización. Este flujo garantiza que el pago se procese primero y luego se cree la invitación con la configuración guardada.
+
+### **FLUJO COMPLETO DETALLADO**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 1: PERSONALIZACIÓN (Frontend)                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ 1.1 Usuario accede a /invitacion/demo/{template_id}                │
+│ 1.2 DynamicCustomizer carga datos del template desde API           │
+│ 1.3 Usuario modifica campos (nombres, fotos, textos)               │
+│ 1.4 useCustomizerSync guarda cambios en localStorage:              │
+│     - Key: "customizerData"                                         │
+│     - Formato: Objeto plano con todos los campos                   │
+│     - Ejemplo: {hero_groom_name: "Jeff", welcome_title: "..."}     │
+│ 1.5 FileImagePicker convierte imágenes a base64                    │
+│ 1.6 MultiImageGalleryPicker convierte galería a base64             │
+│                                                                      │
+│ Estado localStorage al finalizar:                                   │
+│ {                                                                   │
+│   "customizerData": {                                               │
+│     "template_id": 7,                                               │
+│     "plan_id": 1,                                                   │
+│     "hero_groom_name": "Jefferson",                                 │
+│     "hero_bride_name": "Rosmery",                                   │
+│     "hero_imageUrl": "data:image/png;base64,...",                   │
+│     "welcome_title": "¡Nos Casamos!",                               │
+│     "gallery_images": [{url: "data:image/...", alt: "Foto 1"}],    │
+│     ...                                                             │
+│   },                                                                │
+│   "touchedFields": {                                                │
+│     "hero_groom_name": true,                                        │
+│     "hero_bride_name": true                                         │
+│   }                                                                 │
+│ }                                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 2: AGREGAR AL CARRITO (Frontend)                              │
+├─────────────────────────────────────────────────────────────────────┤
+│ 2.1 Usuario hace clic en "Agregar al Carrito"                      │
+│ 2.2 Sistema llama POST /api/cart/add con:                          │
+│     - template_id                                                   │
+│     - quantity: 1                                                   │
+│     - price (del template)                                          │
+│ 2.3 Backend crea CartItem en base de datos                         │
+│ 2.4 localStorage mantiene customizerData (NO se envía al carrito)  │
+│                                                                      │
+│ IMPORTANTE: Los datos de personalización NO van al carrito,        │
+│ solo se mantienen en localStorage hasta el pago.                    │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 3: CHECKOUT - CREAR ORDEN (Frontend + Backend)                │
+├─────────────────────────────────────────────────────────────────────┤
+│ 3.1 Usuario completa formulario de checkout                        │
+│     - Datos personales (nombre, email, teléfono)                   │
+│     - Dirección de facturación                                     │
+│     - Tipo y número de documento                                   │
+│     - Acepta términos y condiciones                                │
+│                                                                      │
+│ 3.2 Sistema valida formulario con Zod schema                       │
+│                                                                      │
+│ 3.3 Frontend llama POST /api/orders/create con:                    │
+│     {                                                               │
+│       "billing_address": {                                          │
+│         "first_name": "Jefferson",                                  │
+│         "last_name": "Smith",                                       │
+│         "email": "jeff@example.com",                                │
+│         "phone": "+51999999999",                                    │
+│         "address": "Av. Lima 123",                                  │
+│         "city": "Lima",                                             │
+│         "state": "Lima",                                            │
+│         "zip_code": "15001",                                        │
+│         "country": "PE",                                            │
+│         "document_type": "dni",                                     │
+│         "document_number": "12345678"                               │
+│       },                                                            │
+│       "coupon_code": "PROMO20" // Si aplica                         │
+│     }                                                               │
+│                                                                      │
+│ 3.4 Backend (orders.py) ejecuta:                                   │
+│     - Valida cart no esté vacío                                    │
+│     - Valida coupon si existe                                      │
+│     - Genera order_number único (ORD-20250130-XXXX)                │
+│     - Crea registro en tabla Order con status='PENDING'            │
+│     - Calcula total con descuento si aplica                        │
+│     - Guarda billing_address_json                                  │
+│     - Retorna order con todos sus datos                            │
+│                                                                      │
+│ 3.5 Frontend recibe:                                               │
+│     {                                                               │
+│       "success": true,                                              │
+│       "order": {                                                    │
+│         "id": 123,                                                  │
+│         "order_number": "ORD-20250130-ABC123",                      │
+│         "status": "PENDING",                                        │
+│         "total": 290.00,                                            │
+│         "currency": "PEN",                                          │
+│         "items": [...]                                              │
+│       }                                                             │
+│     }                                                               │
+│                                                                      │
+│ 3.6 Frontend guarda order en estado local: setCurrentOrder(order)  │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 4: CREAR TOKEN DE PAGO (Frontend + Backend)                   │
+├─────────────────────────────────────────────────────────────────────┤
+│ 4.1 Frontend llama POST /api/payments/create-token con:            │
+│     {                                                               │
+│       "order_id": 123,                                              │
+│       "billing_info": {                                             │
+│         "firstName": "Jefferson",                                   │
+│         "lastName": "Smith",                                        │
+│         "email": "jeff@example.com",                                │
+│         "phoneNumber": "+51999999999",                              │
+│         "street": "Av. Lima 123",                                   │
+│         "city": "Lima",                                             │
+│         "state": "Lima",                                            │
+│         "country": "PE",                                            │
+│         "postalCode": "15001",                                      │
+│         "document": "12345678",                                     │
+│         "documentType": "DNI"                                       │
+│       }                                                             │
+│     }                                                               │
+│                                                                      │
+│ 4.2 Backend (payments.py) ejecuta:                                 │
+│     - Valida que Order existe y está PENDING                       │
+│     - Crea payload para Izipay API                                 │
+│     - Llama a Izipay: POST /api-payment/V4/Charge/CreatePayment    │
+│     - Recibe formToken de Izipay                                   │
+│     - Retorna formToken y publicKey al frontend                    │
+│                                                                      │
+│ 4.3 Frontend recibe:                                               │
+│     {                                                               │
+│       "success": true,                                              │
+│       "formToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",       │
+│       "publicKey": "12345678:testpublickey_XXXX"                    │
+│     }                                                               │
+│                                                                      │
+│ 4.4 Frontend cambia a paso 2 del checkout: setCurrentStep(2)       │
+│ 4.5 Frontend renderiza componente IzipayCheckout                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 5: PROCESAMIENTO DE PAGO (Izipay + Backend)                   │
+├─────────────────────────────────────────────────────────────────────┤
+│ 5.1 IzipayCheckout inicializa formulario de pago con:              │
+│     - formToken recibido                                            │
+│     - publicKey de Izipay                                           │
+│     - Biblioteca @lyracom/embedded-form-glue                        │
+│                                                                      │
+│ 5.2 Usuario ingresa datos de tarjeta en iframe de Izipay           │
+│     - Número de tarjeta                                             │
+│     - Fecha de expiración                                           │
+│     - CVV                                                           │
+│                                                                      │
+│ 5.3 Izipay procesa el pago de manera segura (PCI compliant)        │
+│                                                                      │
+│ 5.4 Izipay retorna resultado al frontend vía callback               │
+│                                                                      │
+│ 5.5 Si EXITOSO: onPaymentComplete se ejecuta con paymentResult     │
+│ 5.6 Si ERROR: onPaymentError se ejecuta con error details          │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 6: CONFIRMAR PAGO (Frontend + Backend)                        │
+├─────────────────────────────────────────────────────────────────────┤
+│ 6.1 Frontend ejecuta handlePaymentSuccess()                        │
+│                                                                      │
+│ 6.2 Frontend llama POST /api/payments/process con:                 │
+│     {                                                               │
+│       "order_id": 123,                                              │
+│       "payment_result": {                                           │
+│         "status": "SUCCESS",                                        │
+│         "transaction_id": "ORD-20250130-ABC123",                    │
+│         "izipay_data": {                                            │
+│           "orderStatus": "PAID",                                    │
+│           "orderDetails": {...}                                     │
+│         }                                                           │
+│       }                                                             │
+│     }                                                               │
+│                                                                      │
+│ 6.3 Backend (payments.py) ejecuta:                                 │
+│     - Valida que Order existe                                      │
+│     - Actualiza Order.status = 'PAID'                              │
+│     - Guarda payment_details_json con datos de Izipay              │
+│     - Actualiza paid_at timestamp                                  │
+│     - Limpia CartItems asociados al usuario                        │
+│     - Commit a base de datos                                       │
+│                                                                      │
+│ 6.4 Backend retorna:                                               │
+│     {                                                               │
+│       "success": true,                                              │
+│       "message": "Payment processed successfully",                  │
+│       "order": {                                                    │
+│         "id": 123,                                                  │
+│         "status": "PAID",                                           │
+│         ...                                                         │
+│       }                                                             │
+│     }                                                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 7: CREAR INVITACIÓN (Frontend + Backend) ← NUEVO              │
+├─────────────────────────────────────────────────────────────────────┤
+│ 7.1 Frontend (MISMO handlePaymentSuccess) ejecuta:                 │
+│     - Lee localStorage.getItem('customizerData')                   │
+│     - Parse JSON de los datos                                      │
+│     - Extrae template_id del customizerData                        │
+│                                                                      │
+│ 7.2 Validación de datos:                                           │
+│     if (templateId && Object.keys(customizerData).length > 0) {    │
+│       // Continuar con creación                                    │
+│     } else {                                                        │
+│       // Redirigir a orden sin crear invitación                    │
+│     }                                                               │
+│                                                                      │
+│ 7.3 Frontend llama extractInvitationMetadata(customizerData):      │
+│     - Extrae: event_date, title, groom_name, bride_name            │
+│     - Busca en múltiples campos posibles:                          │
+│       * hero_date, countdown_date → event_date                     │
+│       * hero_title → title                                         │
+│       * hero_groom_name, couple_groom_name → groom_name            │
+│       * hero_bride_name, couple_bride_name → bride_name            │
+│                                                                      │
+│ 7.4 Frontend llama createInvitationFromOrder():                    │
+│     - Parámetros:                                                   │
+│       * orderId: currentOrder.id (123)                             │
+│       * templateId: extraído de customizerData                     │
+│       * customizerData: objeto completo de localStorage            │
+│       * metadata: {event_date, title, groom_name, bride_name}      │
+│                                                                      │
+│ 7.5 createInvitationFromOrder() procesa:                           │
+│                                                                      │
+│     A) Agrupa datos por secciones con groupCustomizerDataBySections│
+│        Input (plano):                                               │
+│        {                                                            │
+│          "hero_groom_name": "Jefferson",                            │
+│          "hero_bride_name": "Rosmery",                              │
+│          "hero_imageUrl": "data:image/...",                         │
+│          "welcome_title": "¡Nos Casamos!",                          │
+│          "welcome_description": "Con alegría...",                   │
+│          "gallery_images": [...]                                    │
+│        }                                                            │
+│                                                                      │
+│        Output (agrupado):                                           │
+│        {                                                            │
+│          "hero": {                                                  │
+│            "hero_groom_name": "Jefferson",                          │
+│            "hero_bride_name": "Rosmery",                            │
+│            "hero_imageUrl": "data:image/..."                        │
+│          },                                                         │
+│          "welcome": {                                               │
+│            "welcome_title": "¡Nos Casamos!",                        │
+│            "welcome_description": "Con alegría..."                  │
+│          },                                                         │
+│          "gallery": {                                               │
+│            "gallery_images": [...]                                  │
+│          }                                                          │
+│        }                                                            │
+│                                                                      │
+│        Lógica de agrupación:                                        │
+│        - Si key.startsWith("hero_") → Sección "hero"               │
+│        - Si key.startsWith("welcome_") → Sección "welcome"         │
+│        - Si key.startsWith("gallery_") → Sección "gallery"         │
+│        - Variables sin prefijo → Sección "general"                 │
+│        - Mantiene nombres originales (NO los renombra)             │
+│                                                                      │
+│     B) Determina plan_id:                                           │
+│        Priority order:                                              │
+│        1. customizerData.template?.plan_id                          │
+│        2. customizerData.plan_id                                    │
+│        3. Default: 1 (Plan Básico)                                 │
+│                                                                      │
+│     C) Construye payload:                                           │
+│        {                                                            │
+│          "order_id": 123,                                           │
+│          "template_id": 7,                                          │
+│          "plan_id": 1,                                              │
+│          "sections_data": {                                         │
+│            "hero": {...},                                           │
+│            "welcome": {...},                                        │
+│            "gallery": {...}                                         │
+│          },                                                         │
+│          "event_date": "2024-12-15T17:00:00",                       │
+│          "title": "Boda Jefferson & Rosmery",                       │
+│          "groom_name": "Jefferson",                                 │
+│          "bride_name": "Rosmery"                                    │
+│        }                                                            │
+│                                                                      │
+│ 7.6 Frontend llama POST /api/invitations/create-from-order         │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 8: BACKEND CREA INVITACIÓN                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│ 8.1 Backend (invitations.py) recibe request                        │
+│                                                                      │
+│ 8.2 Validaciones de seguridad:                                     │
+│     - Extrae current_user_id desde JWT token                       │
+│     - Valida order_id y template_id presentes                      │
+│     - Valida sections_data no esté vacío                           │
+│     - Query Order con filters:                                     │
+│       * id = order_id                                               │
+│       * user_id = current_user_id (seguridad)                      │
+│     - Valida Order.status == OrderStatus.PAID ⚠️ CRÍTICO           │
+│     - Valida Template existe en base de datos                      │
+│                                                                      │
+│ 8.3 Construye datos de Invitation:                                 │
+│     title = data.get('title')                                       │
+│     groom_name = data.get('groom_name')                             │
+│     bride_name = data.get('bride_name')                             │
+│                                                                      │
+│     # Auto-generar title si falta                                  │
+│     if not title and groom_name and bride_name:                    │
+│         title = f"Boda {groom_name} & {bride_name}"                │
+│     elif not title:                                                │
+│         title = f"Invitación - Template {template.name}"           │
+│                                                                      │
+│ 8.4 Crea registro en tabla Invitation:                             │
+│     invitation = Invitation(                                        │
+│         user_id=current_user_id,                                    │
+│         order_id=order_id,                                          │
+│         title=title,                                                │
+│         groom_name=groom_name,                                      │
+│         bride_name=bride_name,                                      │
+│         wedding_date=data.get('event_date'),                        │
+│         plan_id=plan_id,                                            │
+│         status='active'                                             │
+│     )                                                               │
+│     db.session.add(invitation)                                      │
+│     db.session.flush()  # ← Obtiene invitation.id antes de commit  │
+│                                                                      │
+│ 8.5 Itera sobre sections_data y crea InvitationSectionsData:       │
+│     sections_created = 0                                            │
+│                                                                      │
+│     for section_type, variables in sections_data.items():          │
+│         # Skip secciones vacías                                    │
+│         if not variables or len(variables) == 0:                   │
+│             continue                                                │
+│                                                                      │
+│         # Construir usage_stats para tracking                      │
+│         usage_stats = {                                             │
+│             "created_at": datetime.now(timezone.utc).isoformat(),   │
+│             "source": "checkout_post_payment",                      │
+│             "plan_type": "basic" if plan_id == 1 else "premium",   │
+│             "variables_count": len(variables),                      │
+│             "order_id": order_id                                    │
+│         }                                                           │
+│                                                                      │
+│         # Crear registro de sección                                │
+│         section = InvitationSectionsData(                           │
+│             invitation_id=invitation.id,  # ← Desde flush()        │
+│             user_id=current_user_id,                                │
+│             order_id=order_id,                                      │
+│             plan_id=plan_id,                                        │
+│             section_type=section_type,  # "hero", "welcome", etc.  │
+│             section_variant=f"{section_type}_1",  # Default        │
+│             category='weddings',  # Default                         │
+│             variables_json=variables,  # ← Nombres ORIGINALES      │
+│             usage_stats=usage_stats                                 │
+│         )                                                           │
+│                                                                      │
+│         db.session.add(section)                                     │
+│         sections_created += 1                                       │
+│                                                                      │
+│ 8.6 Commit transaction atómica:                                    │
+│     db.session.commit()                                             │
+│     # ← Aquí se guardan Invitation + todas las secciones           │
+│                                                                      │
+│ 8.7 Backend retorna respuesta exitosa:                             │
+│     {                                                               │
+│       "success": true,                                              │
+│       "invitation_id": 456,                                         │
+│       "invitation_url": "/invitacion/456",                          │
+│       "sections_created": 4                                         │
+│     }                                                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ PASO 9: LIMPIEZA Y REDIRECCIÓN (Frontend)                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ 9.1 Frontend recibe respuesta exitosa de creación                  │
+│                                                                      │
+│ 9.2 Limpia localStorage:                                            │
+│     localStorage.removeItem('customizerData')                       │
+│     # ← Importante: Evita reutilizar datos viejos                  │
+│                                                                      │
+│ 9.3 Muestra notificación de éxito:                                 │
+│     toast.success('¡Pago completado e invitación creada!')          │
+│                                                                      │
+│ 9.4 Redirige a la invitación creada:                               │
+│     router.push(invitationResponse.invitation_url)                  │
+│     # → Usuario ve: /invitacion/456                                │
+│                                                                      │
+│ 9.5 Usuario aterriza en TemplateBuilder:                           │
+│     - Carga datos desde InvitationSectionsData                     │
+│     - Renderiza template con personalización guardada              │
+│     - Usuario ve su invitación finalizada                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ MANEJO DE ERRORES                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│ ERROR ESCENARIO 1: Creación de invitación falla                    │
+│ - Pago YA está procesado (Order.status = PAID) ✅                  │
+│ - Catch error en handlePaymentSuccess                              │
+│ - Mostrar: "¡Pago completado! Tu invitación será creada pronto."   │
+│ - Redirigir a: /mi-cuenta/pedidos/{order_number}?success=true      │
+│ - Admin puede crear invitación manualmente desde el pedido         │
+│                                                                      │
+│ ERROR ESCENARIO 2: No hay datos en localStorage                    │
+│ - Validación: Object.keys(customizerData).length === 0             │
+│ - Mostrar: "¡Pago completado exitosamente!"                        │
+│ - Redirigir a: /mi-cuenta/pedidos/{order_number}?success=true      │
+│ - Usuario compró template sin personalizar                         │
+│                                                                      │
+│ ERROR ESCENARIO 3: Orden no está PAID                              │
+│ - Backend valida: order.status != OrderStatus.PAID                 │
+│ - Retorna 400: "La orden no está pagada"                           │
+│ - Frontend no debería llegar aquí (pago se confirmó antes)         │
+│                                                                      │
+│ ERROR ESCENARIO 4: Usuario no es dueño de la orden                 │
+│ - Backend valida: order.user_id != current_user_id                 │
+│ - Retorna 404: "Orden no encontrada"                               │
+│ - Previene acceso no autorizado a órdenes ajenas                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+RESUMEN DEL FLUJO:
+1. ✅ Personalización → localStorage (base64 para imágenes)
+2. ✅ Carrito → Solo template_id, NO personalización
+3. ✅ Checkout → Crear Order PENDING
+4. ✅ Token → Izipay formToken
+5. ✅ Pago → Izipay procesa tarjeta
+6. ✅ Confirmar → Order.status = PAID
+7. ✅ Crear → Invitation + InvitationSectionsData (nombres originales)
+8. ✅ Limpiar → localStorage.removeItem
+9. ✅ Redirigir → /invitacion/{id}
+```
+
+### **IMPLEMENTACIÓN BACKEND**
+
+```python
+# backend/api/invitations.py
+
+@invitations_bp.route('/create-from-order', methods=['POST'])
+@jwt_required()
+def create_invitation_from_order():
+    """
+    POST /api/invitations/create-from-order
+
+    WHY: Crear invitación completa después de pago exitoso.
+    Guarda datos de localStorage agrupados en InvitationSectionsData.
+
+    PAYLOAD:
+    {
+        "order_id": 123,
+        "template_id": 7,
+        "plan_id": 1,  # 1=Basic, 2=Premium
+        "sections_data": {
+            "hero": {"groom_name": "Jefferson", "bride_name": "Rosmery", ...},
+            "welcome": {"welcome_title": "¡Nos Casamos!", ...},
+            "gallery": {"gallery_images": [...]},
+            ...
+        },
+        "event_date": "2024-12-15T17:00:00",  # Opcional
+        "title": "Boda Jefferson & Rosmery",  # Opcional
+        "groom_name": "Jefferson",  # Opcional
+        "bride_name": "Rosmery"  # Opcional
+    }
+
+    RESPONSE:
+    {
+        "success": true,
+        "invitation_id": 456,
+        "invitation_url": "/invitacion/456"
+    }
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json() or {}
+
+        # VALIDACIONES
+        order_id = data.get('order_id')
+        template_id = data.get('template_id')
+        plan_id = data.get('plan_id', 1)
+        sections_data = data.get('sections_data', {})
+
+        if not order_id or not template_id:
+            return jsonify({'error': 'order_id y template_id son requeridos'}), 400
+
+        if not sections_data or len(sections_data) == 0:
+            return jsonify({'error': 'sections_data no puede estar vacío'}), 400
+
+        # Validar que order existe y está PAGADA
+        order = Order.query.filter_by(
+            id=order_id,
+            user_id=current_user_id
+        ).first()
+
+        if not order:
+            return jsonify({'error': 'Orden no encontrada'}), 404
+
+        if order.status != OrderStatus.PAID:
+            return jsonify({'error': 'La orden no está pagada'}), 400
+
+        # Validar template existe
+        template = Template.query.get(template_id)
+        if not template:
+            return jsonify({'error': 'Template no encontrado'}), 404
+
+        # CREAR INVITACIÓN
+        title = data.get('title')
+        groom_name = data.get('groom_name')
+        bride_name = data.get('bride_name')
+
+        # Auto-generar title si no viene
+        if not title and groom_name and bride_name:
+            title = f"Boda {groom_name} & {bride_name}"
+        elif not title:
+            title = f"Invitación - Template {template.name}"
+
+        invitation = Invitation(
+            user_id=current_user_id,
+            order_id=order_id,
+            title=title,
+            groom_name=groom_name,
+            bride_name=bride_name,
+            wedding_date=data.get('event_date'),
+            plan_id=plan_id,
+            status='active'
+        )
+
+        db.session.add(invitation)
+        db.session.flush()  # Get invitation.id before commit
+
+        # CREAR SECCIONES
+        sections_created = 0
+
+        for section_type, variables in sections_data.items():
+            # Skip si no hay variables
+            if not variables or len(variables) == 0:
+                continue
+
+            # Crear usage_stats
+            usage_stats = {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "source": "checkout_post_payment",
+                "plan_type": "basic" if plan_id == 1 else "premium",
+                "variables_count": len(variables),
+                "order_id": order_id
+            }
+
+            section = InvitationSectionsData(
+                invitation_id=invitation.id,
+                user_id=current_user_id,
+                order_id=order_id,
+                plan_id=plan_id,
+                section_type=section_type,
+                section_variant=f"{section_type}_1",  # Default variant
+                category='weddings',  # Default category
+                variables_json=variables,  # ← Mantiene nombres originales
+                usage_stats=usage_stats
+            )
+
+            db.session.add(section)
+            sections_created += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'invitation_id': invitation.id,
+            'invitation_url': f'/invitacion/{invitation.id}',
+            'sections_created': sections_created
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+```
+
+### **IMPLEMENTACIÓN FRONTEND**
+
+```typescript
+// frontend/src/lib/api/invitations.ts
+
+/**
+ * Agrupar datos planos de localStorage por secciones
+ */
+export function groupCustomizerDataBySections(flatData: Record<string, any>): Record<string, any> {
+  const sectionsData: Record<string, any> = {};
+
+  // Secciones conocidas del template
+  const sectionTypes = ['hero', 'welcome', 'couple', 'countdown', 'story', 'video', 'gallery', 'footer'];
+
+  // Inicializar secciones vacías
+  sectionTypes.forEach(section => {
+    sectionsData[section] = {};
+  });
+
+  // Agrupar variables por prefijo
+  Object.entries(flatData).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
+
+    // Buscar sección por prefijo
+    const matchedSection = sectionTypes.find(section => key.startsWith(`${section}_`));
+
+    if (matchedSection) {
+      // Mantener nombre original (con prefijo)
+      sectionsData[matchedSection][key] = value;
+    } else {
+      // Variables sin prefijo van a 'general'
+      if (!sectionsData.general) {
+        sectionsData.general = {};
+      }
+      sectionsData.general[key] = value;
+    }
+  });
+
+  // Remover secciones sin datos
+  Object.keys(sectionsData).forEach(section => {
+    if (Object.keys(sectionsData[section]).length === 0) {
+      delete sectionsData[section];
+    }
+  });
+
+  return sectionsData;
+}
+
+/**
+ * Extraer metadatos de los datos del customizer
+ */
+export function extractInvitationMetadata(customizerData: Record<string, any>) {
+  return {
+    event_date: customizerData.hero_date || customizerData.countdown_date || undefined,
+    title: customizerData.hero_title || undefined,
+    groom_name: customizerData.hero_groom_name || customizerData.couple_groom_name || undefined,
+    bride_name: customizerData.hero_bride_name || customizerData.couple_bride_name || undefined
+  };
+}
+
+/**
+ * Crear invitación desde orden después de pago exitoso
+ */
+export async function createInvitationFromOrder(
+  orderId: number,
+  templateId: number,
+  customizerData: Record<string, any>,
+  additionalData?: {
+    event_date?: string;
+    title?: string;
+    groom_name?: string;
+    bride_name?: string;
+  }
+): Promise<{ success: boolean; invitation_id: number; invitation_url: string }> {
+  try {
+    // Transformar datos planos a agrupados
+    const sectionsData = groupCustomizerDataBySections(customizerData);
+
+    // Determinar plan_id
+    let planId = 1; // Default: Plan Básico
+    if (customizerData.template?.plan_id) {
+      planId = customizerData.template.plan_id;
+    } else if (customizerData.plan_id) {
+      planId = customizerData.plan_id;
+    }
+
+    // Construir payload
+    const payload = {
+      order_id: orderId,
+      template_id: templateId,
+      plan_id: planId,
+      sections_data: sectionsData,
+      ...additionalData
+    };
+
+    // Llamar al backend
+    const response = await apiClient.post('/invitations/create-from-order', payload);
+
+    return response.data;
+
+  } catch (error: any) {
+    console.error('Error creating invitation from order:', error);
+    throw new Error(
+      error.response?.data?.error || 'Failed to create invitation from order'
+    );
+  }
+}
+```
+
+### **INTEGRACIÓN EN CHECKOUT**
+
+```typescript
+// frontend/src/app/checkout/page.tsx
+
+import { createInvitationFromOrder, extractInvitationMetadata } from '@/lib/api/invitations';
+
+const handlePaymentSuccess = async (paymentResult: any) => {
+  try {
+    if (!currentOrder) {
+      throw new Error('No order found');
+    }
+
+    // 1. Procesar pago
+    await paymentsApi.processPayment({
+      order_id: currentOrder.id,
+      payment_result: {
+        status: 'SUCCESS',
+        transaction_id: currentOrder.order_number,
+        izipay_data: paymentResult,
+      },
+    });
+
+    // 2. Guardar invitación desde localStorage
+    try {
+      const customizerData = JSON.parse(localStorage.getItem('customizerData') || '{}');
+      const templateId = customizerData.template_id || cart?.items?.[0]?.template_id;
+
+      if (templateId && Object.keys(customizerData).length > 0) {
+        const metadata = extractInvitationMetadata(customizerData);
+
+        const invitationResponse = await createInvitationFromOrder(
+          currentOrder.id,
+          templateId,
+          customizerData,
+          metadata
+        );
+
+        // Limpiar localStorage
+        localStorage.removeItem('customizerData');
+
+        toast.success('¡Pago completado e invitación creada exitosamente!');
+        router.push(invitationResponse.invitation_url);
+      } else {
+        // Sin datos del customizer
+        toast.success('¡Pago completado exitosamente!');
+        router.push(`/mi-cuenta/pedidos/${currentOrder.order_number}?success=true`);
+      }
+    } catch (invitationError: any) {
+      console.error('Error creating invitation:', invitationError);
+      // Pago exitoso pero fallo creación - redirigir a orden
+      toast.success('¡Pago completado! Tu invitación será creada pronto.');
+      router.push(`/mi-cuenta/pedidos/${currentOrder.order_number}?success=true`);
+    }
+
+  } catch (error: any) {
+    console.error('Error processing payment:', error);
+    toast.error('Error confirmando el pago. Contacta con soporte.');
+  }
+};
+```
+
+### **EJEMPLO DE DATOS REALES**
+
+#### **localStorage Antes del Pago**
+```json
+{
+  "customizerData": {
+    "template_id": 7,
+    "plan_id": 1,
+    "hero_groom_name": "Jefferson",
+    "hero_bride_name": "Rosmery",
+    "hero_date": "2024-12-15T17:00:00",
+    "hero_imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEU...",
+    "welcome_title": "¡Nos Casamos!",
+    "welcome_description": "Con inmensa alegría...",
+    "gallery_images": [
+      {"url": "data:image/png;base64,...", "alt": "Foto 1"},
+      {"url": "data:image/png;base64,...", "alt": "Foto 2"}
+    ],
+    "countdown_date": "2024-12-15T17:00:00"
+  },
+  "touchedFields": {
+    "hero_groom_name": true,
+    "hero_bride_name": true,
+    "welcome_title": true
+  }
+}
+```
+
+#### **Payload Enviado al Backend**
+```json
+{
+  "order_id": 123,
+  "template_id": 7,
+  "plan_id": 1,
+  "sections_data": {
+    "hero": {
+      "hero_groom_name": "Jefferson",
+      "hero_bride_name": "Rosmery",
+      "hero_date": "2024-12-15T17:00:00",
+      "hero_imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEU..."
+    },
+    "welcome": {
+      "welcome_title": "¡Nos Casamos!",
+      "welcome_description": "Con inmensa alegría..."
+    },
+    "gallery": {
+      "gallery_images": [
+        {"url": "data:image/png;base64,...", "alt": "Foto 1"},
+        {"url": "data:image/png;base64,...", "alt": "Foto 2"}
+      ]
+    },
+    "countdown": {
+      "countdown_date": "2024-12-15T17:00:00"
+    }
+  },
+  "event_date": "2024-12-15T17:00:00",
+  "groom_name": "Jefferson",
+  "bride_name": "Rosmery"
+}
+```
+
+#### **Datos Guardados en Base de Datos**
+
+**Tabla: `Invitation`**
+```sql
+id: 456
+user_id: 14
+order_id: 123
+title: "Boda Jefferson & Rosmery"
+groom_name: "Jefferson"
+bride_name: "Rosmery"
+wedding_date: "2024-12-15 17:00:00"
+plan_id: 1
+status: "active"
+```
+
+**Tabla: `InvitationSectionsData` (4 registros creados)**
+
+```sql
+-- Registro 1: Hero
+id: 1001
+invitation_id: 456
+user_id: 14
+order_id: 123
+plan_id: 1
+section_type: "hero"
+section_variant: "hero_1"
+category: "weddings"
+variables_json: {
+  "hero_groom_name": "Jefferson",
+  "hero_bride_name": "Rosmery",
+  "hero_date": "2024-12-15T17:00:00",
+  "hero_imageUrl": "data:image/png;base64,..."
+}
+usage_stats: {
+  "created_at": "2025-01-24T15:30:00Z",
+  "source": "checkout_post_payment",
+  "plan_type": "basic",
+  "variables_count": 4,
+  "order_id": 123
+}
+
+-- Registro 2: Welcome
+id: 1002
+section_type: "welcome"
+variables_json: {
+  "welcome_title": "¡Nos Casamos!",
+  "welcome_description": "Con inmensa alegría..."
+}
+
+-- Registro 3: Gallery
+id: 1003
+section_type: "gallery"
+variables_json: {
+  "gallery_images": [...]
+}
+
+-- Registro 4: Countdown
+id: 1004
+section_type: "countdown"
+variables_json: {
+  "countdown_date": "2024-12-15T17:00:00"
+}
+```
+
+### **PUNTOS CLAVE**
+
+1. **✅ Mantiene nombres originales** - No se renombran variables
+2. **✅ Agrupa por prefijos** - `hero_`, `welcome_`, etc.
+3. **✅ Base64 para imágenes** - Compatible con PDF generation
+4. **✅ Orden pagada primero** - Validación de `OrderStatus.PAID`
+5. **✅ Atomic transaction** - Todo o nada con `db.session`
+6. **✅ Error handling completo** - Fallbacks si falla creación
+7. **✅ localStorage cleanup** - Limpia datos después de guardar
+8. **✅ Redirección automática** - Usuario ve su invitación nueva
+
+### **VENTAJAS DEL ENFOQUE**
+
+- **Seguro**: Pago validado antes de crear invitación
+- **Automático**: No requiere intervención manual
+- **Robusto**: Maneja errores sin perder el pago
+- **Transparente**: Usuario ve resultado inmediatamente
+- **Escalable**: Funciona con cualquier template/plan
+
+### **FLUJO DE ERROR RECOVERY**
+
+```
+Si PAGO exitoso pero CREACIÓN falla:
+1. Pago ya procesado ✅
+2. Order status = PAID ✅
+3. Usuario redirigido a Order Confirmation
+4. Admin puede crear invitación manualmente desde Order
+5. O sistema puede reintentar automáticamente
+```
+
+---
+
 **🎯 RESUMEN DE CASOS DE USO:**
 
 1. **✅ Wedding Básico** - Registro estándar con validaciones
@@ -1089,5 +2006,6 @@ function SaveButton({ templateId }) {
 7. **✅ Validación Robusta** - Manejo de errores en producción
 8. **✅ Testing Completo** - Cobertura de casos edge
 9. **✅ localStorage Integration** - Transformación de datos del frontend
+10. **✅ Checkout Post-Payment** - Creación automática después de pago exitoso
 
 **Esta documentación cubre todos los escenarios reales de uso del sistema** 🚀

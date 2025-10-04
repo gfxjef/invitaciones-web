@@ -31,6 +31,32 @@ export const useCustomizerSync = ({
   const saveState = useCallback(() => {
     if (!templateId) return;
 
+    // 🔍 VALIDATION: Check if there are any meaningful changes
+    // Don't save if customizerData is empty or all values are empty strings
+    // WHY: Prevents saving empty initial state when user never opens customizer
+    const hasNonEmptyData = customizerData &&
+      Object.values(customizerData).some(value => {
+        // Check if value is meaningful (not empty string, null, or undefined)
+        if (value === '' || value === null || value === undefined) return false;
+        // For arrays (like gallery_images), check if array has items
+        if (Array.isArray(value)) return value.length > 0;
+        // For objects, check if has keys
+        if (typeof value === 'object') return Object.keys(value).length > 0;
+        return true;
+      });
+
+    const hasTouchedFields = touchedFields &&
+      Object.keys(touchedFields).length > 0;
+
+    // Only save if user has actually customized something
+    if (!hasNonEmptyData || !hasTouchedFields) {
+      console.log('⏭️ [useCustomizerSync] Skipping save - no meaningful data to persist');
+      console.log('   - hasNonEmptyData:', hasNonEmptyData);
+      console.log('   - hasTouchedFields:', hasTouchedFields);
+      console.log('   - touchedFields count:', Object.keys(touchedFields || {}).length);
+      return;
+    }
+
     const state = {
       customizerData,
       touchedFields,
@@ -40,6 +66,9 @@ export const useCustomizerSync = ({
 
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
+      console.log('💾 [useCustomizerSync] Saved state to localStorage');
+      console.log('   - Non-empty fields:', Object.entries(customizerData).filter(([k, v]) => v !== '' && v !== null && v !== undefined).length);
+      console.log('   - Touched fields:', Object.keys(touchedFields).length);
 
       // Dispatch custom event for real-time sync between desktop and mobile
       const syncEvent = new CustomEvent('customizer-sync', {

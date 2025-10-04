@@ -589,27 +589,47 @@ export const ordersApi = {
     const response = await apiClient.get(`/orders/number/${orderNumber}`);
     return response.data.order;
   },
+
+  /**
+   * Get invitation associated with an order
+   * Used by "Ver invitación" button in orders page
+   */
+  getOrderInvitation: async (orderId: number): Promise<{
+    success: boolean;
+    invitation?: {
+      id: number;
+      url_slug: string;
+      full_url: string;
+      status: string;
+      title: string;
+    };
+    error?: string;
+    message?: string;
+  }> => {
+    const response = await apiClient.get(`/orders/${orderId}/invitation`);
+    return response.data;
+  },
 };
 
 // Invitation types
 export interface Invitation {
   id: number;
-  name: string;
-  event_type: 'boda' | 'quince' | 'bautizo' | 'cumpleanos' | 'baby_shower' | 'otro';
-  event_date: string;
+  title: string; // Backend uses 'title' not 'name'
+  event_type: string; // Backend returns template category
+  event_date: string | null; // Can be null if not set
   url_slug: string;
   full_url: string;
-  status: 'draft' | 'active' | 'expired' | 'completed';
+  status: string; // Backend can return various statuses
   template_name: string;
-  thumbnail_url?: string;
+  plan_id?: number;
+  plan_name?: string;
+  thumbnail_url?: string; // From templates.preview_image_url
   created_at: string;
   updated_at: string;
   stats: {
-    total_views: number;
-    unique_visitors: number;
-    rsvp_responses: number;
-    rsvp_confirmed: number;
-    rsvp_declined: number;
+    views: number; // Backend uses 'views' not 'total_views'
+    visitors: number; // Backend uses 'visitors' not 'unique_visitors'
+    rsvps: number; // Backend uses 'rsvps' not 'rsvp_responses'
     shares: number;
   };
   settings: {
@@ -821,7 +841,7 @@ export const invitationsApi = {
     status?: string;
     event_type?: string;
   }): Promise<PaginatedResponse<Invitation>> => {
-    const response = await apiClient.get('/invitations', { params });
+    const response = await apiClient.get('/invitations/', { params }); // Added trailing slash
     return response.data;
   },
 

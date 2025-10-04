@@ -16,6 +16,9 @@ import { notFound } from 'next/navigation';
 import { TemplateRenderer } from '@/components/templates/TemplateRenderer';
 import { LoaderOverlay } from '@/components/ui/LoaderOverlay';
 import { Invitation, InvitationData, TemplateMetadata, TemplateColors } from '@/types/template';
+import { apiClient } from '@/lib/api';
+import { useTemplate } from '@/lib/hooks/use-templates';
+import { useDynamicCustomizer } from '@/lib/hooks/useDynamicCustomizer';
 
 interface InvitationPageProps {
   params: {
@@ -23,7 +26,93 @@ interface InvitationPageProps {
   };
 }
 
-// Mock invitation data - in real app, this would come from API
+/**
+ * Transform backend API response with real template to frontend TemplateRenderer format
+ *
+ * WHY: Backend returns invitation data in database format from invitation_sections_data table.
+ * We need to combine it with real template metadata (sections_config) for rendering,
+ * AND transform it through the same pipeline as demo pages to correctly handle
+ * base64 images and other complex data types.
+ *
+ * BASED ON: /invitacion/demo/[id]/page.tsx createDemoInvitationData()
+ */
+function transformBackendInvitationData(
+  backendData: any,
+  templateData: any
+): {
+  invitation: Invitation;
+  data: InvitationData;
+  template: TemplateMetadata;
+  colors: TemplateColors;
+  transformedData: any; // NEW: Pass through useDynamicCustomizer transformation
+} {
+  console.log('🔍 [transformBackendInvitationData] Starting transformation');
+  console.log('🔍 [transformBackendInvitationData] Backend data:', backendData);
+  console.log('🔍 [transformBackendInvitationData] Template data:', templateData);
+
+  const { invitation, sections_data } = backendData;
+  const template = templateData.template;
+
+  console.log('🔍 [transformBackendInvitationData] Invitation object:', invitation);
+  console.log('🔍 [transformBackendInvitationData] Sections data:', sections_data);
+  console.log('🔍 [transformBackendInvitationData] Template object:', template);
+
+  // Transform sections_data from BD to nested format for TemplateBuilder
+  // Backend format: { "hero": { "variant": "hero_2", "variables": {...} }, ... }
+  // Frontend format (NEW): { "hero": {...}, "gallery": {...} } (nested by section, NOT flat)
+  // WHY: TemplateBuilder expects data organized by section, components receive unprefixed fields
+  const data: any = {};
+
+  if (sections_data && Object.keys(sections_data).length > 0) {
+    console.log(`🔍 [transformBackendInvitationData] Processing ${Object.keys(sections_data).length} sections`);
+
+    Object.entries(sections_data).forEach(([sectionType, sectionInfo]: [string, any]) => {
+      // Each section has {variant, variables, category}
+      // Keep data organized by section WITHOUT adding prefixes to field names
+      if (sectionInfo.variables) {
+        const variableCount = Object.keys(sectionInfo.variables).length;
+        console.log(`🔍 [transformBackendInvitationData] Section "${sectionType}": ${variableCount} variables`);
+        console.log(`🔍 [transformBackendInvitationData] Section "${sectionType}" variables:`, sectionInfo.variables);
+
+        // Store variables directly under section name
+        data[sectionType] = sectionInfo.variables;
+        console.log(`  ✅ Added section "${sectionType}" with ${variableCount} variables`);
+      }
+    });
+  } else {
+    console.log('⚠️ [transformBackendInvitationData] No sections_data found or empty');
+  }
+
+  console.log('🔍 [transformBackendInvitationData] Final data object keys:', Object.keys(data));
+  console.log('🔍 [transformBackendInvitationData] Final data object:', data);
+
+  // NEW: Return both flat data (for backward compatibility) and transformedData
+  // transformedData will be passed through useDynamicCustomizer in the component
+  return {
+    invitation: {
+      id: invitation.id,
+      user_id: invitation.user_id || 1,
+      template_id: template.id,
+      title: invitation.title,
+      slug: invitation.unique_url,
+      is_published: invitation.is_published || false,
+      published_at: invitation.published_at || null,
+      views_count: invitation.views_count || 0,
+      created_at: invitation.created_at,
+      updated_at: invitation.updated_at,
+      template,
+      invitation_data: data,
+      media: [],
+      events: []
+    },
+    data,
+    template,
+    colors: template.default_colors,
+    transformedData: data // Will be processed by useDynamicCustomizer
+  };
+}
+
+// Mock invitation data - Only used for demo/preview invitations
 const createMockInvitation = (): {
   invitation: Invitation;
   data: InvitationData;
@@ -198,40 +287,68 @@ export default function InvitationPage({ params }: InvitationPageProps) {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<number | null>(null);
+  const [backendInvitationData, setBackendInvitationData] = useState<any>(null);
 
   const invitationId = params.id;
 
+  // Stage 1: Load invitation data to get template_id
   useEffect(() => {
     const loadInvitation = async () => {
+      // Check if demo invitation
+      if (invitationId === 'demo' || invitationId === 'maria-carlos-2024') {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const mockData = createMockInvitation();
+        setInvitationData(mockData);
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        setIsLoading(true);
-        setError(null);
+        const response = await apiClient.get(`/invitations/by-url/${invitationId}`);
+        const data = response.data;
 
-        // In a real app, this would be an API call:
-        // const response = await fetch(`/api/invitations/${invitationId}`);
-        // const invitationData = await response.json();
-
-        // For now, use mock data for demo/test invitations
-        if (invitationId === 'demo' || invitationId === 'maria-carlos-2024') {
-          // Simulate loading delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          const mockData = createMockInvitation();
-          setInvitationData(mockData);
-        } else {
-          // Handle real invitation IDs here
-          throw new Error('Invitation not found');
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load invitation');
         }
+
+        // Save invitation data and trigger template fetch
+        setBackendInvitationData(data);
+        setTemplateId(data.template_id);
+
       } catch (err) {
         console.error('Error loading invitation:', err);
         setError(err instanceof Error ? err.message : 'Failed to load invitation');
-      } finally {
         setIsLoading(false);
       }
     };
 
     loadInvitation();
   }, [invitationId]);
+
+  // Stage 2: Fetch template metadata using useTemplate hook
+  const { data: templateData, isLoading: templateLoading } = useTemplate(
+    templateId || 0
+  );
+
+  // REMOVED: useDynamicCustomizer - not needed for view-only pages
+  // This was causing template defaults to override real database data
+  // (e.g., "Jefferson & Rosmery" overriding real names like "11 & 55")
+
+  // Stage 3: When both invitation and template are loaded, combine them
+  useEffect(() => {
+    if (!templateId || !templateData || !backendInvitationData) return;
+
+    try {
+      const transformed = transformBackendInvitationData(backendInvitationData, templateData);
+      setInvitationData(transformed);
+    } catch (err) {
+      console.error('Error transforming invitation data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to transform invitation');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [templateId, templateData, backendInvitationData]);
 
   if (error || (!invitationData && !isLoading)) {
     notFound();
@@ -253,17 +370,35 @@ export default function InvitationPage({ params }: InvitationPageProps) {
 
       {/* Template content - renders underneath the overlay */}
       {shouldRenderContent && invitation && data && template && colors && (
-        <TemplateRenderer
-          invitation={invitation}
-          data={data}
-          template={template}
-          colors={colors}
-          features={template.supported_features}
-          media={invitation.media}
-          events={invitation.events}
-          isPreview={false}
-          isEditing={false}
-        />
+        <>
+          {console.log('🎨 [TemplateRenderer] About to render with data:', {
+            invitationId: invitation?.id,
+            dataKeys: Object.keys(data || {}),
+            dataSample: {
+              hero: (data as any)?.hero,
+              bride_name: (data as any)?.bride_name,
+              groom_name: (data as any)?.groom_name,
+              familiares_madre_novia: (data as any)?.familiares_madre_novia,
+              familiares_padre_novia: (data as any)?.familiares_padre_novia,
+              place_religioso_lugar: (data as any)?.place_religioso_lugar,
+              place_ceremonia_lugar: (data as any)?.place_ceremonia_lugar,
+              gallery_images: (data as any)?.gallery_images
+            },
+            templateId: template?.id,
+            templateName: template?.name
+          })}
+          <TemplateRenderer
+            invitation={invitation}
+            data={data}
+            template={template}
+            colors={colors}
+            features={template.supported_features}
+            media={invitation.media}
+            events={invitation.events}
+            isPreview={false}
+            isEditing={false}
+          />
+        </>
       )}
     </div>
   );
