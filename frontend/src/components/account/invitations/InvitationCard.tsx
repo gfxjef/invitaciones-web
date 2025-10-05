@@ -132,8 +132,9 @@ export default function InvitationCard({
 
   const calculateResponseRate = () => {
     const { stats } = invitation;
-    if (stats.rsvp_responses === 0) return 0;
-    return Math.round((stats.rsvp_confirmed / stats.rsvp_responses) * 100);
+    // Backend only provides total rsvps count, not confirmed/responses breakdown
+    // Return 0 for now - TODO: backend needs to provide rsvp_confirmed and rsvp_declined
+    return stats.rsvps > 0 ? 100 : 0;
   };
 
   const getPerformanceColor = (rate: number) => {
@@ -229,7 +230,7 @@ export default function InvitationCard({
         {/* Invitation Info */}
         <div className="mb-4">
           <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-1">
-            {invitation.name}
+            {invitation.title}
           </h3>
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
             <span>{EVENT_TYPE_LABELS[invitation.event_type]}</span>
@@ -269,19 +270,19 @@ export default function InvitationCard({
               <Eye className="w-4 h-4 text-blue-600" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {invitation.stats.total_views}
+              {invitation.stats.views}
             </p>
             <p className="text-xs text-gray-500">Vistas</p>
           </div>
-          
+
           <div className="bg-gray-50 rounded-lg p-2">
             <div className="flex items-center justify-center mb-1">
               <Users className="w-4 h-4 text-green-600" />
             </div>
             <p className="text-lg font-semibold text-gray-900">
-              {invitation.stats.rsvp_confirmed}
+              {invitation.stats.rsvps}
             </p>
-            <p className="text-xs text-gray-500">Confirmados</p>
+            <p className="text-xs text-gray-500">RSVPs</p>
           </div>
           
           <div className="bg-gray-50 rounded-lg p-2">
@@ -306,7 +307,7 @@ export default function InvitationCard({
             <div className="flex items-center gap-2">
               <Users className="w-3 h-3 text-gray-500" />
               <span className="text-gray-600">Únicos:</span>
-              <span className="font-medium text-gray-900">{invitation.stats.unique_visitors}</span>
+              <span className="font-medium text-gray-900">{invitation.stats.visitors}</span>
             </div>
           </div>
         </div>
