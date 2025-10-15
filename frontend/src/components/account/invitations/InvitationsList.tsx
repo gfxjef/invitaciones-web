@@ -72,22 +72,23 @@ interface SortOptions {
 const mockInvitations: Invitation[] = [
   {
     id: 1,
-    name: 'Boda María & Carlos',
+    title: 'Boda María & Carlos',
     event_type: 'boda',
     event_date: '2024-09-15T18:00:00Z',
     url_slug: 'maria-carlos-2024',
     full_url: 'https://graphica.pe/invitacion/maria-carlos-2024',
     status: 'active',
     template_name: 'Elegancia Rosa',
+    template_id: 1,
     thumbnail_url: '/api/placeholder/300/200',
     created_at: '2024-07-20T10:30:00Z',
     updated_at: '2024-07-25T14:20:00Z',
     stats: {
-      total_views: 234,
-      unique_visitors: 189,
-      rsvp_responses: 45,
-      rsvp_confirmed: 38,
-      rsvp_declined: 7,
+      views: 234,
+      visitors: 189,
+      rsvps: 45,
+      // rsvp_confirmed (not used): 38,
+      // rsvp_declined (not used): 7,
       shares: 12,
     },
     settings: {
@@ -98,21 +99,22 @@ const mockInvitations: Invitation[] = [
   },
   {
     id: 2,
-    name: 'XV Años Isabella',
+    title: 'XV Años Isabella',
     event_type: 'quince',
     event_date: '2024-08-20T19:00:00Z',
     url_slug: 'isabella-xv',
     full_url: 'https://graphica.pe/invitacion/isabella-xv',
     status: 'active',
     template_name: 'Clásico Dorado',
+    template_id: 2,
     created_at: '2024-07-15T16:45:00Z',
     updated_at: '2024-07-22T09:15:00Z',
     stats: {
-      total_views: 89,
-      unique_visitors: 67,
-      rsvp_responses: 23,
-      rsvp_confirmed: 20,
-      rsvp_declined: 3,
+      views: 89,
+      visitors: 67,
+      rsvps: 23,
+      // rsvp_confirmed (not used): 20,
+      // rsvp_declined (not used): 3,
       shares: 5,
     },
     settings: {
@@ -123,21 +125,22 @@ const mockInvitations: Invitation[] = [
   },
   {
     id: 3,
-    name: 'Baby Shower Emma',
+    title: 'Baby Shower Emma',
     event_type: 'baby_shower',
     event_date: '2024-08-10T15:00:00Z',
     url_slug: 'baby-shower-emma',
     full_url: 'https://graphica.pe/invitacion/baby-shower-emma',
     status: 'completed',
     template_name: 'Vintage Floral',
+    template_id: 3,
     created_at: '2024-06-30T12:00:00Z',
     updated_at: '2024-08-11T10:30:00Z',
     stats: {
-      total_views: 156,
-      unique_visitors: 124,
-      rsvp_responses: 35,
-      rsvp_confirmed: 32,
-      rsvp_declined: 3,
+      views: 156,
+      visitors: 124,
+      rsvps: 35,
+      // rsvp_confirmed (not used): 32,
+      // rsvp_declined (not used): 3,
       shares: 8,
     },
     settings: {
@@ -148,21 +151,22 @@ const mockInvitations: Invitation[] = [
   },
   {
     id: 4,
-    name: 'Cumpleaños Jorge (Borrador)',
+    title: 'Cumpleaños Jorge (Borrador)',
     event_type: 'cumpleanos',
     event_date: '2024-09-25T20:00:00Z',
     url_slug: 'jorge-cumple',
     full_url: 'https://graphica.pe/invitacion/jorge-cumple',
     status: 'draft',
     template_name: 'Moderno Azul',
+    template_id: 4,
     created_at: '2024-08-01T09:00:00Z',
     updated_at: '2024-08-01T09:00:00Z',
     stats: {
-      total_views: 0,
-      unique_visitors: 0,
-      rsvp_responses: 0,
-      rsvp_confirmed: 0,
-      rsvp_declined: 0,
+      views: 0,
+      visitors: 0,
+      rsvps: 0,
+      // rsvp_confirmed (not used): 0,
+      // rsvp_declined (not used): 0,
       shares: 0,
     },
     settings: {
@@ -240,7 +244,7 @@ export default function InvitationsList() {
 
       // Backend returns { invitations: [...], total: N }
       // Map to frontend format if needed
-      const mappedInvitations = response.invitations || response.items || [];
+      const mappedInvitations = (response as any).invitations || response.items || [];
       setInvitations(mappedInvitations);
 
       console.log(`✅ Loaded ${mappedInvitations.length} invitations from API`);
@@ -263,7 +267,7 @@ export default function InvitationsList() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(inv => 
-        inv.name.toLowerCase().includes(query) ||
+        inv.title.toLowerCase().includes(query) ||
         inv.template_name.toLowerCase().includes(query) ||
         EVENT_TYPE_LABELS[inv.event_type].toLowerCase().includes(query)
       );
@@ -314,8 +318,8 @@ export default function InvitationsList() {
 
       switch (sortOptions.field) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
           break;
         case 'created_at':
           aValue = new Date(a.created_at);
@@ -600,27 +604,11 @@ export default function InvitationsList() {
           }
         />
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredAndSortedInvitations.map((invitation) => (
             <InvitationCard
               key={invitation.id}
               invitation={invitation}
-              isSelected={selectedInvitations.has(invitation.id)}
-              onSelect={(selected) => handleSelectInvitation(invitation.id, selected)}
-              onView={() => router.push(`/mi-cuenta/invitaciones/${invitation.id}`)}
-              onEdit={() => router.push(`/invitacion/${invitation.id}/edit`)}
-              onShare={(inv) => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: inv.name,
-                    text: `Te invito a mi ${EVENT_TYPE_LABELS[inv.event_type].toLowerCase()}`,
-                    url: inv.full_url,
-                  });
-                } else {
-                  navigator.clipboard.writeText(inv.full_url);
-                  toast.success('URL copiada al portapapeles');
-                }
-              }}
             />
           ))}
         </div>

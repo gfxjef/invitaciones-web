@@ -243,7 +243,7 @@ export function ResponsivePreviewFrame({
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=${frameWidth}, initial-scale=1, user-scalable=no">
-        <title>Preview - ${previewData.invitation.name}</title>
+        <title>Preview - ${previewData.invitation.title}</title>
         <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
         <style>
           body { 

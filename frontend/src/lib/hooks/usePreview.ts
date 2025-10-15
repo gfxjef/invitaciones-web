@@ -284,8 +284,9 @@ export function useSharingStats(invitationId: number) {
  */
 export function useExportToPDF() {
   return useMutation({
-    mutationFn: ({ invitationId, options }: {
+    mutationFn: ({ invitationId, urlSlug, options }: {
       invitationId: number;
+      urlSlug?: string;
       options?: {
         format?: 'A4' | 'letter' | 'A5' | 'custom';
         orientation?: 'portrait' | 'landscape';
@@ -293,7 +294,7 @@ export function useExportToPDF() {
         include_rsvp?: boolean;
         customData?: any;
       };
-    }) => exportApi.exportToPDF(invitationId, options),
+    }) => exportApi.exportToPDF(invitationId, { ...options, url_slug: urlSlug }),
   });
 }
 

@@ -103,12 +103,12 @@ export function DownloadClientPDF({
       // That page will fetch data from database via /api/invitations/by-url/{url_slug}
       const result = await exportToPDF.mutateAsync({
         invitationId: invitationData.id,
+        urlSlug: invitationData.url_slug,  // ← KEY: Pass url_slug to backend
         options: {
           format: 'A4',
           orientation: 'portrait',
           quality: 'high',
           include_rsvp: true,
-          url_slug: invitationData.url_slug,  // ← KEY: Use production URL
           customData: null  // ← NO customData - page fetches from database
         }
       });

@@ -140,21 +140,20 @@ export default function MyAccountDashboard() {
           invitations: [
             {
               id: 1,
-              name: 'Boda María & Carlos',
+              title: 'Boda María & Carlos',
               event_type: 'boda',
               event_date: '2024-09-15T18:00:00Z',
               url_slug: 'maria-carlos-2024',
               full_url: 'https://graphica.pe/invitacion/maria-carlos-2024',
               status: 'active',
               template_name: 'Elegancia Rosa',
+              template_id: 1,
               created_at: '2024-07-20T10:30:00Z',
               updated_at: '2024-07-25T14:20:00Z',
               stats: {
-                total_views: 234,
-                unique_visitors: 189,
-                rsvp_responses: 45,
-                rsvp_confirmed: 38,
-                rsvp_declined: 7,
+                views: 234,
+                visitors: 189,
+                rsvps: 45,
                 shares: 12,
               },
               settings: {
@@ -165,21 +164,20 @@ export default function MyAccountDashboard() {
             },
             {
               id: 2,
-              name: 'XV Años Isabella',
+              title: 'XV Años Isabella',
               event_type: 'quince',
               event_date: '2024-08-20T19:00:00Z',
               url_slug: 'isabella-xv',
               full_url: 'https://graphica.pe/invitacion/isabella-xv',
               status: 'active',
               template_name: 'Clásico Dorado',
+              template_id: 2,
               created_at: '2024-07-15T16:45:00Z',
               updated_at: '2024-07-22T09:15:00Z',
               stats: {
-                total_views: 89,
-                unique_visitors: 67,
-                rsvp_responses: 23,
-                rsvp_confirmed: 20,
-                rsvp_declined: 3,
+                views: 89,
+                visitors: 67,
+                rsvps: 23,
                 shares: 5,
               },
               settings: {
@@ -495,7 +493,7 @@ export default function MyAccountDashboard() {
                   {dashboardStats.recent_activity.invitations.slice(0, 3).map((invitation) => {
                     const statusConfig = getStatusConfig(invitation.status);
                     const EventIcon = getEventTypeIcon(invitation.event_type);
-                    const responseRate = Math.round((invitation.stats.rsvp_confirmed / invitation.stats.rsvp_responses) * 100) || 0;
+                    const responseRate = Math.round((invitation.stats.rsvps / invitation.stats.views) * 100) || 0;
 
                     return (
                       <div key={invitation.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -506,7 +504,7 @@ export default function MyAccountDashboard() {
                               <EventIcon className="w-6 h-6 text-purple-600" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">{invitation.name}</p>
+                              <p className="font-medium text-gray-900">{invitation.title}</p>
                               <p className="text-sm text-gray-600">
                                 {invitation.template_name} • {formatDate(invitation.event_date)}
                               </p>
@@ -518,16 +516,16 @@ export default function MyAccountDashboard() {
                         </div>
                         <div className="grid grid-cols-4 gap-4 text-sm">
                           <div className="text-center">
-                            <p className="font-semibold text-gray-900">{invitation.stats.total_views}</p>
+                            <p className="font-semibold text-gray-900">{invitation.stats.views}</p>
                             <p className="text-gray-500 text-xs">Vistas</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-semibold text-gray-900">{invitation.stats.unique_visitors}</p>
+                            <p className="font-semibold text-gray-900">{invitation.stats.visitors}</p>
                             <p className="text-gray-500 text-xs">Únicos</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-semibold text-gray-900">{invitation.stats.rsvp_confirmed}</p>
-                            <p className="text-gray-500 text-xs">Confirmados</p>
+                            <p className="font-semibold text-gray-900">{invitation.stats.rsvps}</p>
+                            <p className="text-gray-500 text-xs">RSVPs</p>
                           </div>
                           <div className="text-center">
                             <p className="font-semibold text-gray-900">{responseRate}%</p>

@@ -256,7 +256,7 @@ export default function InvitationAnalytics({ invitation }: InvitationAnalyticsP
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Analíticas de Invitación</h2>
-            <p className="text-gray-600">{invitation.name}</p>
+            <p className="text-gray-600">{invitation.title}</p>
           </div>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -284,7 +284,7 @@ export default function InvitationAnalytics({ invitation }: InvitationAnalyticsP
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Analíticas de Invitación</h2>
-          <p className="text-gray-600">{invitation.name}</p>
+          <p className="text-gray-600">{invitation.title}</p>
         </div>
         
         <div className="flex items-center gap-3">

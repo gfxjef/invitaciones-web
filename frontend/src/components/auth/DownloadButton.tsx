@@ -173,10 +173,19 @@ export function DownloadButton({
         const template = {
           id: templateData.id,
           name: templateData.name,
+          description: '',
+          category: '',
+          preview_image_url: templateData.preview_image_url || templateData.thumbnail_url || '',
           thumbnail_url: templateData.thumbnail_url || templateData.preview_image_url || '',
+          is_premium: templateData.is_premium || false,
+          is_active: true,
+          display_order: 0,
+          supported_features: [],
+          default_colors: {},
           plan: templateData.plan,
-          is_premium: templateData.is_premium,
-          price: templateData.price
+          price: templateData.price,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
 
         addTemplate(template);
@@ -207,10 +216,19 @@ export function DownloadButton({
       const template = {
         id: templateData.id,
         name: templateData.name,
+        description: '',
+        category: '',
+        preview_image_url: templateData.preview_image_url || templateData.thumbnail_url || '',
         thumbnail_url: templateData.thumbnail_url || templateData.preview_image_url || '',
+        is_premium: templateData.is_premium || false,
+        is_active: true,
+        display_order: 0,
+        supported_features: [],
+        default_colors: {},
         plan: templateData.plan,
-        is_premium: templateData.is_premium,
-        price: templateData.price
+        price: templateData.price,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       addTemplate(template);

@@ -115,8 +115,8 @@ export default function InvitationActionsMenu({
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: invitation.name,
-        text: `Te invito a mi evento: ${invitation.name}`,
+        title: invitation.title,
+        text: `Te invito a mi evento: ${invitation.title}`,
         url: invitation.full_url,
       }).catch(error => {
         console.error('Error sharing:', error);
@@ -339,14 +339,14 @@ export default function InvitationActionsMenu({
               <AlertDialogTitle>Eliminar invitación</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="pl-13">
-              ¿Estás seguro de que quieres eliminar la invitación <strong>"{invitation.name}"</strong>?
+              ¿Estás seguro de que quieres eliminar la invitación <strong>"{invitation.title}"</strong>?
               <br />
               <br />
               Esta acción no se puede deshacer y se eliminarán:
               <ul className="list-disc list-inside mt-2 text-sm">
                 <li>La invitación y todo su contenido</li>
-                <li>Las estadísticas de {invitation.stats.total_views} vistas</li>
-                <li>Las {invitation.stats.rsvp_responses} respuestas RSVP</li>
+                <li>Las estadísticas de {invitation.stats.views} vistas</li>
+                <li>Las {invitation.stats.rsvps} respuestas RSVP</li>
                 <li>Todos los códigos QR y URLs generados</li>
               </ul>
             </AlertDialogDescription>
@@ -385,7 +385,7 @@ export default function InvitationActionsMenu({
               <AlertDialogTitle>Archivar invitación</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="pl-13">
-              ¿Quieres archivar la invitación <strong>"{invitation.name}"</strong>?
+              ¿Quieres archivar la invitación <strong>"{invitation.title}"</strong>?
               <br />
               <br />
               La invitación archivada:

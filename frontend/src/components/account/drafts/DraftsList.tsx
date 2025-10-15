@@ -63,13 +63,14 @@ interface DraftInvitation extends Invitation {
 const mockDrafts: DraftInvitation[] = [
   {
     id: 1001,
-    name: 'Cumpleaños Jorge',
+    title: 'Cumpleaños Jorge',
     event_type: 'cumpleanos',
     event_date: '2024-09-25T20:00:00Z',
     url_slug: 'jorge-cumple-draft',
     full_url: '',
     status: 'draft',
     template_name: 'Moderno Azul',
+    template_id: 1,
     created_at: '2024-08-01T09:00:00Z',
     updated_at: '2024-08-19T15:30:00Z',
     completion_percentage: 65,
@@ -79,11 +80,9 @@ const mockDrafts: DraftInvitation[] = [
     is_recoverable: true,
     time_spent_editing: 45,
     stats: {
-      total_views: 0,
-      unique_visitors: 0,
-      rsvp_responses: 0,
-      rsvp_confirmed: 0,
-      rsvp_declined: 0,
+      views: 0,
+      visitors: 0,
+      rsvps: 0,
       shares: 0,
     },
     settings: {
@@ -94,13 +93,14 @@ const mockDrafts: DraftInvitation[] = [
   },
   {
     id: 1002,
-    name: 'Bautizo Sofía',
+    title: 'Bautizo Sofía',
     event_type: 'bautizo',
     event_date: '2024-10-15T11:00:00Z',
     url_slug: 'bautizo-sofia-draft',
     full_url: '',
     status: 'draft',
     template_name: 'Clásico Blanco',
+    template_id: 2,
     created_at: '2024-08-15T14:20:00Z',
     updated_at: '2024-08-18T10:15:00Z',
     completion_percentage: 30,
@@ -110,11 +110,9 @@ const mockDrafts: DraftInvitation[] = [
     is_recoverable: true,
     time_spent_editing: 15,
     stats: {
-      total_views: 0,
-      unique_visitors: 0,
-      rsvp_responses: 0,
-      rsvp_confirmed: 0,
-      rsvp_declined: 0,
+      views: 0,
+      visitors: 0,
+      rsvps: 0,
       shares: 0,
     },
     settings: {
@@ -125,13 +123,14 @@ const mockDrafts: DraftInvitation[] = [
   },
   {
     id: 1003,
-    name: 'Reunión familiar',
+    title: 'Reunión familiar',
     event_type: 'otro',
     event_date: '2024-09-30T16:00:00Z',
     url_slug: 'reunion-familiar-draft',
     full_url: '',
     status: 'draft',
     template_name: 'Simple Verde',
+    template_id: 3,
     created_at: '2024-07-28T11:45:00Z',
     updated_at: '2024-07-28T12:30:00Z',
     completion_percentage: 15,
@@ -141,11 +140,9 @@ const mockDrafts: DraftInvitation[] = [
     is_recoverable: false,
     time_spent_editing: 5,
     stats: {
-      total_views: 0,
-      unique_visitors: 0,
-      rsvp_responses: 0,
-      rsvp_confirmed: 0,
-      rsvp_declined: 0,
+      views: 0,
+      visitors: 0,
+      rsvps: 0,
       shares: 0,
     },
     settings: {
@@ -200,7 +197,7 @@ export default function DraftsList() {
 
   const filteredDrafts = drafts.filter(draft => {
     const matchesSearch = !searchQuery.trim() || 
-      draft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      draft.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       draft.template_name.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
@@ -252,7 +249,7 @@ export default function DraftsList() {
   const handleDuplicateDraft = async (draft: DraftInvitation) => {
     try {
       // TODO: Implement duplication logic
-      toast.success(`Borrador "${draft.name}" duplicado`);
+      toast.success(`Borrador "${draft.title}" duplicado`);
       loadDrafts();
     } catch (error) {
       toast.error('Error duplicando borrador');
@@ -262,7 +259,7 @@ export default function DraftsList() {
   const handleRecoverDraft = async (draft: DraftInvitation) => {
     try {
       // TODO: Implement recovery logic
-      toast.success(`Borrador "${draft.name}" recuperado exitosamente`);
+      toast.success(`Borrador "${draft.title}" recuperado exitosamente`);
       router.push(`/editor/invitation/${draft.id}?recovery=true`);
     } catch (error) {
       toast.error('Error recuperando borrador');
@@ -273,7 +270,7 @@ export default function DraftsList() {
     try {
       // TODO: Implement delete API call
       setDrafts(prev => prev.filter(d => d.id !== draft.id));
-      toast.success(`Borrador "${draft.name}" eliminado`);
+      toast.success(`Borrador "${draft.title}" eliminado`);
       setDeleteConfirm({ open: false, draft: null });
     } catch (error) {
       toast.error('Error eliminando borrador');
@@ -283,7 +280,7 @@ export default function DraftsList() {
   const handleArchiveDraft = async (draft: DraftInvitation) => {
     try {
       // TODO: Implement archive logic
-      toast.success(`Borrador "${draft.name}" archivado`);
+      toast.success(`Borrador "${draft.title}" archivado`);
       loadDrafts();
     } catch (error) {
       toast.error('Error archivando borrador');
@@ -379,7 +376,7 @@ export default function DraftsList() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-gray-900 text-lg">
-                          {draft.name}
+                          {draft.title}
                         </h3>
                         <p className="text-sm text-gray-600">
                           {EVENT_TYPE_LABELS[draft.event_type]} • {draft.template_name}
@@ -522,7 +519,7 @@ export default function DraftsList() {
               <AlertDialogTitle>Eliminar borrador</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="pl-13">
-              ¿Estás seguro de que quieres eliminar el borrador <strong>"{deleteConfirm.draft?.name}"</strong>?
+              ¿Estás seguro de que quieres eliminar el borrador <strong>"{deleteConfirm.draft?.title}"</strong>?
               <br />
               <br />
               Esta acción no se puede deshacer y se perderán:

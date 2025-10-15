@@ -122,7 +122,7 @@ export function PublicURLGenerator({
     resolver: zodResolver(urlGeneratorSchema),
     defaultValues: {
       custom_slug: initialData?.custom_slug || '',
-      title: initialData?.title || previewData?.invitation.name || '',
+      title: initialData?.title || previewData?.invitation.title || '',
       description: initialData?.description || '',
       enable_seo: initialData?.enable_seo ?? true,
       enable_analytics: initialData?.enable_analytics ?? true,

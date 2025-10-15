@@ -103,10 +103,11 @@ export default function PedidosPage() {
       const response = await ordersApi.getOrders();
 
       // Map backend status to frontend status and normalize total_amount
-      const mappedOrders = response.orders.map(order => ({
+      const ordersList = (response as any).orders || response.items || [];
+      const mappedOrders = ordersList.map((order: Order) => ({
         ...order,
         status: mapOrderStatus(order.status),
-        total_amount: order.total_amount || order.total,
+        total_amount: order.total_amount || (order as any).total,
       }));
 
       setOrders(mappedOrders);

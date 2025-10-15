@@ -281,7 +281,8 @@ export default function TemplateDemoPage({ params, searchParams }: TemplateDemoP
                     templateData={{
                       id: templateId,
                       name: template.name,
-                      template: template
+                      thumbnail_url: template.thumbnail_url,
+                      preview_image_url: template.preview_image_url
                     }}
                     buttonText="Descargar Invitación"
                     className="bg-purple-600 hover:bg-purple-700"

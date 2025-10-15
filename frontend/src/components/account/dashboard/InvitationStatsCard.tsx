@@ -63,34 +63,31 @@ export default function InvitationStatsCard({
   // Calculate performance metrics
   const calculateMetrics = (): PerformanceMetric[] => {
     const { stats } = invitation;
-    const conversionRate = stats.rsvp_responses > 0 
-      ? Math.round((stats.rsvp_confirmed / stats.rsvp_responses) * 100) 
+    const conversionRate = stats.rsvps > 0
+      ? Math.round((stats.rsvps / stats.views) * 100)
       : 0;
-    const viewToRsvpRate = stats.total_views > 0
-      ? Math.round((stats.rsvp_responses / stats.total_views) * 100)
-      : 0;
-    const engagementRate = stats.total_views > 0
-      ? Math.round(((stats.rsvp_responses + stats.shares) / stats.total_views) * 100)
+    const engagementRate = stats.views > 0
+      ? Math.round(((stats.rsvps + stats.shares) / stats.views) * 100)
       : 0;
 
     return [
       {
         label: 'Vistas totales',
-        value: stats.total_views.toLocaleString(),
+        value: stats.views.toLocaleString(),
         change: { value: 12, positive: true, period: 'esta semana' },
         icon: Eye,
         color: 'text-blue-600'
       },
       {
         label: 'Visitantes únicos',
-        value: stats.unique_visitors.toLocaleString(),
+        value: stats.visitors.toLocaleString(),
         change: { value: 8, positive: true, period: 'esta semana' },
         icon: Users,
         color: 'text-green-600'
       },
       {
         label: 'Confirmaciones',
-        value: stats.rsvp_confirmed,
+        value: stats.rsvps,
         change: { value: 15, positive: true, period: 'esta semana' },
         icon: Users,
         color: 'text-green-600'
@@ -152,8 +149,8 @@ export default function InvitationStatsCard({
 
   const getPerformanceInsight = () => {
     const { stats } = invitation;
-    const conversionRate = stats.rsvp_responses > 0 
-      ? Math.round((stats.rsvp_confirmed / stats.rsvp_responses) * 100) 
+    const conversionRate = stats.rsvps > 0
+      ? Math.round((stats.rsvps / stats.views) * 100)
       : 0;
     
     if (conversionRate >= 80) {
@@ -200,7 +197,7 @@ export default function InvitationStatsCard({
             <div className="text-2xl">{getEventTypeIcon(invitation.event_type)}</div>
             <div>
               <h3 className="font-semibold text-gray-900 text-lg line-clamp-1">
-                {invitation.name}
+                {invitation.title}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
                 {invitation.template_name}
@@ -315,45 +312,13 @@ export default function InvitationStatsCard({
                   ))}
                 </div>
 
-                {/* RSVP Breakdown */}
+                {/* RSVP Breakdown - TODO: Add detailed RSVP stats to backend */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Desglose RSVP</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Confirmados</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full"
-                            style={{ 
-                              width: `${invitation.stats.rsvp_responses > 0 
-                                ? (invitation.stats.rsvp_confirmed / invitation.stats.rsvp_responses) * 100 
-                                : 0}%` 
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {invitation.stats.rsvp_confirmed}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Declinaron</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-red-600 h-2 rounded-full"
-                            style={{ 
-                              width: `${invitation.stats.rsvp_responses > 0 
-                                ? (invitation.stats.rsvp_declined / invitation.stats.rsvp_responses) * 100 
-                                : 0}%` 
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {invitation.stats.rsvp_declined}
-                        </span>
-                      </div>
+                  <h4 className="font-medium text-gray-900 mb-3">RSVPs</h4>
+                  <div className="flex items-center justify-center py-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-gray-900">{invitation.stats.rsvps}</p>
+                      <p className="text-sm text-gray-600 mt-1">Respuestas totales</p>
                     </div>
                   </div>
                 </div>
