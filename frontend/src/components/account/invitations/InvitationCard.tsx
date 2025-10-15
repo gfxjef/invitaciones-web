@@ -100,16 +100,19 @@ export default function InvitationCard({
         className={`relative w-full h-52 rounded-2xl overflow-hidden bg-slate-950 shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group ${className}`}
         onClick={() => setShowDetailsModal(true)}
       >
-        {/* Hero Image - Right side (75% width) */}
+        {/* Hero Image - Full Width (100%) */}
         {(invitation.hero_image_url || invitation.thumbnail_url) && (
           <img
             src={invitation.hero_image_url || invitation.thumbnail_url}
             alt={invitation.title}
-            className="absolute right-0 top-0 h-full w-3/4 object-cover group-hover:scale-105 transition-transform duration-500"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         )}
 
-        {/* Gradient Overlay - Lighter */}
+        {/* Color Overlay Layer - 15% opacity for color tint */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
+
+        {/* Gradient Overlay with Transparency - For text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-800/90 from-25% to-transparent" />
 
         {/* Content - Left side */}
