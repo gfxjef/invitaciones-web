@@ -71,11 +71,33 @@ export default function InvitationCard({
   const eventLabel = getEventTypeLabel(invitation.event_type);
   const isPremium = invitation.plan_name?.toLowerCase() === 'premium';
 
+  // Helper: Break title into lines with max 10 chars per line
+  const breakTitle = (title: string) => {
+    const words = title.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      if (testLine.length <= 10) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) lines.push(currentLine);
+
+    return lines;
+  };
+
+  const titleLines = breakTitle(invitation.title);
+
   return (
     <>
-      {/* Horizontal Minimalist Card */}
+      {/* Horizontal Minimalist Card - Reduced Height */}
       <div
-        className={`relative w-full h-80 rounded-2xl overflow-hidden bg-slate-950 shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group ${className}`}
+        className={`relative w-full h-52 rounded-2xl overflow-hidden bg-slate-950 shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group ${className}`}
         onClick={() => setShowDetailsModal(true)}
       >
         {/* Hero Image - Right side (75% width) */}
@@ -87,52 +109,53 @@ export default function InvitationCard({
           />
         )}
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 from-25% to-transparent" />
+        {/* Gradient Overlay - Lighter */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-800/90 from-25% to-transparent" />
 
         {/* Content - Left side */}
-        <div className="relative h-full flex flex-col justify-between px-6 md:px-12 py-6 md:py-10 z-10">
-          {/* Top: Badges */}
-          <div className="flex flex-col gap-2">
-            <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs md:text-sm font-medium w-fit shadow-lg">
-              💍 {eventLabel}
-            </span>
-            {isPremium && (
-              <span className="bg-amber-500 text-black px-3 py-1 rounded-full text-xs md:text-sm font-bold w-fit shadow-lg">
-                ⭐ Premium
-              </span>
-            )}
-          </div>
-
-          {/* Middle: Title & Date */}
-          <div>
-            <h2 className="text-2xl md:text-4xl font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-300 transition-colors">
-              {invitation.title}
+        <div className="relative h-full flex flex-col justify-between px-6 md:px-8 py-4 md:py-6 z-10">
+          {/* Top: Title */}
+          <div className="flex-1 flex items-start pt-2">
+            <h2 className="text-xl md:text-2xl font-bold text-white leading-tight group-hover:text-blue-300 transition-colors">
+              {titleLines.map((line, index) => (
+                <span key={index} className="block">
+                  {line}
+                </span>
+              ))}
             </h2>
-            <p className="text-base md:text-lg text-gray-300">
-              {formatDate(invitation.event_date)}
-              {invitation.event_date && formatTime(invitation.event_date) && (
-                <> • {formatTime(invitation.event_date)}</>
-              )}
-            </p>
           </div>
 
-          {/* Bottom: Action Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetailsModal(true);
-            }}
-            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-base md:text-lg group self-start"
-          >
-            <span className="font-medium">VER MÁS</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
+          {/* Bottom Row: VER MÁS (left) and Badges (right) */}
+          <div className="flex items-center justify-between">
+            {/* Left: Action Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetailsModal(true);
+              }}
+              className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-sm md:text-base group"
+            >
+              <span className="font-medium">VER MÁS</span>
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            {/* Right: Badges */}
+            <div className="flex flex-col gap-1.5 items-end">
+              <span className="bg-purple-600 text-white px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium shadow-lg whitespace-nowrap">
+                💍 {eventLabel}
+              </span>
+              {isPremium && (
+                <span className="bg-amber-500 text-black px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-bold shadow-lg whitespace-nowrap">
+                  ⭐ Premium
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Fallback background pattern if no image */}
         {!invitation.hero_image_url && !invitation.thumbnail_url && (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-purple-800 to-slate-800 opacity-60" />
         )}
       </div>
 
