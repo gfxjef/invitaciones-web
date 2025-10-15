@@ -9,6 +9,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { type Invitation } from '@/lib/api';
 import {
   X,
@@ -20,6 +21,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { DownloadClientPDF } from '@/components/auth/DownloadClientPDF';
+import { ShareURLModal } from './ShareURLModal';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -35,6 +37,7 @@ export function InvitationDetailsModal({
   onClose
 }: InvitationDetailsModalProps) {
   const router = useRouter();
+  const [showShareURLModal, setShowShareURLModal] = useState(false);
 
   // Don't render if not open
   if (!isOpen) return null;
@@ -68,14 +71,9 @@ export function InvitationDetailsModal({
     return Math.round((stats.rsvps / stats.views) * 100);
   };
 
-  // Handle copy URL
+  // Handle copy URL - Open ShareURLModal
   const handleCopyURL = () => {
-    if (invitation.full_url) {
-      navigator.clipboard.writeText(invitation.full_url);
-      toast.success('URL copiada al portapapeles');
-    } else {
-      toast.error('URL no disponible');
-    }
+    setShowShareURLModal(true);
   };
 
   // Handle get QR
@@ -110,11 +108,28 @@ export function InvitationDetailsModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
+    <>
+      {/* ShareURL Modal */}
+      <ShareURLModal
+        isOpen={showShareURLModal}
+        onClose={() => setShowShareURLModal(false)}
+        invitation={{
+          id: invitation.id,
+          url_slug: invitation.url_slug,
+          groom_name: invitation.groom_name,
+          bride_name: invitation.bride_name,
+          short_code: invitation.short_code,
+          custom_names: invitation.custom_names,
+          plan_id: invitation.plan_id
+        }}
+      />
+
+      {/* Invitation Details Modal */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={handleBackdropClick}
+      >
+        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
         {/* Header with Close Button */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1 pr-4">
@@ -204,5 +219,6 @@ export function InvitationDetailsModal({
         </div>
       </div>
     </div>
+    </>
   );
 }
