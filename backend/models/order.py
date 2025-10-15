@@ -11,6 +11,13 @@ class OrderStatus(Enum):
     REFUNDED = 'REFUNDED'
 
 
+class OrderType(Enum):
+    NEW_PURCHASE = 'NEW_PURCHASE'      # Compra inicial de plan
+    PLAN_UPGRADE = 'PLAN_UPGRADE'      # Upgrade de plan existente
+    PLAN_RENEWAL = 'PLAN_RENEWAL'      # Renovación (futuro)
+    PLAN_DOWNGRADE = 'PLAN_DOWNGRADE'  # Downgrade (futuro)
+
+
 class Order(db.Model):
     __tablename__ = 'orders'
     
@@ -18,6 +25,15 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
     
+    # Tipo de orden
+    order_type = db.Column(db.Enum(OrderType), default=OrderType.NEW_PURCHASE, nullable=False)
+
+    # Para upgrades: referencia a la invitación que se está upgradeando
+    upgraded_invitation_id = db.Column(db.Integer, db.ForeignKey('invitations.id'), nullable=True)
+
+    # Para upgrades: guardar el plan original (auditoría)
+    previous_plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'), nullable=True)
+
     # Montos
     subtotal = db.Column(Numeric(10, 2), nullable=False)
     discount_amount = db.Column(Numeric(10, 2), default=0)
@@ -47,7 +63,22 @@ class Order(db.Model):
     
     # Relationships
     items = db.relationship('OrderItem', backref='order', lazy='dynamic')
-    invitations = db.relationship('Invitation', backref='order', lazy='dynamic')
+
+    # Invitaciones creadas por esta orden (compra inicial)
+    invitations = db.relationship(
+        'Invitation',
+        foreign_keys='Invitation.order_id',
+        backref='order',
+        lazy='dynamic'
+    )
+
+    # Invitación que fue upgradeada (solo para órdenes tipo PLAN_UPGRADE)
+    upgraded_invitation = db.relationship(
+        'Invitation',
+        foreign_keys=[upgraded_invitation_id],
+        backref='upgrade_orders',
+        lazy='select'
+    )
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -59,6 +90,9 @@ class Order(db.Model):
         return {
             'id': self.id,
             'order_number': self.order_number,
+            'order_type': self.order_type.value if self.order_type else 'NEW_PURCHASE',
+            'upgraded_invitation_id': self.upgraded_invitation_id,
+            'previous_plan_id': self.previous_plan_id,
             'subtotal': float(self.subtotal),
             'discount_amount': float(self.discount_amount),
             'total': float(self.total),

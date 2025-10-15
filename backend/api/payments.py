@@ -405,9 +405,30 @@ def process_payment():
                 'processed_at': datetime.utcnow().isoformat()
             })
             order.payment_data = current_payment_data
-            
+
             logger.info(f"Payment successful for order {order.order_number}")
-            
+
+            # 🔄 HANDLE PLAN_UPGRADE ORDERS: Update invitation plan_id when upgrade is paid
+            from models.order import OrderType
+            from models.invitation import Invitation
+
+            if order.order_type == OrderType.PLAN_UPGRADE and order.upgraded_invitation_id:
+                invitation = Invitation.query.get(order.upgraded_invitation_id)
+
+                if invitation:
+                    # Get new plan from order items
+                    order_item = order.items.first()
+                    if order_item and order_item.plan_id:
+                        old_plan_id = invitation.plan_id
+                        invitation.plan_id = order_item.plan_id
+
+                        logger.info(f"✅ PLAN UPGRADED: Invitation {invitation.id} upgraded from plan {old_plan_id} to plan {order_item.plan_id}")
+                        logger.info(f"   Order: {order.order_number}, Type: {order.order_type.value}")
+                    else:
+                        logger.error(f"⚠️ PLAN UPGRADE ERROR: Order {order.id} has no items with plan_id")
+                else:
+                    logger.error(f"⚠️ PLAN UPGRADE ERROR: Invitation {order.upgraded_invitation_id} not found for order {order.id}")
+
         else:
             # Payment failed or was cancelled
             current_payment_data = order.payment_data or {}
@@ -607,7 +628,7 @@ def payment_webhook():
                 order.status = OrderStatus.PAID
                 order.paid_at = datetime.utcnow()
                 order.payment_method = 'IZIPAY'
-                
+
                 # Guardar toda la información del webhook
                 current_payment_data = order.payment_data or {}
                 current_payment_data.update({
@@ -617,8 +638,29 @@ def payment_webhook():
                     'order_status': order_status
                 })
                 order.payment_data = current_payment_data
-                
+
                 logger.info(f"Webhook confirmed payment for order {order.order_number}")
+
+                # 🔄 HANDLE PLAN_UPGRADE ORDERS: Update invitation plan_id when upgrade is paid
+                from models.order import OrderType
+                from models.invitation import Invitation
+
+                if order.order_type == OrderType.PLAN_UPGRADE and order.upgraded_invitation_id:
+                    invitation = Invitation.query.get(order.upgraded_invitation_id)
+
+                    if invitation:
+                        # Get new plan from order items
+                        order_item = order.items.first()
+                        if order_item and order_item.plan_id:
+                            old_plan_id = invitation.plan_id
+                            invitation.plan_id = order_item.plan_id
+
+                            logger.info(f"✅ PLAN UPGRADED: Invitation {invitation.id} upgraded from plan {old_plan_id} to plan {order_item.plan_id}")
+                            logger.info(f"   Order: {order.order_number}, Type: {order.order_type.value}")
+                        else:
+                            logger.error(f"⚠️ PLAN UPGRADE ERROR: Order {order.id} has no items with plan_id")
+                    else:
+                        logger.error(f"⚠️ PLAN UPGRADE ERROR: Invitation {order.upgraded_invitation_id} not found for order {order.id}")
         
         elif order_status == 'UNPAID':
             if order.status == OrderStatus.PENDING:

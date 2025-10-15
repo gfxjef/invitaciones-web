@@ -353,7 +353,7 @@ def get_order_invitation(order_id):
     Usado por el botón "Ver invitación" en la página de pedidos.
 
     Returns:
-        {
+        {00000
             "success": true,
             "invitation": {
                 "id": int,

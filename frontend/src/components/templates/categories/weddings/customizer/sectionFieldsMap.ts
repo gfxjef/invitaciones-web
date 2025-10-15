@@ -239,7 +239,6 @@ export const WEDDING_SECTION_FIELDS_MAP: Record<string, SectionConfig> = {
       'place_ceremonia_mapa_url'
     ]
   },
-
   vestimenta: {
     label: 'Vestimenta',
     icon: '👗',
@@ -884,18 +883,6 @@ export const FIELD_DEFINITIONS: Record<string, CustomizerField> = {
     placeholder: 'Selecciona hasta 9 fotos para tu galería...'
   },
 
-  // Footer section fields - Using individual names (removing legacy footer_coupleNames)
-
-
-
-  footer_copyrightText: {
-    key: 'footer_copyrightText',
-    label: 'Texto de Copyright',
-    type: 'text',
-    // placeholder:'Hecho con Amor. All right reserved...',
-    section: 'footer',
-    category: 'Footer'
-  }
 };
 
 /**

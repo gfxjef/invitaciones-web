@@ -17,7 +17,7 @@ class Invitation(db.Model):
     bride_name = db.Column(db.String(100), nullable=False)
     
     # Fecha y ubicación
-    wedding_date = db.Column(db.DateTime, nullable=True)
+    wedding_date = db.Column('event_date', db.DateTime)
     ceremony_location = db.Column(db.String(500))
     ceremony_address = db.Column(db.Text)
     reception_location = db.Column(db.String(500))
@@ -35,10 +35,21 @@ class Invitation(db.Model):
     # URLs y configuración
     unique_url = db.Column(db.String(100), unique=True, nullable=False)
     custom_url = db.Column(
-        db.String(100), 
+        db.String(100),
         unique=True,
         nullable=True,
         comment="Custom URL slug for invitation (user-defined)"
+    )
+    short_code = db.Column(
+        db.String(10),
+        unique=True,
+        nullable=True,
+        comment="Short code for personalized URLs (e.g., w3d, xv2)"
+    )
+    custom_names = db.Column(
+        db.String(100),
+        nullable=True,
+        comment="Custom couple names for URL (e.g., Carlos&Nayeli)"
     )
     template_name = db.Column(db.String(100))
     custom_colors = db.Column(db.JSON)
@@ -136,15 +147,28 @@ class Invitation(db.Model):
     def get_url_slug(self) -> str:
         """
         Get the URL slug for this invitation.
-        
+
         Returns:
             Custom URL if set, otherwise unique URL
-            
+
         WHY: Provides consistent URL generation with preference for
         custom URLs when available.
         """
         return self.custom_url or self.unique_url
-    
+
+    def get_short_url_path(self) -> str | None:
+        """
+        Get the short URL path if available.
+
+        Returns:
+            Short URL path (e.g., "w3d/Carlos&Maria") or None
+
+        WHY: Provides personalized short URL format for sharing.
+        """
+        if self.short_code and self.custom_names:
+            return f"{self.short_code}/{self.custom_names}"
+        return None
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -159,6 +183,8 @@ class Invitation(db.Model):
             'main_photo_url': self.main_photo_url,
             'unique_url': self.unique_url,
             'custom_url': self.custom_url,
+            'short_code': self.short_code,
+            'custom_names': self.custom_names,
             'is_published': self.is_published,
             'status': self.status,
             'is_password_protected': self.is_password_protected(),

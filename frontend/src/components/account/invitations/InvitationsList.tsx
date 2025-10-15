@@ -244,6 +244,8 @@ export default function InvitationsList() {
       setInvitations(mappedInvitations);
 
       console.log(`✅ Loaded ${mappedInvitations.length} invitations from API`);
+      console.log('📅 DEBUG - First invitation event_date:', mappedInvitations[0]?.event_date);
+      console.log('📋 DEBUG - First invitation full data:', JSON.stringify(mappedInvitations[0], null, 2));
     } catch (error) {
       toast.error('Error cargando invitaciones');
       console.error('Error loading invitations:', error);
@@ -598,7 +600,7 @@ export default function InvitationsList() {
           }
         />
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {filteredAndSortedInvitations.map((invitation) => (
             <InvitationCard
               key={invitation.id}

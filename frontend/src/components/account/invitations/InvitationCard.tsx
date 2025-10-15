@@ -1,49 +1,31 @@
 /**
- * Individual Invitation Card Component
- * 
- * WHY: Displays individual invitation in a card format with
- * quick actions, statistics, and status indicators for
- * efficient invitation management.
- * 
- * WHAT: Card component with thumbnail, stats, actions,
- * selection support, and hover effects.
+ * Individual Invitation Card Component - New Design
+ *
+ * WHY: Modern card design with left preview and right info/actions layout
+ *
+ * WHAT: Two-column card with preview, stats, and action buttons
  */
 
 'use client';
 
 import { useState } from 'react';
-import { 
+import { useRouter } from 'next/navigation';
+import {
   Heart,
   Star,
   Users,
   Calendar,
   Baby,
   Eye,
-  Share2,
-  Edit3,
-  MoreHorizontal,
-  ExternalLink,
-  Copy,
-  Download,
-  Archive,
-  Trash2,
-  BarChart3,
+  QrCode,
   Link2,
-  Clock,
-  MapPin,
-  Settings
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { type Invitation } from '@/lib/api';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DownloadClientPDF } from '@/components/auth/DownloadClientPDF';
+import { ShareURLModal } from './ShareURLModal';
+import toast from 'react-hot-toast';
 
 interface InvitationCardProps {
   invitation: Invitation;
@@ -60,6 +42,7 @@ interface InvitationCardProps {
 
 const EVENT_TYPE_LABELS = {
   boda: 'Boda',
+  weddings: 'Boda',
   quince: 'XV Años',
   bautizo: 'Bautizo',
   cumpleanos: 'Cumpleaños',
@@ -67,349 +50,214 @@ const EVENT_TYPE_LABELS = {
   otro: 'Otro',
 };
 
-const STATUS_CONFIG = {
-  draft: {
-    label: 'Borrador',
-    color: 'bg-gray-100 text-gray-800 border-gray-200',
-    icon: Clock
-  },
-  active: {
-    label: 'Activa',
-    color: 'bg-green-100 text-green-800 border-green-200',
-    icon: Eye
-  },
-  expired: {
-    label: 'Expirada',
-    color: 'bg-red-100 text-red-800 border-red-200',
-    icon: Clock
-  },
-  completed: {
-    label: 'Completada',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
-    icon: BarChart3
-  },
-};
-
 export default function InvitationCard({
   invitation,
-  isSelected = false,
-  onSelect,
-  onView,
-  onEdit,
-  onDuplicate,
-  onDelete,
-  onShare,
-  onArchive,
   className = ''
 }: InvitationCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const router = useRouter();
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const getEventTypeIcon = (type: string) => {
     switch (type) {
-      case 'boda': return Heart;
-      case 'quince': return Star;
-      case 'bautizo': return Users;
-      case 'cumpleanos': return Calendar;
-      case 'baby_shower': return Baby;
-      default: return Calendar;
+      case 'boda':
+      case 'weddings':
+        return Heart;
+      case 'quince':
+        return Star;
+      case 'bautizo':
+        return Users;
+      case 'cumpleanos':
+        return Calendar;
+      case 'baby_shower':
+        return Baby;
+      default:
+        return Calendar;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-PE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Sin fecha configurada';
+
+    try {
+      return new Date(dateString).toLocaleDateString('es-PE', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Fecha inválida';
+    }
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('es-PE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return '';
+
+    try {
+      return new Date(dateString).toLocaleTimeString('es-PE', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '';
+    }
   };
 
   const calculateResponseRate = () => {
     const { stats } = invitation;
-    // Backend only provides total rsvps count, not confirmed/responses breakdown
-    // Return 0 for now - TODO: backend needs to provide rsvp_confirmed and rsvp_declined
+    // Backend only provides total rsvps count
     return stats.rsvps > 0 ? 100 : 0;
   };
 
-  const getPerformanceColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-600';
-    if (rate >= 60) return 'text-blue-600';
-    if (rate >= 40) return 'text-yellow-600';
-    return 'text-red-600';
+  // Action Handlers
+  const handleCopyURL = () => {
+    // Open share modal instead of direct copy
+    setShowShareModal(true);
   };
 
-  const statusConfig = STATUS_CONFIG[invitation.status];
+  const handleGetQR = () => {
+    // Download QR code
+    const qrUrl = `/r/${invitation.url_slug}/qr`;
+    window.open(qrUrl, '_blank');
+    toast.info('Abriendo código QR...');
+  };
+
+  const handleStatistics = () => {
+    router.push(`/mi-cuenta/invitaciones/${invitation.id}/analytics`);
+  };
+
   const EventTypeIcon = getEventTypeIcon(invitation.event_type);
   const responseRate = calculateResponseRate();
-  const isEventSoon = new Date(invitation.event_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Within 7 days
+  const eventLabel = EVENT_TYPE_LABELS[invitation.event_type] || 'Evento';
 
   return (
-    <div
-      className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 ${
-        isSelected ? 'ring-2 ring-purple-500 border-purple-300' : ''
-      } ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Selection Checkbox */}
-      {onSelect && (
-        <div className={`absolute top-3 left-3 z-10 transition-opacity ${
-          isSelected || isHovered ? 'opacity-100' : 'opacity-0'
-        }`}>
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onSelect}
-            className="bg-white shadow-sm"
-          />
-        </div>
-      )}
+    <div className={`grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-2 lg:gap-3 ${className}`}>
+      {/* Left Card - Preview with Background Image */}
+      <div
+        className="rounded-2xl border-2 border-black p-3 flex flex-col justify-between min-h-[200px] bg-cover bg-center bg-no-repeat relative"
+        style={{
+          backgroundImage: (invitation.hero_image_url || invitation.thumbnail_url)
+            ? `url(${invitation.hero_image_url || invitation.thumbnail_url})`
+            : 'none',
+          backgroundColor: (invitation.hero_image_url || invitation.thumbnail_url) ? 'transparent' : 'white'
+        }}
+      >
+        {/* Overlay para mejorar legibilidad de badges si hay imagen */}
+        {(invitation.hero_image_url || invitation.thumbnail_url) && (
+          <div className="absolute inset-0 bg-black/10 rounded-2xl"></div>
+        )}
 
-      {/* Invitation Thumbnail/Preview */}
-      <div className="relative h-48 bg-gradient-to-br from-purple-100 to-purple-200 rounded-t-lg overflow-hidden">
-        {/* Event Soon Badge */}
-        {isEventSoon && invitation.status === 'active' && (
-          <div className="absolute top-3 right-3 z-10">
-            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
-              Próximamente
-            </Badge>
+        {/* Event Type Badge */}
+        <div className="inline-flex items-center justify-center bg-black text-white rounded-full px-3 py-1 text-xs font-medium self-start relative z-10">
+          <EventTypeIcon className="w-3 h-3 mr-1" />
+          {eventLabel}
+        </div>
+
+        {/* Icon fallback if no image */}
+        {!invitation.hero_image_url && !invitation.thumbnail_url && (
+          <div className="flex-1 flex items-center justify-center">
+            <EventTypeIcon className="w-16 h-16 text-gray-200" />
           </div>
         )}
 
-        {/* Status Badge */}
-        <div className={`absolute ${onSelect ? 'top-3 right-3' : 'top-3 left-3'} z-10`}>
-          <Badge className={`border ${statusConfig.color} flex items-center gap-1`}>
-            <statusConfig.icon className="w-3 h-3" />
-            {statusConfig.label}
-          </Badge>
+        {/* Plan Name Badge */}
+        <div className="inline-flex items-center justify-center bg-black text-white rounded-full px-3 py-1 text-xs font-medium self-start relative z-10">
+          {invitation.plan_name || 'Plan Estándar'}
         </div>
+      </div>
 
-        {/* Event Type Icon Background */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <EventTypeIcon className="w-16 h-16 text-purple-600 opacity-30" />
-        </div>
-
-        {/* Template Preview Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3">
-          <p className="text-white text-sm font-medium">
-            {invitation.template_name}
+      {/* Right Section - Info & Actions */}
+      <div className="space-y-2 lg:space-y-3">
+        {/* Header */}
+        <div>
+          <h1 className="text-lg lg:text-xl xl:text-2xl font-bold mb-1 lg:mb-2 line-clamp-2">
+            {invitation.title}
+          </h1>
+          <p className="text-sm lg:text-base xl:text-lg text-gray-600">
+            {formatDate(invitation.event_date)}
+            {invitation.event_date && formatTime(invitation.event_date) && (
+              <> • {formatTime(invitation.event_date)}</>
+            )}
           </p>
         </div>
 
-        {/* Hover Actions */}
-        <div className={`absolute inset-0 bg-black/20 flex items-center justify-center gap-2 transition-opacity ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="bg-white/90 text-gray-900 hover:bg-white"
-            onClick={() => window.open(invitation.full_url, '_blank')}
+        {/* Stats Grid - 3 columns */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-gray-200 rounded-xl p-2 flex flex-col items-center justify-center">
+            <Eye className="w-4 h-4 mb-1" />
+            <p className="text-base lg:text-lg font-semibold mb-0.5">{invitation.stats.views}</p>
+            <p className="text-[10px] lg:text-xs text-gray-700">Vistas</p>
+          </div>
+
+          <div className="bg-gray-200 rounded-xl p-2 flex flex-col items-center justify-center">
+            <Users className="w-4 h-4 mb-1" />
+            <p className="text-base lg:text-lg font-semibold mb-0.5">{invitation.stats.rsvps}</p>
+            <p className="text-[10px] lg:text-xs text-gray-700">RSVPs</p>
+          </div>
+
+          <div className="bg-gray-200 rounded-xl p-2 flex flex-col items-center justify-center">
+            <TrendingUp className="w-4 h-4 mb-1" />
+            <p className="text-base lg:text-lg font-semibold mb-0.5">{responseRate}%</p>
+            <p className="text-[10px] lg:text-xs text-gray-700">Respuesta</p>
+          </div>
+        </div>
+
+        {/* Action Buttons Grid - 2 columns */}
+        <div className="grid grid-cols-2 gap-2">
+          <DownloadClientPDF
+            invitationData={{
+              id: invitation.id,
+              title: invitation.title,
+              url_slug: invitation.url_slug,
+              template_id: invitation.template_id
+            }}
+            buttonText="Descargar"
+            size="default"
+            className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 h-auto"
+          />
+
+          <button
+            onClick={handleCopyURL}
+            className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
           >
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-          {onEdit && (
-            <Button
-              size="sm"
-              variant="secondary"
-              className="bg-white/90 text-gray-900 hover:bg-white"
-              onClick={() => onEdit(invitation)}
-            >
-              <Edit3 className="w-4 h-4" />
-            </Button>
-          )}
+            <Link2 className="w-3 h-3 lg:w-4 lg:h-4" />
+            <span className="hidden sm:inline">Copiar URL</span>
+          </button>
+        </div>
+
+        {/* Bottom Buttons Grid - 2 columns */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={handleStatistics}
+            className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+          >
+            <BarChart3 className="w-3 h-3 lg:w-4 lg:h-4" />
+            <span className="hidden sm:inline">Estadísticas</span>
+          </button>
+
+          <button
+            onClick={handleGetQR}
+            className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+          >
+            <QrCode className="w-3 h-3 lg:w-4 lg:h-4" />
+            <span className="hidden sm:inline">Obtener QR</span>
+          </button>
         </div>
       </div>
 
-      <div className="p-4">
-        {/* Invitation Info */}
-        <div className="mb-4">
-          <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-1">
-            {invitation.title}
-          </h3>
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-            <span>{EVENT_TYPE_LABELS[invitation.event_type]}</span>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(invitation.event_date)}</span>
-            </div>
-            <span>•</span>
-            <span>{formatTime(invitation.event_date)}</span>
-          </div>
-          
-          {/* Event Status Indicators */}
-          <div className="flex items-center gap-2 text-xs">
-            {invitation.settings.rsvp_enabled && (
-              <Badge variant="outline" className="text-xs">
-                RSVP habilitado
-              </Badge>
-            )}
-            {invitation.settings.password_protected && (
-              <Badge variant="outline" className="text-xs">
-                Protegida
-              </Badge>
-            )}
-            {!invitation.settings.is_public && (
-              <Badge variant="outline" className="text-xs">
-                Privada
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Performance Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-          <div className="bg-gray-50 rounded-lg p-2">
-            <div className="flex items-center justify-center mb-1">
-              <Eye className="w-4 h-4 text-blue-600" />
-            </div>
-            <p className="text-lg font-semibold text-gray-900">
-              {invitation.stats.views}
-            </p>
-            <p className="text-xs text-gray-500">Vistas</p>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-2">
-            <div className="flex items-center justify-center mb-1">
-              <Users className="w-4 h-4 text-green-600" />
-            </div>
-            <p className="text-lg font-semibold text-gray-900">
-              {invitation.stats.rsvps}
-            </p>
-            <p className="text-xs text-gray-500">RSVPs</p>
-          </div>
-          
-          <div className="bg-gray-50 rounded-lg p-2">
-            <div className="flex items-center justify-center mb-1">
-              <BarChart3 className={`w-4 h-4 ${getPerformanceColor(responseRate)}`} />
-            </div>
-            <p className={`text-lg font-semibold ${getPerformanceColor(responseRate)}`}>
-              {responseRate}%
-            </p>
-            <p className="text-xs text-gray-500">Respuesta</p>
-          </div>
-        </div>
-
-        {/* Engagement Summary */}
-        <div className="bg-gray-50 rounded-lg p-3 mb-4">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Share2 className="w-3 h-3 text-gray-500" />
-              <span className="text-gray-600">Compartidas:</span>
-              <span className="font-medium text-gray-900">{invitation.stats.shares}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-3 h-3 text-gray-500" />
-              <span className="text-gray-600">Únicos:</span>
-              <span className="font-medium text-gray-900">{invitation.stats.visitors}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          {onView && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => onView(invitation)}
-            >
-              <BarChart3 className="w-4 h-4 mr-1" />
-              Analíticas
-            </Button>
-          )}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onShare?.(invitation)}
-          >
-            <Share2 className="w-4 h-4" />
-          </Button>
-          
-          {/* More Actions Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(invitation)}>
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Editar invitación
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuItem onClick={() => window.open(invitation.full_url, '_blank')}>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Abrir invitación
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                onClick={() => {
-                  navigator.clipboard.writeText(invitation.full_url);
-                  // TODO: Add toast notification
-                }}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar enlace
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem>
-                <Link2 className="w-4 h-4 mr-2" />
-                Gestionar URLs
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              {onDuplicate && (
-                <DropdownMenuItem onClick={() => onDuplicate(invitation)}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Duplicar
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuItem>
-                <Download className="w-4 h-4 mr-2" />
-                Descargar QR
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem>
-                <Settings className="w-4 h-4 mr-2" />
-                Configuración
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              {onArchive && (
-                <DropdownMenuItem onClick={() => onArchive(invitation)}>
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archivar
-                </DropdownMenuItem>
-              )}
-              
-              {onDelete && (
-                <DropdownMenuItem 
-                  onClick={() => onDelete(invitation)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      {/* Share URL Modal */}
+      <ShareURLModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        invitation={{
+          id: invitation.id,
+          url_slug: invitation.url_slug,
+          groom_name: invitation.groom_name,
+          bride_name: invitation.bride_name,
+          short_code: invitation.short_code,
+          custom_names: invitation.custom_names,
+          plan_id: invitation.plan_id
+        }}
+      />
     </div>
   );
 }

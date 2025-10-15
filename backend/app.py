@@ -219,6 +219,7 @@ def create_app(config_name=None):
     from api.cart import cart_bp
     from api.modular_templates import modular_templates_bp
     from api.pdf_generation import pdf_bp
+    from api.short_urls import short_urls_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/user')
@@ -235,6 +236,7 @@ def create_app(config_name=None):
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
     app.register_blueprint(modular_templates_bp, url_prefix='/api/modular-templates')
     app.register_blueprint(pdf_bp)  # PDF generation service
+    app.register_blueprint(short_urls_bp)  # Short URL: /api/invitations/{id}/... AND /{code}/{names}
 
     logger.info("Todos los blueprints registrados correctamente")
     logger.info(f"Aplicación Flask configurada y lista en modo: {app_environment}")

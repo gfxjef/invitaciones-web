@@ -89,6 +89,7 @@ def generate_pdf():
         # Extract parameters
         url = data.get('url')
         invitation_id = data.get('invitation_id')
+        url_slug = data.get('url_slug')  # ← NEW: URL slug for production invitations
         device_type = data.get('device_type', 'invitation_mobile')
         quality = data.get('quality', 'standard')
         filename = data.get('filename')
@@ -98,6 +99,7 @@ def generate_pdf():
         # DEBUG: Log received custom_data to see what's coming from frontend
         logger.info(f"🔍 [PDF API] Received request data structure:")
         logger.info(f"  - invitation_id: {invitation_id}")
+        logger.info(f"  - url_slug: {url_slug}")  # ← NEW: Log url_slug
         logger.info(f"  - url: {url}")
         logger.info(f"  - device_type: {device_type}")
         logger.info(f"  - quality: {quality}")
@@ -128,7 +130,16 @@ def generate_pdf():
             # Replace backend port with frontend port for PDF generation
             if ':5000' in base_url:
                 base_url = base_url.replace(':5000', ':3000')
-            url = build_invitation_url(base_url, invitation_id, embedded=True)
+
+            # ← NEW: Use url_slug for production invitations, or demo for testing
+            if url_slug:
+                # Production invitation - use /invitacion/{url_slug}
+                url = f"{base_url}/invitacion/{url_slug}?embedded=true"
+                logger.info(f"📄 [PDF API] Using PRODUCTION URL: {url}")
+            else:
+                # Demo invitation - use /invitacion/demo/{id}
+                url = build_invitation_url(base_url, invitation_id, embedded=True)
+                logger.info(f"🎨 [PDF API] Using DEMO URL: {url}")
 
         # Validate URL
         allowed_domains = ['localhost', '127.0.0.1', 'localhost:3000', '127.0.0.1:3000']  # Add production domains as needed

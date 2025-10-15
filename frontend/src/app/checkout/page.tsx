@@ -12,7 +12,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -73,15 +73,18 @@ const checkoutSchema = z.object({
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
-// Order Summary Component
-const OrderSummary = ({ cart }: { cart: any }) => {
+// Order Summary Component - Accepts either cart or order
+const OrderSummary = ({ cart, order }: { cart?: any; order?: any }) => {
   const appliedCoupon = useAppliedCoupon();
   const couponDiscount = useCouponDiscount();
   const { removeCoupon } = useCartStore();
   const removeCouponMutation = useRemoveCoupon();
-  
-  const subtotal = cart?.total_amount || 0;
-  const total = Math.max(0, subtotal - couponDiscount);
+
+  // Use order data if provided (direct order mode), otherwise use cart
+  const isDirectOrder = !!order;
+  const subtotal = isDirectOrder ? (order?.subtotal || 0) : (cart?.total_amount || 0);
+  const discountAmount = isDirectOrder ? (order?.discount_amount || 0) : couponDiscount;
+  const total = isDirectOrder ? (order?.total || 0) : Math.max(0, subtotal - couponDiscount);
 
   const handleRemoveCoupon = async () => {
     try {
@@ -98,34 +101,62 @@ const OrderSummary = ({ cart }: { cart: any }) => {
         Resumen del pedido
       </h3>
       
-      {/* Cart Items */}
+      {/* Cart Items (from cart or order) */}
       <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
-        {cart?.items?.map((item: any) => (
-          <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-12 h-16 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-              <img
-                src={item.template_thumbnail || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
-                alt={item.template_name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 text-sm truncate">
-                {item.template_name}
+        {isDirectOrder ? (
+          // Render order items for direct order mode
+          order?.items?.map((item: any) => (
+            <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-12 h-16 bg-purple-100 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <span className="text-purple-600 text-xs font-bold">✨</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm truncate">
+                  {item.product_name}
+                </p>
+                {item.product_description && (
+                  <p className="text-xs text-gray-600 truncate">
+                    {item.product_description}
+                  </p>
+                )}
+                <p className="text-xs text-gray-600">
+                  Cantidad: {item.quantity}
+                </p>
+              </div>
+              <p className="font-medium text-gray-900 text-sm">
+                S/ {(item.total_price || 0).toFixed(2)}
               </p>
-              <p className="text-xs text-gray-600">
-                Cantidad: {item.quantity}
+            </div>
+          ))
+        ) : (
+          // Render cart items for normal cart mode
+          cart?.items?.map((item: any) => (
+            <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-12 h-16 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                <img
+                  src={item.template_thumbnail || 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=600'}
+                  alt={item.template_name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm truncate">
+                  {item.template_name}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Cantidad: {item.quantity}
+                </p>
+              </div>
+              <p className="font-medium text-gray-900 text-sm">
+                S/ {((item.price || 0) * item.quantity).toFixed(2)}
               </p>
             </div>
-            <p className="font-medium text-gray-900 text-sm">
-              S/ {((item.price || 0) * item.quantity).toFixed(2)}
-            </p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
       
-      {/* Applied Coupon */}
-      {appliedCoupon && (
+      {/* Applied Coupon - Hide for direct orders (already have fixed discount) */}
+      {!isDirectOrder && appliedCoupon && (
         <div className="mb-4">
           <CouponCard
             coupon={appliedCoupon}
@@ -137,9 +168,9 @@ const OrderSummary = ({ cart }: { cart: any }) => {
           />
         </div>
       )}
-      
-      {/* Coupon Input */}
-      {!appliedCoupon && (
+
+      {/* Coupon Input - Hide for direct orders (already have fixed discount) */}
+      {!isDirectOrder && !appliedCoupon && (
         <div className="mb-4">
           <CouponInput
             orderAmount={subtotal}
@@ -154,14 +185,14 @@ const OrderSummary = ({ cart }: { cart: any }) => {
           <span className="text-gray-600">Subtotal</span>
           <span className="font-medium">S/ {subtotal.toFixed(2)}</span>
         </div>
-        
-        {couponDiscount > 0 && (
+
+        {discountAmount > 0 && (
           <div className="flex justify-between text-green-600">
-            <span>Descuento ({appliedCoupon?.code})</span>
-            <span>-S/ {couponDiscount.toFixed(2)}</span>
+            <span>Descuento {isDirectOrder ? '(Upgrade)' : appliedCoupon?.code ? `(${appliedCoupon.code})` : ''}</span>
+            <span>-S/ {discountAmount.toFixed(2)}</span>
           </div>
         )}
-        
+
         <div className="border-t pt-2">
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>
@@ -182,6 +213,9 @@ const OrderSummary = ({ cart }: { cart: any }) => {
 export default function CheckoutPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const directOrderId = searchParams.get('order_id'); // Direct order ID from upgrade flow
+
   const { data: cart, isLoading: cartLoading } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -190,6 +224,7 @@ export default function CheckoutPage() {
   const appliedCoupon = useAppliedCoupon();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [isLoadingDirectOrder, setIsLoadingDirectOrder] = useState(false);
 
   const {
     register,
@@ -204,12 +239,44 @@ export default function CheckoutPage() {
 
   const documentType = watch('documentType');
 
-  // Redirect if cart is empty (ONLY if payment hasn't been completed)
+  // Load direct order if order_id is provided (upgrade flow)
   useEffect(() => {
+    if (directOrderId && !isLoadingDirectOrder && !currentOrder) {
+      const loadDirectOrder = async () => {
+        setIsLoadingDirectOrder(true);
+        try {
+          console.log('[Checkout] Loading direct order:', directOrderId);
+          const order = await ordersApi.getOrder(parseInt(directOrderId));
+          console.log('[Checkout] Direct order loaded:', order);
+          setCurrentOrder(order);
+        } catch (error) {
+          console.error('[Checkout] Error loading direct order:', error);
+          toast.error('Error al cargar la orden. Redirigiendo...');
+          router.push('/mi-cuenta/invitaciones');
+        } finally {
+          setIsLoadingDirectOrder(false);
+        }
+      };
+
+      loadDirectOrder();
+    }
+  }, [directOrderId, isLoadingDirectOrder, currentOrder, router]);
+
+  // Redirect if cart is empty (ONLY if payment hasn't been completed AND NOT a direct order)
+  // WHY: Direct orders (upgrades) don't use cart, so we skip this check
+  useEffect(() => {
+    // Skip cart verification for direct orders
+    if (directOrderId) {
+      console.log('[Checkout] Direct order mode detected, skipping cart verification');
+      return;
+    }
+
+    // Only verify cart in normal mode
     if (!paymentCompleted && !cartLoading && (!cart || !cart.items || cart.items.length === 0)) {
+      console.log('[Checkout] Cart is empty, redirecting to cart page');
       router.push('/carrito');
     }
-  }, [cart, cartLoading, router, paymentCompleted]);
+  }, [cart, cartLoading, router, paymentCompleted, directOrderId]);
 
   // Check if customizer data exists before allowing checkout
   useEffect(() => {
@@ -253,53 +320,62 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutForm) => {
     setIsProcessing(true);
-    
+
     try {
-      // Step 1: Create order first
-      const orderData = {
-        billing_address: {
-          first_name: data.firstName,
-          last_name: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          zip_code: data.zipCode,
-          country: data.country,
-          document_type: data.documentType,
-          document_number: data.documentNumber,
-          business_name: data.businessName,
-        },
-        coupon_code: appliedCoupon?.code,
-      };
-      
-      console.log('🚀 [CHECKOUT] Creating order with data:', {
-        orderData,
-        cartItems: cart?.items?.length || 0,
-        cartTotal: cart?.total_amount || 0,
-        appliedCoupon: appliedCoupon?.code || 'none'
-      });
-      
-      const orderResponse = await ordersApi.createOrder(orderData);
+      let order;
 
-      console.log('✅ [CHECKOUT] Order creation response:', orderResponse);
+      // Step 1: Create order OR use existing direct order
+      if (directOrderId && currentOrder) {
+        // Direct order mode: Order already exists, skip creation
+        console.log('🔄 [CHECKOUT] Using existing direct order:', currentOrder.order_number);
+        order = currentOrder;
+      } else {
+        // Normal cart mode: Create new order from cart
+        const orderData = {
+          billing_address: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            city: data.city,
+            state: data.state,
+            zip_code: data.zipCode,
+            country: data.country,
+            document_type: data.documentType,
+            document_number: data.documentNumber,
+            business_name: data.businessName,
+          },
+          coupon_code: appliedCoupon?.code,
+        };
 
-      if (!orderResponse.success || !orderResponse.order) {
-        console.error('❌ [CHECKOUT] Order creation failed:', orderResponse);
-        throw new Error('Failed to create order: ' + ((orderResponse as any).error || 'Unknown error'));
+        console.log('🚀 [CHECKOUT] Creating order with data:', {
+          orderData,
+          cartItems: cart?.items?.length || 0,
+          cartTotal: cart?.total_amount || 0,
+          appliedCoupon: appliedCoupon?.code || 'none'
+        });
+
+        const orderResponse = await ordersApi.createOrder(orderData);
+
+        console.log('✅ [CHECKOUT] Order creation response:', orderResponse);
+
+        if (!orderResponse.success || !orderResponse.order) {
+          console.error('❌ [CHECKOUT] Order creation failed:', orderResponse);
+          throw new Error('Failed to create order: ' + ((orderResponse as any).error || 'Unknown error'));
+        }
+
+        order = orderResponse.order;
+        console.log('📦 [CHECKOUT] Order created from API response:', {
+          id: order.id,
+          order_number: order.order_number,
+          total: order.total,
+          status: order.status
+        });
+
+        setCurrentOrder(order);
+        console.log('✅ [CHECKOUT] currentOrder state updated with order ID:', order.id);
       }
-
-      const order = orderResponse.order;
-      console.log('📦 [CHECKOUT] Order created from API response:', {
-        id: order.id,
-        order_number: order.order_number,
-        total: order.total,
-        status: order.status
-      });
-
-      setCurrentOrder(order);
-      console.log('✅ [CHECKOUT] currentOrder state updated with order ID:', order.id);
 
       // Step 2: Create payment token for Izipay
       setIsLoadingPayment(true);
@@ -551,19 +627,28 @@ export default function CheckoutPage() {
     router.push('/carrito');
   };
 
-  if (cartLoading) {
+  // Show loading state while loading cart OR direct order
+  if (cartLoading || isLoadingDirectOrder) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información del pedido...</p>
+          <p className="text-gray-600">
+            {isLoadingDirectOrder ? 'Cargando orden...' : 'Cargando información del pedido...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!cart || !cart.items || cart.items.length === 0) {
+  // Skip empty cart check if using direct order
+  if (!directOrderId && (!cart || !cart.items || cart.items.length === 0)) {
     return null; // Redirecting...
+  }
+
+  // For direct orders, ensure order is loaded
+  if (directOrderId && !currentOrder) {
+    return null; // Still loading or redirecting...
   }
 
   return (
@@ -925,7 +1010,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div>
-            <OrderSummary cart={cart} />
+            <OrderSummary cart={cart} order={directOrderId ? currentOrder : undefined} />
           </div>
         </div>
       </div>

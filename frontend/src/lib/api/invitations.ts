@@ -214,9 +214,137 @@ export async function createInvitationFromOrder(
  */
 export function extractInvitationMetadata(customizerData: Record<string, any>) {
   return {
-    event_date: customizerData.hero_date || customizerData.countdown_date || undefined,
+    event_date: customizerData.weddingDate || customizerData.hero_date || customizerData.countdown_date || undefined,
     title: customizerData.hero_title || undefined,
     groom_name: customizerData.hero_groom_name || customizerData.couple_groom_name || undefined,
     bride_name: customizerData.hero_bride_name || customizerData.couple_bride_name || undefined
   };
+}
+
+/**
+ * Short URL API Functions
+ */
+
+interface ShortUrlResponse {
+  success: boolean;
+  short_code?: string;
+  custom_names?: string;
+  short_url?: string;
+  exists?: boolean;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Generate personalized short URL for invitation
+ */
+export async function generateShortUrl(
+  invitationId: number,
+  customNames?: string
+): Promise<ShortUrlResponse> {
+  try {
+    const response = await apiClient.post<ShortUrlResponse>(
+      `/invitations/${invitationId}/generate-short-url`,
+      customNames ? { custom_names: customNames } : {}
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error generating short URL:', error);
+    throw new Error(
+      error.response?.data?.error || 'Failed to generate short URL'
+    );
+  }
+}
+
+/**
+ * Get existing short URL for invitation
+ */
+export async function getShortUrl(invitationId: number): Promise<ShortUrlResponse> {
+  try {
+    const response = await apiClient.get<ShortUrlResponse>(
+      `/invitations/${invitationId}/short-url`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error getting short URL:', error);
+    throw new Error(
+      error.response?.data?.error || 'Failed to get short URL'
+    );
+  }
+}
+
+/**
+ * Plan Upgrade API Functions
+ */
+
+interface CalculateUpgradeResponse {
+  success: boolean;
+  invitation_id: number;
+  current_plan: {
+    id: number;
+    name: string;
+    price: number;
+  };
+  new_plan: {
+    id: number;
+    name: string;
+    price: number;
+  };
+  amount_to_pay: number;
+  currency: string;
+  error?: string;
+}
+
+interface CreateUpgradeOrderResponse {
+  success: boolean;
+  order_id: number;
+  order_number: string;
+  order_type: string;
+  amount_to_pay: number;
+  currency: string;
+  invitation_id: number;
+  previous_plan_id: number;
+  new_plan_id: number;
+  error?: string;
+}
+
+/**
+ * Calculate upgrade amount from current plan to Premium
+ *
+ * WHY: Shows user exact differential amount before payment.
+ * Returns current plan, new plan, and exact amount to pay.
+ */
+export async function calculateUpgrade(invitationId: number): Promise<CalculateUpgradeResponse> {
+  try {
+    const response = await apiClient.get<CalculateUpgradeResponse>(
+      `/invitations/${invitationId}/calculate-upgrade`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error calculating upgrade:', error);
+    throw new Error(
+      error.response?.data?.error || 'Failed to calculate upgrade amount'
+    );
+  }
+}
+
+/**
+ * Create upgrade order (does NOT update plan immediately)
+ *
+ * WHY: When user clicks "Mejora tu plan", creates PLAN_UPGRADE order with
+ * differential amount. Plan is updated automatically when payment webhook confirms.
+ * Returns order_id to proceed to checkout.
+ */
+export async function createUpgradeOrder(invitationId: number): Promise<CreateUpgradeOrderResponse> {
+  try {
+    const response = await apiClient.post<CreateUpgradeOrderResponse>(
+      `/invitations/${invitationId}/upgrade-plan`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error creating upgrade order:', error);
+    throw new Error(
+      error.response?.data?.error || 'Failed to create upgrade order'
+    );
+  }
 }

@@ -73,11 +73,64 @@ def get_user_invitations():
 
             rsvp_counts = {inv_id: count for inv_id, count in rsvp_results}
 
+        # Pre-fetch all sections_data to avoid N+1 queries when extracting weddingDate
+        sections_by_invitation = {}
+        if invitation_ids:
+            all_sections = InvitationSectionsData.query.filter(
+                InvitationSectionsData.invitation_id.in_(invitation_ids)
+            ).all()
+
+            for section in all_sections:
+                if section.invitation_id not in sections_by_invitation:
+                    sections_by_invitation[section.invitation_id] = []
+                sections_by_invitation[section.invitation_id].append(section)
+
         invitations_data = []
         for invitation, template_preview, template_category, plan_name in invitations:
             # Extract event_type and event_date from sections_data if not in main table
             event_type = template_category or 'wedding'
             event_date = invitation.wedding_date
+            hero_image_url = None  # 🆕 Extract hero image from sections_data
+
+            logger.info(f"🔍 DEBUG Invitation {invitation.id} ({invitation.title}): wedding_date={invitation.wedding_date}")
+
+            # Extract weddingDate and hero image from sections_data
+            sections = sections_by_invitation.get(invitation.id, [])
+            logger.info(f"🔍 DEBUG Found {len(sections)} sections for invitation {invitation.id}")
+
+            for section in sections:
+                variables = section.variables_json
+                logger.info(f"🔍 DEBUG Section {section.section_type}: has variables_json={variables is not None}, keys={list(variables.keys()) if variables else 'NONE'}")
+
+                # Extract weddingDate if wedding_date is NULL
+                if not event_date and variables and 'weddingDate' in variables:
+                    event_date_str = variables['weddingDate']
+                    logger.info(f"✅ DEBUG Found weddingDate in section {section.section_type}: {event_date_str}")
+
+                    try:
+                        from datetime import datetime
+                        # Handle ISO format with or without timezone
+                        event_date = datetime.fromisoformat(
+                            event_date_str.replace('Z', '+00:00')
+                        )
+                        logger.info(f"✅ DEBUG Successfully parsed to datetime: {event_date}")
+                    except (ValueError, AttributeError) as e:
+                        logger.error(f"❌ DEBUG Failed to parse date: {e}")
+
+                # 🆕 Extract hero image from hero section
+                if section.section_type == 'hero' and variables and 'image' in variables:
+                    hero_image_url = variables['image']
+                    logger.info(f"✅ DEBUG Found hero image in invitation {invitation.id}: {len(hero_image_url)} chars")
+
+            if event_date:
+                logger.info(f"✅ DEBUG Final event_date for invitation {invitation.id}: {event_date}")
+            else:
+                logger.warning(f"⚠️ DEBUG No weddingDate found for invitation {invitation.id}")
+
+            if hero_image_url:
+                logger.info(f"✅ DEBUG Final hero_image_url for invitation {invitation.id}: {len(hero_image_url)} chars")
+            else:
+                logger.info(f"⚠️ DEBUG No hero image found for invitation {invitation.id}, using template thumbnail")
 
             # Build URLs
             url_slug = invitation.custom_url or invitation.unique_url
@@ -104,6 +157,14 @@ def get_user_invitations():
                 'shares': 0  # TODO: Add shares tracking
             }
 
+            # Extract template_id from template_name (e.g., "template_9" -> 9)
+            template_id = None
+            if invitation.template_name and invitation.template_name.startswith('template_'):
+                try:
+                    template_id = int(invitation.template_name.replace('template_', ''))
+                except ValueError:
+                    pass
+
             invitations_data.append({
                 'id': invitation.id,
                 'title': invitation.title,
@@ -113,11 +174,17 @@ def get_user_invitations():
                 'url_slug': url_slug,
                 'full_url': full_url,
                 'thumbnail_url': template_preview,
+                'hero_image_url': hero_image_url,  # 🆕 Hero image from sections_data
                 'created_at': invitation.created_at.isoformat() if invitation.created_at else None,
                 'updated_at': invitation.updated_at.isoformat() if invitation.updated_at else None,
                 'template_name': invitation.template_name,
+                'template_id': template_id,  # NEW: For PDF generation
                 'plan_id': invitation.plan_id,
                 'plan_name': plan_name,
+                'groom_name': invitation.groom_name,  # NEW: For short URL
+                'bride_name': invitation.bride_name,  # NEW: For short URL
+                'short_code': invitation.short_code,  # NEW: Short URL code
+                'custom_names': invitation.custom_names,  # NEW: Custom names
                 'stats': stats,
                 'settings': settings
             })
@@ -174,6 +241,241 @@ def create_invitation():
         db.session.rollback()
         logger.error(f"Error creating invitation: {str(e)}")
         return jsonify({'message': 'Internal server error'}), 500
+
+
+@invitations_bp.route('/<int:invitation_id>/calculate-upgrade', methods=['GET'])
+@jwt_required()
+def calculate_upgrade_amount(invitation_id):
+    """
+    GET /api/invitations/<id>/calculate-upgrade
+
+    Calculate the amount needed to upgrade from current plan to Premium plan.
+
+    WHY: Frontend needs to show exact differential amount before payment.
+    This ensures transparent pricing and prevents confusion.
+
+    Returns:
+    {
+        "success": true,
+        "invitation_id": int,
+        "current_plan": {
+            "id": int,
+            "name": str,
+            "price": float
+        },
+        "new_plan": {
+            "id": int,
+            "name": str,
+            "price": float
+        },
+        "amount_to_pay": float,  # Diferencia a pagar
+        "currency": str
+    }
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        # Get invitation
+        invitation = Invitation.query.get(invitation_id)
+        if not invitation:
+            return jsonify({
+                'success': False,
+                'error': 'Invitation not found'
+            }), 404
+
+        # Verify ownership
+        if invitation.user_id != current_user_id:
+            return jsonify({
+                'success': False,
+                'error': 'Unauthorized'
+            }), 403
+
+        # Get current and new plan
+        from models.plan import Plan
+
+        current_plan = Plan.query.get(invitation.plan_id)
+        if not current_plan:
+            return jsonify({
+                'success': False,
+                'error': 'Current plan not found'
+            }), 404
+
+        # Premium plan is always ID 2
+        new_plan = Plan.query.get(2)
+        if not new_plan:
+            return jsonify({
+                'success': False,
+                'error': 'Premium plan not found'
+            }), 404
+
+        # Check if already premium
+        if invitation.plan_id == 2:
+            return jsonify({
+                'success': False,
+                'error': 'Invitation is already Premium'
+            }), 400
+
+        # Calculate difference
+        amount_to_pay = float(new_plan.price) - float(current_plan.price)
+
+        # Ensure positive amount (can't downgrade)
+        if amount_to_pay <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Cannot upgrade to a cheaper or same-price plan'
+            }), 400
+
+        logger.info(f"Calculated upgrade for invitation {invitation_id}: S/ {amount_to_pay}")
+
+        return jsonify({
+            'success': True,
+            'invitation_id': invitation.id,
+            'current_plan': {
+                'id': current_plan.id,
+                'name': current_plan.name,
+                'price': float(current_plan.price)
+            },
+            'new_plan': {
+                'id': new_plan.id,
+                'name': new_plan.name,
+                'price': float(new_plan.price)
+            },
+            'amount_to_pay': amount_to_pay,
+            'currency': new_plan.currency
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error calculating upgrade amount: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+
+@invitations_bp.route('/<int:invitation_id>/upgrade-plan', methods=['POST'])
+@jwt_required()
+def upgrade_invitation_plan(invitation_id):
+    """
+    POST /api/invitations/<id>/upgrade-plan
+
+    Create upgrade order for invitation plan from Basic to Premium.
+    Does NOT update plan_id immediately - plan is updated when payment is confirmed.
+
+    WHY: User clicks "Mejora tu plan", system creates PLAN_UPGRADE order with
+    differential amount, redirects to payment. Payment webhook updates plan_id.
+
+    Returns:
+    {
+        "success": true,
+        "order_id": int,
+        "order_number": str,
+        "order_type": "PLAN_UPGRADE",
+        "amount_to_pay": float,
+        "currency": str,
+        "invitation_id": int,
+        "previous_plan_id": int,
+        "new_plan_id": int
+    }
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+
+        # Get invitation
+        invitation = Invitation.query.get(invitation_id)
+        if not invitation:
+            return jsonify({
+                'success': False,
+                'error': 'Invitation not found'
+            }), 404
+
+        # Verify ownership
+        if invitation.user_id != current_user_id:
+            return jsonify({
+                'success': False,
+                'error': 'Unauthorized'
+            }), 403
+
+        # Check if already premium
+        if invitation.plan_id == 2:
+            return jsonify({
+                'success': False,
+                'error': 'Invitation is already Premium'
+            }), 400
+
+        # Get current and new plan
+        from models.plan import Plan
+        from models.order import OrderType
+
+        current_plan = Plan.query.get(invitation.plan_id)
+        new_plan = Plan.query.get(2)  # Premium
+
+        if not current_plan or not new_plan:
+            return jsonify({
+                'success': False,
+                'error': 'Plan configuration error'
+            }), 500
+
+        # Calculate upgrade amount
+        amount_to_pay = float(new_plan.price) - float(current_plan.price)
+
+        if amount_to_pay <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Cannot upgrade to cheaper plan'
+            }), 400
+
+        # Create PLAN_UPGRADE order
+        upgrade_order = Order(
+            user_id=current_user_id,
+            order_type=OrderType.PLAN_UPGRADE,
+            upgraded_invitation_id=invitation.id,
+            previous_plan_id=invitation.plan_id,
+            subtotal=amount_to_pay,
+            total=amount_to_pay,
+            discount_amount=0,
+            currency=new_plan.currency,
+            status=OrderStatus.PENDING
+        )
+
+        db.session.add(upgrade_order)
+        db.session.flush()  # Get order ID
+
+        # Create order item for the upgrade
+        upgrade_item = OrderItem(
+            order_id=upgrade_order.id,
+            plan_id=new_plan.id,
+            product_name=f"Upgrade a {new_plan.name}",
+            product_description=f"Mejora de plan desde {current_plan.name} a {new_plan.name}",
+            unit_price=amount_to_pay,
+            quantity=1,
+            total_price=amount_to_pay
+        )
+
+        db.session.add(upgrade_item)
+        db.session.commit()
+
+        logger.info(f"Created PLAN_UPGRADE order {upgrade_order.id} for invitation {invitation_id}: S/ {amount_to_pay}")
+
+        return jsonify({
+            'success': True,
+            'order_id': upgrade_order.id,
+            'order_number': upgrade_order.order_number,
+            'order_type': 'PLAN_UPGRADE',
+            'amount_to_pay': amount_to_pay,
+            'currency': new_plan.currency,
+            'invitation_id': invitation.id,
+            'previous_plan_id': invitation.plan_id,
+            'new_plan_id': new_plan.id
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating upgrade order: {str(e)}")
+        logger.exception(e)
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
 
 
 @invitations_bp.route('/create-from-order', methods=['POST'])
@@ -271,10 +573,23 @@ def create_invitation_from_order():
 
         # Extract wedding date from sections_data if available
         wedding_date = data.get('event_date')
+        if wedding_date:
+            # Parse string to datetime if event_date is provided
+            try:
+                wedding_date = datetime.fromisoformat(wedding_date.replace('Z', '+00:00'))
+            except (ValueError, AttributeError, TypeError):
+                logger.warning(f"Could not parse event_date from payload: {wedding_date}")
+                wedding_date = None
+
         if not wedding_date:
-            # Try to extract from sections_data
+            # Try to extract from sections_data (check multiple locations for compatibility)
             sections_data = data.get('sections_data', {})
-            event_date_str = sections_data.get('event', {}).get('date') or sections_data.get('general', {}).get('weddingDate')
+            event_date_str = (
+                sections_data.get('event', {}).get('date') or
+                sections_data.get('general', {}).get('weddingDate') or
+                sections_data.get('hero', {}).get('date') or           # Template 9+ hero section
+                sections_data.get('hero', {}).get('weddingDate')       # Backward compatibility
+            )
             if event_date_str:
                 try:
                     wedding_date = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
@@ -291,7 +606,7 @@ def create_invitation_from_order():
             wedding_date=wedding_date,
             template_name=f"template_{data['template_id']}",
             plan_id=data['plan_id'],
-            status='active'
+            status='published'
         )
 
         db.session.add(invitation)

@@ -621,9 +621,15 @@ export interface Invitation {
   full_url: string;
   status: string; // Backend can return various statuses
   template_name: string;
+  template_id: number; // NEW: For PDF generation and other operations
   plan_id?: number;
   plan_name?: string;
   thumbnail_url?: string; // From templates.preview_image_url
+  hero_image_url?: string; // 🆕 Hero image from invitation_sections_data
+  groom_name?: string; // NEW: For short URL generation
+  bride_name?: string; // NEW: For short URL generation
+  short_code?: string; // NEW: Short URL code (e.g., "w3d")
+  custom_names?: string; // NEW: Custom names for URL (e.g., "Carlos&Maria")
   created_at: string;
   updated_at: string;
   stats: {
@@ -1476,6 +1482,7 @@ export const exportApi = {
     quality?: 'high' | 'medium' | 'low';
     include_rsvp?: boolean;
     customData?: any;
+    url_slug?: string;  // ← NEW: URL slug for production invitations (from database)
   }): Promise<{ pdf_url: string; download_url: string; expires_at: string }> => {
     // Map frontend options to backend API parameters
     const backendOptions = {
@@ -1483,7 +1490,8 @@ export const exportApi = {
       device_type: 'invitation_mobile', // Use optimized mobile profile
       quality: options?.quality === 'high' ? 'high' : options?.quality === 'low' ? 'draft' : 'standard',
       filename: `invitation-${invitationId}.pdf`,
-      custom_data: options?.customData || null, // Add custom localStorage data
+      custom_data: options?.customData || null, // Add custom localStorage data (demo only)
+      url_slug: options?.url_slug || null,  // ← NEW: Add url_slug for production invitations
       options: {
         format: options?.format || 'A4',
         orientation: options?.orientation || 'portrait',
