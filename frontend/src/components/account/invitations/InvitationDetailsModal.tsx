@@ -232,7 +232,7 @@ export function InvitationDetailsModal({
             {/* Gradient for text readability - Dark from left, transparent to right */}
             <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
+            <div className="relative h-full flex flex-col justify-center pl-8 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 {isDownloading ? 'Descargando...' : 'Descargar PDF'}
               </h3>
@@ -258,7 +258,7 @@ export function InvitationDetailsModal({
             {/* Gradient for text readability - Dark from left, transparent to right */}
             <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
+            <div className="relative h-full flex flex-col justify-center pl-8 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Copiar URL
               </h3>
@@ -284,7 +284,7 @@ export function InvitationDetailsModal({
             {/* Gradient for text readability - Dark from left, transparent to right */}
             <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
+            <div className="relative h-full flex flex-col justify-center pl-8 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Estadísticas
               </h3>
@@ -310,7 +310,7 @@ export function InvitationDetailsModal({
             {/* Gradient for text readability - Dark from left, transparent to right */}
             <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
+            <div className="relative h-full flex flex-col justify-center pl-8 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Obtener QR
               </h3>
