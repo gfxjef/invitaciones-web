@@ -15,13 +15,10 @@ import {
   X,
   Eye,
   Users,
-  TrendingUp,
-  Link2,
-  ChartColumn,
-  QrCode
+  TrendingUp
 } from 'lucide-react';
-import { DownloadClientPDF } from '@/components/auth/DownloadClientPDF';
 import { ShareURLModal } from './ShareURLModal';
+import { useExportToPDF } from '@/lib/hooks/usePreview';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -38,6 +35,8 @@ export function InvitationDetailsModal({
 }: InvitationDetailsModalProps) {
   const router = useRouter();
   const [showShareURLModal, setShowShareURLModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const exportToPDF = useExportToPDF();
 
   // Don't render if not open
   if (!isOpen) return null;
@@ -69,6 +68,47 @@ export function InvitationDetailsModal({
     const { stats } = invitation;
     if (!stats || !stats.views || stats.views === 0) return 0;
     return Math.round((stats.rsvps / stats.views) * 100);
+  };
+
+  // Handle download PDF
+  const handleDownload = async () => {
+    if (!invitation || !invitation.url_slug) {
+      toast.error('No hay datos de invitación disponibles');
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
+      const result = await exportToPDF.mutateAsync({
+        invitationId: invitation.id,
+        urlSlug: invitation.url_slug,
+        options: {
+          format: 'A4',
+          orientation: 'portrait',
+          quality: 'high',
+          include_rsvp: true,
+          customData: null
+        }
+      });
+
+      if (result && result.pdf_url) {
+        const link = document.createElement('a');
+        link.href = result.pdf_url;
+        link.download = `${invitation.title || 'invitacion'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('PDF descargado exitosamente');
+      } else {
+        toast.error('Error al generar PDF');
+      }
+    } catch (error: any) {
+      console.error('Download error:', error);
+      toast.error(error.message || 'Error al descargar PDF');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Handle copy URL - Open ShareURLModal
@@ -174,47 +214,110 @@ export function InvitationDetailsModal({
           </div>
         </div>
 
-        {/* Action Buttons Grid */}
-        <div className="space-y-2 lg:space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <DownloadClientPDF
-              invitationData={{
-                id: invitation.id,
-                title: invitation.title,
-                url_slug: invitation.url_slug,
-                template_id: invitation.template_id
-              }}
-              buttonText="Descargar"
-              size="default"
-              className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 h-auto"
+        {/* Action Cards Grid - 2x2 with horizontal card design */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Card 1: Descargar PDF */}
+          <div
+            onClick={handleDownload}
+            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+          >
+            {/* Background Image */}
+            <img
+              src="https://www.kossomet.com/AppUp/default/download.webp"
+              alt="Descargar PDF"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <button
-              onClick={handleCopyURL}
-              className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-            >
-              <Link2 className="w-3 h-3 lg:w-4 lg:h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Copiar URL</span>
-              <span className="sm:hidden">URL</span>
-            </button>
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
+            {/* Gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+              <h3 className="text-white font-bold text-base md:text-lg mb-1">
+                {isDownloading ? 'Descargando...' : 'Descargar PDF'}
+              </h3>
+              <p className="text-gray-300 text-xs md:text-sm leading-tight">
+                Descarga los PDF's de manera fácil para compartir con tus invitados
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={handleStatistics}
-              className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-            >
-              <ChartColumn className="w-3 h-3 lg:w-4 lg:h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Estadísticas</span>
-              <span className="sm:hidden">Stats</span>
-            </button>
-            <button
-              onClick={handleGetQR}
-              className="bg-white border-2 border-black rounded-2xl py-2 px-2 lg:px-3 text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-            >
-              <QrCode className="w-3 h-3 lg:w-4 lg:h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Obtener QR</span>
-              <span className="sm:hidden">QR</span>
-            </button>
+          {/* Card 2: Copiar URL */}
+          <div
+            onClick={handleCopyURL}
+            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+          >
+            {/* Background Image */}
+            <img
+              src="https://www.kossomet.com/AppUp/default/link_url.webp"
+              alt="Copiar URL"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
+            {/* Gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+              <h3 className="text-white font-bold text-base md:text-lg mb-1">
+                Copiar URL
+              </h3>
+              <p className="text-gray-300 text-xs md:text-sm leading-tight">
+                Comparte el enlace por WhatsApp, redes sociales o email
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Estadísticas */}
+          <div
+            onClick={handleStatistics}
+            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+          >
+            {/* Background Image */}
+            <img
+              src="https://www.kossomet.com/AppUp/default/staditic.webp"
+              alt="Estadísticas"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
+            {/* Gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+              <h3 className="text-white font-bold text-base md:text-lg mb-1">
+                Estadísticas
+              </h3>
+              <p className="text-gray-300 text-xs md:text-sm leading-tight">
+                Visualiza métricas detalladas de visitas, confirmaciones y más
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4: Obtener QR */}
+          <div
+            onClick={handleGetQR}
+            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+          >
+            {/* Background Image */}
+            <img
+              src="https://www.kossomet.com/AppUp/default/qrcode.webp"
+              alt="Obtener QR"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            {/* Color Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
+            {/* Gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+              <h3 className="text-white font-bold text-base md:text-lg mb-1">
+                Obtener QR
+              </h3>
+              <p className="text-gray-300 text-xs md:text-sm leading-tight">
+                Genera un código QR para imprimir en tus tarjetas físicas
+              </p>
+            </div>
           </div>
         </div>
       </div>
