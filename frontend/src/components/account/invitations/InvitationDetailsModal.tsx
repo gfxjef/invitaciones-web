@@ -169,7 +169,7 @@ export function InvitationDetailsModal({
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
         onClick={handleBackdropClick}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 p-6 animate-in fade-in zoom-in duration-200">
         {/* Header with Close Button */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1 pr-4">
@@ -219,20 +219,20 @@ export function InvitationDetailsModal({
           {/* Card 1: Descargar PDF */}
           <div
             onClick={handleDownload}
-            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+            className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image */}
+            {/* Background Image - Positioned Right */}
             <img
               src="https://www.kossomet.com/AppUp/default/download.webp"
               alt="Descargar PDF"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
             {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
-            {/* Content */}
-            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Content - Left Side */}
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 {isDownloading ? 'Descargando...' : 'Descargar PDF'}
               </h3>
@@ -245,20 +245,20 @@ export function InvitationDetailsModal({
           {/* Card 2: Copiar URL */}
           <div
             onClick={handleCopyURL}
-            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+            className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image */}
+            {/* Background Image - Positioned Right */}
             <img
               src="https://www.kossomet.com/AppUp/default/link_url.webp"
               alt="Copiar URL"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
             {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
-            {/* Content */}
-            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Content - Left Side */}
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Copiar URL
               </h3>
@@ -271,20 +271,20 @@ export function InvitationDetailsModal({
           {/* Card 3: Estadísticas */}
           <div
             onClick={handleStatistics}
-            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+            className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image */}
+            {/* Background Image - Positioned Right */}
             <img
               src="https://www.kossomet.com/AppUp/default/staditic.webp"
               alt="Estadísticas"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
             {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
-            {/* Content */}
-            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Content - Left Side */}
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Estadísticas
               </h3>
@@ -297,20 +297,20 @@ export function InvitationDetailsModal({
           {/* Card 4: Obtener QR */}
           <div
             onClick={handleGetQR}
-            className="relative h-32 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
+            className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image */}
+            {/* Background Image - Positioned Right */}
             <img
               src="https://www.kossomet.com/AppUp/default/qrcode.webp"
               alt="Obtener QR"
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
             {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent" />
-            {/* Content */}
-            <div className="relative h-full flex flex-col justify-center px-4 z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Content - Left Side */}
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Obtener QR
               </h3>
