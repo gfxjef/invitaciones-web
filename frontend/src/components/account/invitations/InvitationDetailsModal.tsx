@@ -221,18 +221,18 @@ export function InvitationDetailsModal({
             onClick={handleDownload}
             className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image - Positioned Right */}
+            {/* Background Image - Full width, object-right to start from right edge */}
             <img
               src="https://www.kossomet.com/AppUp/default/download.webp"
               alt="Descargar PDF"
-              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover object-right group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
-            {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Gradient for text readability - Dark from left, transparent to right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 {isDownloading ? 'Descargando...' : 'Descargar PDF'}
               </h3>
@@ -247,18 +247,18 @@ export function InvitationDetailsModal({
             onClick={handleCopyURL}
             className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image - Positioned Right */}
+            {/* Background Image - Full width, object-right to start from right edge */}
             <img
               src="https://www.kossomet.com/AppUp/default/link_url.webp"
               alt="Copiar URL"
-              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover object-right group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
-            {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Gradient for text readability - Dark from left, transparent to right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Copiar URL
               </h3>
@@ -273,18 +273,18 @@ export function InvitationDetailsModal({
             onClick={handleStatistics}
             className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image - Positioned Right */}
+            {/* Background Image - Full width, object-right to start from right edge */}
             <img
               src="https://www.kossomet.com/AppUp/default/staditic.webp"
               alt="Estadísticas"
-              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover object-right group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
-            {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Gradient for text readability - Dark from left, transparent to right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Estadísticas
               </h3>
@@ -299,18 +299,18 @@ export function InvitationDetailsModal({
             onClick={handleGetQR}
             className="relative h-40 rounded-xl overflow-hidden bg-slate-800 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
           >
-            {/* Background Image - Positioned Right */}
+            {/* Background Image - Full width, object-right to start from right edge */}
             <img
               src="https://www.kossomet.com/AppUp/default/qrcode.webp"
               alt="Obtener QR"
-              className="absolute right-0 top-0 h-full w-2/5 object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover object-right group-hover:scale-105 transition-transform duration-500"
             />
             {/* Color Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 opacity-15" />
-            {/* Gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/70 to-transparent" />
+            {/* Gradient for text readability - Dark from left, transparent to right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 from-10% via-slate-900/80 via-50% to-transparent" />
             {/* Content - Left Side */}
-            <div className="relative h-full flex flex-col justify-center px-4 pr-[45%] z-10">
+            <div className="relative h-full flex flex-col justify-center px-4 pr-[40%] z-10">
               <h3 className="text-white font-bold text-base md:text-lg mb-1">
                 Obtener QR
               </h3>
