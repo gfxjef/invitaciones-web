@@ -517,9 +517,15 @@ export interface ProcessPaymentRequest {
 // API Methods - Payments
 export const paymentsApi = {
   /**
-   * Create formToken for Izipay checkout (según documentación oficial)
+   * Create formToken for Izipay SmartForm V4.0 (Krypton Client)
    */
-  createPaymentToken: async (data: CreatePaymentTokenRequest): Promise<{success: boolean; formToken: string; publicKey: string; order_number: string}> => {
+  createPaymentToken: async (data: CreatePaymentTokenRequest): Promise<{
+    success: boolean;
+    formToken: string;
+    publicKey: string;
+    mode: string;  // TEST | SANDBOX | PRODUCTION
+    order_number: string;
+  }> => {
     const response = await apiClient.post('/payments/formtoken', data);
     return response.data;
   },

@@ -42,20 +42,23 @@ class IzipayConfig:
             'password': os.getenv('IZIPAY_PASSWORD'),  # Clave de Test o Producción
             'public_key': os.getenv('IZIPAY_PUBLIC_KEY'),  # Clave Pública
             'hmac_key': os.getenv('IZIPAY_HMACSHA256'),  # Clave HMAC-SHA-256
+            'merchant_code': os.getenv('IZIPAY_MERCHANT_CODE'),  # LEGACY: Solo para SDK Web V1 (no usado en SmartForm V4.0)
+            'key_rsa': os.getenv('IZIPAY_KEY_RSA'),  # LEGACY: Solo para SDK Web V1 (no usado en SmartForm V4.0)
             'api_url': 'https://api.micuentaweb.pe/api-payment/V4',  # URL oficial V4
             'mode': os.getenv('IZIPAY_MODE', 'SANDBOX')
         }
     
     @staticmethod
     def validate_config():
-        """Valida configuración según estructura oficial"""
+        """Valida configuración según estructura oficial SmartForm V4.0"""
         config = IzipayConfig.get_config()
+        # Solo validamos credenciales necesarias para SmartForm V4.0 (Krypton Client)
         required_keys = ['username', 'password', 'public_key', 'hmac_key']
-        
+
         missing_keys = [key for key in required_keys if not config.get(key)]
         if missing_keys:
             raise ValueError(f"Missing Izipay configuration: {', '.join(missing_keys)}")
-        
+
         return config
 
 
@@ -127,38 +130,78 @@ class IzipayService:
         }
         
         try:
-            # URL oficial según documentación
+            # URL oficial de Izipay según ejemplo Popin-PaymentForm-Python-Flask
+            # Este endpoint retorna formToken que es compatible con SDK Web V1
             url = f"{self.config['api_url']}/Charge/CreatePayment"
-            logger.info(f"Creating payment token for order {order_data['order_number']}")
-            logger.info(f"Request URL: {url}")
-            logger.info(f"Request payload: {token_payload}")
-            logger.info(f"Request headers: {headers}")
-            
+
+            # 🔍 ENHANCED LOGGING: Credential verification
+            logger.info("=" * 80)
+            logger.info(f"[IZIPAY TOKEN] Creating payment token for order {order_data['order_number']}")
+            logger.info(f"[IZIPAY TOKEN] Using endpoint: Charge/CreatePayment (official)")
+            logger.info(f"[IZIPAY TOKEN] Credentials being used:")
+            logger.info(f"  USERNAME (for API auth):  {self.config['username']}")
+            logger.info(f"  MERCHANT_CODE (for SDK):  {self.config['merchant_code']}")
+            logger.info(f"  MODE:                     {self.config['mode']}")
+            logger.info(f"  PUBLIC_KEY (first 20):    {self.config['public_key'][:20]}...")
+            logger.info(f"  KEY_RSA (first 20):       {self.config['key_rsa'][:20]}...")
+            logger.info(f"[IZIPAY TOKEN] Request URL: {url}")
+            logger.info(f"[IZIPAY TOKEN] Request payload: {json.dumps(token_payload, indent=2)}")
+            logger.info("=" * 80)
+
             response = requests.post(
                 url,
                 json=token_payload,
                 headers=headers,
                 timeout=30
             )
-            
-            logger.info(f"Response status: {response.status_code}")
-            logger.info(f"Response body: {response.text[:500]}")
-            
+
+            logger.info(f"[IZIPAY TOKEN] Response status: {response.status_code}")
+            logger.info(f"[IZIPAY TOKEN] Response body: {response.text[:1000]}")
+
             if response.status_code != 200:
+                # ✅ FIX: Removed undefined transaction_id variable
                 return {
                     'success': False,
-                    'error': f'Izipay API error: {response.status_code} - {response.text}',
-                    'transaction_id': transaction_id
+                    'error': f'Izipay API error: {response.status_code} - {response.text}'
                 }
-            
+
             result = response.json()
-            
-            # Formato de respuesta según documentación oficial (app.py línea 139-141)
+
+            # 🔍 ENHANCED LOGGING: Token response analysis
             if result.get('status') == 'SUCCESS':
                 form_token = result['answer']['formToken']
-                logger.info(f"FormToken created successfully for order {order_data['order_number']}")
+                shop_name = result['answer'].get('shopName', 'N/A')
+                merchant_id = result['answer'].get('merchantId', 'N/A')
+                order_id_response = result['answer'].get('orderId', 'N/A')
+
+                logger.info("=" * 80)
+                logger.info(f"[IZIPAY TOKEN] ✅ FormToken created successfully")
+                logger.info(f"[IZIPAY TOKEN] Response Details:")
+                logger.info(f"  shopName (from token):    {shop_name}")
+                logger.info(f"  merchantId (from answer): {merchant_id}")
+                logger.info(f"  orderId (from response):  {order_id_response}")
+                logger.info(f"  formToken (first 30):     {form_token[:30]}...")
+                logger.info("=" * 80)
+
+                # ⚠️ CREDENTIAL VERIFICATION WARNING
+                merchant_code_str = str(self.config['merchant_code'])
+                shop_name_str = str(shop_name)
+                merchant_id_str = str(merchant_id)
+
+                if merchant_code_str not in shop_name_str and merchant_code_str != merchant_id_str:
+                    logger.warning("⚠️" * 30)
+                    logger.warning(f"⚠️ CREDENTIAL MISMATCH DETECTED!")
+                    logger.warning(f"⚠️ MERCHANT_CODE ({merchant_code_str}) NOT found in:")
+                    logger.warning(f"⚠️   - shopName: {shop_name_str}")
+                    logger.warning(f"⚠️   - merchantId: {merchant_id_str}")
+                    logger.warning(f"⚠️ This WILL cause 'Token is invalid' errors in SDK Web V1")
+                    logger.warning(f"⚠️ ")
+                    logger.warning(f"⚠️ SOLUTION: Update .env with correct MERCHANT_CODE:")
+                    logger.warning(f"⚠️   If shopName shows (5859904), use: IZIPAY_MERCHANT_CODE=5859904")
+                    logger.warning(f"⚠️   All credentials (USERNAME, PASSWORD, KEY_RSA) must be from same merchant")
+                    logger.warning("⚠️" * 30)
             else:
-                logger.error(f"Failed to create formToken: {result}")
+                logger.error(f"[IZIPAY TOKEN] ❌ Failed to create formToken: {result}")
                 form_token = None
             
             if not form_token:
@@ -332,11 +375,12 @@ def create_formtoken():
         
         db.session.commit()
         
-        # Respuesta según documentación oficial
+        # Respuesta según documentación oficial SmartForm V4.0 (Krypton Client)
         return jsonify({
             'success': True,
             'formToken': result['form_token'],
             'publicKey': izipay_service.config['public_key'],
+            'mode': izipay_service.config['mode'],  # TEST, SANDBOX o PRODUCTION
             'order_number': order.order_number
         }), 200
         

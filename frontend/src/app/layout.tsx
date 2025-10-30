@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Great_Vibes, Montserrat } from 'next/font/google'
 import './globals.css'
+import '@/styles/izipay-custom.css'
 import { Providers } from './providers'
 import Navigation from '@/components/ui/navigation'
 
@@ -35,9 +36,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Estilos oficiales de Izipay según documentación */}
-        <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic-reset.css" />
-        <link rel="stylesheet" href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css" />
+        {/* Los temas de Izipay se cargan localmente en los componentes que los usan */}
       </head>
       <body className={`${inter.className} ${greatVibes.variable} ${montserrat.variable}`}>
         <Providers>

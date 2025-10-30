@@ -39,7 +39,7 @@ import { useAppliedCoupon, useCouponDiscount, useCartStore } from '@/store/cartS
 import { useRemoveCoupon } from '@/lib/hooks/use-coupons';
 import { ordersApi, paymentsApi } from '@/lib/api';
 import { createInvitationFromOrder, extractInvitationMetadata } from '@/lib/api/invitations';
-import { IzipayCheckout } from '@/components/ui/izipay-checkout';
+import { IzipaySmartForm } from '@/components/ui/izipay-smartform';
 import toast from 'react-hot-toast';
 
 // Form validation schema
@@ -408,7 +408,8 @@ export default function CheckoutPage() {
       
       setPaymentConfig({
         formToken: tokenResponse.formToken,
-        publicKey: tokenResponse.publicKey
+        publicKey: tokenResponse.publicKey,
+        mode: tokenResponse.mode
       });
       
       // Move to payment step
@@ -978,28 +979,17 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Izipay Checkout */}
-                <IzipayCheckout
+                {/* Izipay SmartForm V4.0 - Krypton Client */}
+                <IzipaySmartForm
                   order={{
                     id: currentOrder.id,
                     order_number: currentOrder.order_number,
                     total: currentOrder.total,
                     currency: currentOrder.currency || 'PEN',
                   }}
-                  billingInfo={{
-                    firstName: watch('firstName') || '',
-                    lastName: watch('lastName') || '',
-                    email: watch('email') || '',
-                    phoneNumber: watch('phone') || '',
-                    street: watch('address') || '',
-                    city: watch('city') || '',
-                    state: watch('state') || '',
-                    country: watch('country') || 'PE',
-                    postalCode: (watch('zipCode') || '15001').replace(/\D/g, '').padStart(5, '0').slice(0, 5) || '15001',
-                    document: watch('documentNumber') || '',
-                    documentType: (watch('documentType') || 'dni').toUpperCase() as 'DNI' | 'RUC',
-                  }}
                   paymentConfig={paymentConfig}
+                  displayMode="card-expanded"
+                  theme="neon"
                   onPaymentComplete={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
                   isLoading={isLoadingPayment}

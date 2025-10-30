@@ -79,11 +79,21 @@ npm run lint  # Linting
 3. On 401 response, interceptor attempts token refresh
 4. On refresh failure, redirects to login
 
-### Payment Integration (Izipay)
-- Backend creates payment tokens via Izipay API
-- Frontend uses `@lyracom/embedded-form-glue` for secure payment forms
-- Webhook endpoint at `/api/payments/webhook` for status updates
-- Fallback redirect flow at `frontend/src/app/izipay/retorno/page.tsx`
+### Payment Integration (Izipay SDK Web V1)
+- **Backend**: API V4 (`https://api.micuentaweb.pe/api-payment/V4`) generates formTokens via `/Charge/CreatePayment`
+- **Frontend**: SDK Web V1 (JavaScript moderno) cargado desde CDN para checkout
+- **Supported Payment Methods**:
+  - ✅ Credit/Debit Cards (Visa, MasterCard, Diners Club, American Express)
+  - ✅ Yape (billetera digital)
+  - ✅ Plin Interbank (billetera digital)
+  - ✅ QR Code
+  - ✅ Apple Pay
+- **Components**:
+  - `frontend/src/components/ui/izipay-checkout-v1.tsx`: Componente moderno con SDK Web V1
+  - `backend/api/payments.py`: Integración con API V4 y webhooks
+- **Webhook**: `/api/payments/webhook` para notificaciones IPN
+- **Fallback**: `frontend/src/app/izipay/retorno/page.tsx` para redirecciones
+- **Modes**: SANDBOX (desarrollo) y PRODUCTION (producción)
 
 ## Environment Variables
 
@@ -99,12 +109,16 @@ DB_PORT=3306
 SECRET_KEY=your-secret-key
 JWT_SECRET=your-jwt-secret
 
-# Payment
-IZIPAY_USERNAME=your-username
-IZIPAY_PASSWORD=your-password
-IZIPAY_PUBLIC_KEY=your-public-key
-IZIPAY_HMACSHA256=your-hmac-key
-IZIPAY_MODE=SANDBOX
+# Payment (Izipay SDK Web V1)
+IZIPAY_USERNAME=45259313  # Usuario para autenticación
+IZIPAY_MERCHANT_CODE=45259313  # Código de comercio (mismo que USERNAME)
+IZIPAY_PASSWORD=testpassword_xxx  # Clave de Test o Producción
+IZIPAY_PUBLIC_KEY=45259313:testpublickey_xxx  # Clave pública según ambiente
+IZIPAY_HMACSHA256=your-hmac-key  # Clave HMAC-SHA-256 para webhooks
+IZIPAY_KEY_RSA=publickey_xxx  # Clave RSA pública para encriptación (SDK Web V1)
+IZIPAY_MODE=SANDBOX  # SANDBOX o PRODUCTION
+IZIPAY_WEBHOOK_URL=http://localhost:5000/api/payments/webhook
+IZIPAY_RETURN_URL=http://localhost:3000/izipay/retorno
 
 # FTP (Media uploads)
 FTP_HOST=ftp.kossomet.com
